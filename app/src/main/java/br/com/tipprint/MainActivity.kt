@@ -68,6 +68,16 @@ class MainActivity : AppCompatActivity() {
 
     private var foundDialog: AlertDialog? = null
 
+    private val MAC_REGEX = Regex("^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+
+    private fun setControlsEnabled(enabled: Boolean) {
+        connectBluetooth.isEnabled = enabled
+        discoverBluetooth.isEnabled = enabled
+        connectUsb.isEnabled = enabled
+        connectNet.isEnabled = enabled
+        printTest.isEnabled = enabled
+    }
+
     private val bluetoothPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             if (allGranted(it)) fillBluetoothDevices() else showStatus(getString(R.string.bluetooth_permission_denied))
@@ -194,9 +204,11 @@ class MainActivity : AppCompatActivity() {
     private fun connectToDevice(device: BluetoothDevice) {
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
         showStatus(getString(R.string.connecting_bluetooth, device.name, device.address))
+        setControlsEnabled(false)
         scope.launch {
             val ok = tryOpenPrinter(adapter, device)
             withContext(Dispatchers.Main) {
+                setControlsEnabled(true)
                 if (ok) {
                     activePrinter = device.address
                     savePrinter("bluetooth", device.address)
@@ -236,8 +248,9 @@ class MainActivity : AppCompatActivity() {
         foundDialog?.dismiss()
         foundDialog = null
         discoveryInProgress = true
+        setControlsEnabled(false)
         runCatching { adapter.startDiscovery() }
-            .onFailure { discoveryInProgress = false; showStatus(getString(R.string.bluetooth_scan_failed)) }
+            .onFailure { discoveryInProgress = false; setControlsEnabled(true); showStatus(getString(R.string.bluetooth_scan_failed)) }
             .onSuccess { showScanningStatus() }
     }
 
@@ -273,6 +286,7 @@ class MainActivity : AppCompatActivity() {
                     if (!discoveryInProgress) return
                     discoveryInProgress = false
                     stopScanningAnimation()
+                    setControlsEnabled(true)
                     if (discoveredDevices.isEmpty()) {
                         showStatus(getString(R.string.bluetooth_none_found))
                         return
@@ -286,14 +300,24 @@ class MainActivity : AppCompatActivity() {
                         .show()
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
-                    if (intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1) == BluetoothDevice.BOND_BONDED) {
-                        fillBluetoothDevices()
-                        showStatus(getString(R.string.bluetooth_bonded))
-                        val device = intent.bluetoothDeviceExtra()
-                        val pending = pendingPairDevice
-                        if (device != null && pending != null && pending.address == device.address) {
-                            pendingPairDevice = null
-                            connectToDevice(device)
+                    val device = intent.bluetoothDeviceExtra()
+                    when (intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)) {
+                        BluetoothDevice.BOND_BONDED -> {
+                            fillBluetoothDevices()
+                            showStatus(getString(R.string.bluetooth_bonded))
+                            val pending = pendingPairDevice
+                            if (device != null && pending != null && pending.address == device.address) {
+                                pendingPairDevice = null
+                                connectToDevice(device)
+                            }
+                        }
+                        BluetoothDevice.BOND_NONE -> {
+                            val pending = pendingPairDevice
+                            if (device != null && pending != null && pending.address == device.address) {
+                                pendingPairDevice = null
+                                setControlsEnabled(true)
+                                showStatus(getString(R.string.bluetooth_pair_failed))
+                            }
                         }
                     }
                 }
@@ -324,10 +348,12 @@ class MainActivity : AppCompatActivity() {
             return
         }
         showStatus(getString(R.string.connecting_bluetooth, device.name, device.address))
+        setControlsEnabled(false)
         scope.launch {
             val ok = tryOpenPrinter(adapter, device)
             withContext(Dispatchers.Main) {
                 if (ok) {
+                    setControlsEnabled(true)
                     activePrinter = device.address
                     savePrinter("bluetooth", device.address)
                     showStatus(getString(R.string.bluetooth_connected, device.name))
@@ -336,7 +362,7 @@ class MainActivity : AppCompatActivity() {
                     showStatus(getString(R.string.bluetooth_pairing, device.name ?: device.address))
                     runCatching { device.createBond() }
                         .onSuccess { showStatus(getString(R.string.bluetooth_pairing, device.name ?: device.address)) }
-                        .onFailure { showStatus(getString(R.string.bluetooth_pair_failed)) }
+                        .onFailure { setControlsEnabled(true); showStatus(getString(R.string.bluetooth_pair_failed)) }
                 }
             }
         }
@@ -452,6 +478,7 @@ class MainActivity : AppCompatActivity() {
             val result = runCatching {
                 val printer = when {
                     target.startsWith("usb:") -> UsbPrinter(usbManager!!, usbManager!!.deviceList.values.first { it.deviceId.toString() == target.removePrefix("usb:") })
+                    MAC_REGEX.matches(target) -> BluetoothPrinter(bluetoothAdapter!!, bluetoothAdapter!!.getRemoteDevice(target))
                     target.contains(":") -> NetPrinter(target.substringBefore(":"), target.substringAfter(":").toInt())
                     else -> BluetoothPrinter(bluetoothAdapter!!, bluetoothAdapter!!.getRemoteDevice(target))
                 }
