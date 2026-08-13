@@ -115,8 +115,9 @@ class MainActivity : AppCompatActivity() {
         val type = prefs.getString("printer_type", null)
         val target = prefs.getString("printer_target", null)
         if (type == null || target == null) return
-        openWork(type)
-        when (type) {
+        val workType = if (type == "bluetooth") "bt" else type
+        openWork(workType)
+        when (workType) {
             "bt" -> pendingAutoConnect = target
             "net" -> {
                 ipInput.setText(target.substringBefore(":"))

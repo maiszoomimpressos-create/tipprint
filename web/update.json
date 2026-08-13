@@ -1,9 +1,9 @@
 ﻿{
   "appId": "br.com.tipprint",
-"versionCode": 15,
-  "versionName": "1.0.5.0.0.8",
+"versionCode": 16,
+  "versionName": "1.0.5.0.0.9",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Reconexao automatica: ao abrir o app, volta direto para o ultimo tipo/impressora usados e tenta reconectar."
+  "notes": "Correcao da reconexao automatica: tipo salvo era 'bluetooth' e a restauracao procurava 'bt'. Agora volta para a tela Bluetooth e reconecta."
 }
 
 
