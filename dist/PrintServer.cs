@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Net;
@@ -24,15 +25,41 @@ class PrintServer
     static bool WantConnect = false;
     static int ReconnectTries = 0;
 
+    // Saude/observabilidade da impressao (exposto em /status)
+    static int PrintedOk = 0;
+    static int PrintedFail = 0;
+    static string LastError = null;
+    static DateTime? LastErrorAt = null;
+    static DateTime? LastSuccessAt = null;
+
+    // Deduplicacao de pedidos (evita imprimir o mesmo ingresso 2x em caso de retry de rede)
+    static readonly object DedupLock = new object();
+    static readonly Dictionary<string, DateTime> RecentRequests = new Dictionary<string, DateTime>();
+    static readonly TimeSpan DedupWindow = TimeSpan.FromSeconds(25);
+
+    // Instancia unica + auto-restart em caso de erro fatal nao tratado
+    static Mutex SingleInstanceMutex;
+    static string[] StartupArgs;
+
     static readonly object QueueLock = new object();
     static readonly Queue<PrintJob> JobQueue = new Queue<PrintJob>();
     static volatile int ActiveJobs = 0;
 
     static void Main(string[] args)
     {
+        StartupArgs = args;
+
         if (args.Length > 0) HttpPort = int.Parse(args[0]);
         if (args.Length > 1) TcpPort = int.Parse(args[1]);
         if (args.Length > 2) LogFile = args[2];
+
+        if (!AcquireSingleInstance())
+        {
+            Log("Outra instancia do PrintServer ja esta em execucao. Encerrando esta copia.");
+            return;
+        }
+
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 
         Log("Iniciando TipPrint PrintServer...");
 
@@ -57,14 +84,99 @@ class PrintServer
         {
             ThreadPool.QueueUserWorkItem(delegate
             {
-                Thread.Sleep(3000);
-                Log("Reconectando a impressora salva: " + saved);
-                AutoConnect(saved);
+                try
+                {
+                    Thread.Sleep(3000);
+                    Log("Reconectando a impressora salva: " + saved);
+                    AutoConnect(saved);
+                }
+                catch (Exception ex)
+                {
+                    Log("Erro ao reconectar impressora salva (ignorado, servidor continua no ar): " + ex.Message);
+                }
             });
         }
 
         Log(string.Format("Pronto. Painel: http://localhost:{0}  |  Impressao por rede TCP:{1}", HttpPort, TcpPort));
         Console.ReadLine();
+    }
+
+    // Garante que so exista uma copia do PrintServer rodando por sessao do Windows.
+    // Tolerante a uma instancia anterior que esteja no meio de um crash/restart (AbandonedMutexException).
+    static bool AcquireSingleInstance()
+    {
+        for (int attempt = 0; attempt < 25; attempt++) // ate ~5s esperando a instancia anterior liberar
+        {
+            bool createdNew = false;
+            try
+            {
+                SingleInstanceMutex = new Mutex(true, "Local\\TipPrint_PrintServer_SingleInstance", out createdNew);
+            }
+            catch (AbandonedMutexException)
+            {
+                createdNew = true; // conseguimos a posse mesmo com abandono da instancia anterior
+            }
+            if (createdNew) return true;
+            try { if (SingleInstanceMutex != null) SingleInstanceMutex.Close(); } catch { }
+            SingleInstanceMutex = null;
+            Thread.Sleep(200);
+        }
+        return false;
+    }
+
+    // Ultimo recurso: se alguma excecao escapar de todos os try/catch das threads,
+    // registra o erro e tenta religar o proprio processo em vez de deixar o PrintServer sumir.
+    static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        try
+        {
+            var ex = e.ExceptionObject as Exception;
+            Log("ERRO FATAL nao tratado - reiniciando o processo automaticamente: " + (ex != null ? ex.ToString() : Convert.ToString(e.ExceptionObject)));
+        }
+        catch { }
+        try
+        {
+            string exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var sb = new StringBuilder();
+            if (StartupArgs != null)
+            {
+                foreach (string a in StartupArgs) sb.Append("\"" + (a ?? "").Replace("\"", "\\\"") + "\" ");
+            }
+            Thread.Sleep(1000); // pequena pausa para nao entrar em loop de restart instantaneo
+            Process.Start(new ProcessStartInfo(exe, sb.ToString().Trim()) { UseShellExecute = false });
+        }
+        catch { }
+    }
+
+    // Evita reimprimir o mesmo pedido quando o site refaz a chamada por timeout/instabilidade de rede.
+    // So conta como "ja visto" um pedido que REALMENTE foi enfileirado com sucesso (ver MarkRequestHandled) -
+    // assim um retry legitimo apos uma falha (ex.: impressora ainda sem conectar) nao e descartado por engano.
+    static bool WasRequestRecentlyHandled(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return false;
+        lock (DedupLock)
+        {
+            DateTime seenAt;
+            if (RecentRequests.TryGetValue(key, out seenAt) && (DateTime.UtcNow - seenAt) < DedupWindow) return true;
+            return false;
+        }
+    }
+
+    static void MarkRequestHandled(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return;
+        lock (DedupLock)
+        {
+            if (RecentRequests.Count > 500)
+            {
+                DateTime now = DateTime.UtcNow;
+                var expired = new List<string>();
+                foreach (var kv in RecentRequests)
+                    if (now - kv.Value > DedupWindow) expired.Add(kv.Key);
+                foreach (var k in expired) RecentRequests.Remove(k);
+            }
+            RecentRequests[key] = DateTime.UtcNow;
+        }
     }
 
     static string LoadConfig()
@@ -380,27 +492,34 @@ class PrintServer
     {
         while (true)
         {
-            Thread.Sleep(4000);
-            bool needReopen = false;
-            lock (Lock)
+            try
             {
-                if (WantConnect && ActivePort != null)
+                Thread.Sleep(4000);
+                bool needReopen = false;
+                lock (Lock)
                 {
-                    if (!ActivePort.IsOpen) needReopen = true;
+                    if (WantConnect && ActivePort != null)
+                    {
+                        if (!ActivePort.IsOpen) needReopen = true;
+                    }
+                    else if (WantConnect && ActivePort == null)
+                    {
+                        needReopen = true;
+                    }
+                    if (Active != null && Active.Type == "windows") needReopen = false;
                 }
-                else if (WantConnect && ActivePort == null)
+                if (needReopen)
                 {
-                    needReopen = true;
+                    if (!TryOpen())
+                    {
+                        int delay = Math.Min(30, 2 * ReconnectTries);
+                        Thread.Sleep(delay * 1000);
+                    }
                 }
-                if (Active != null && Active.Type == "windows") needReopen = false;
             }
-            if (needReopen)
+            catch (Exception ex)
             {
-                if (!TryOpen())
-                {
-                    int delay = Math.Min(30, 2 * ReconnectTries);
-                    Thread.Sleep(delay * 1000);
-                }
+                Log("Erro inesperado no watchdog (ignorado, continua rodando): " + ex.Message);
             }
         }
     }
@@ -427,26 +546,46 @@ class PrintServer
         while (true)
         {
             PrintJob job = null;
-            lock (QueueLock)
+            try
             {
-                while (JobQueue.Count == 0) Monitor.Wait(QueueLock);
-                job = JobQueue.Dequeue();
-                ActiveJobs++;
+                lock (QueueLock)
+                {
+                    while (JobQueue.Count == 0) Monitor.Wait(QueueLock);
+                    job = JobQueue.Dequeue();
+                    ActiveJobs++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Erro inesperado na fila de impressao (ignorado, continua rodando): " + ex.Message);
+                continue;
             }
             try
             {
                 SendAndChunk(job);
+                PrintedOk++;
+                LastSuccessAt = DateTime.Now;
             }
             catch (Exception ex)
             {
                 Log(string.Format("Falha ao imprimir job \"{0}\": {1}", job.Label, ex.Message));
+                PrintedFail++;
+                LastError = ex.Message;
+                LastErrorAt = DateTime.Now;
             }
             finally
             {
                 lock (QueueLock) ActiveJobs--;
             }
-            PrintProfile prof = ProfileFor(job.Printer);
-            if (prof != null && prof.PauseBetweenJobsMs > 0) Thread.Sleep(prof.PauseBetweenJobsMs);
+            try
+            {
+                PrintProfile prof = ProfileFor(job.Printer);
+                if (prof != null && prof.PauseBetweenJobsMs > 0) Thread.Sleep(prof.PauseBetweenJobsMs);
+            }
+            catch (Exception ex)
+            {
+                Log("Erro inesperado ao pausar entre jobs (ignorado): " + ex.Message);
+            }
         }
     }
 
@@ -602,7 +741,12 @@ class PrintServer
                     profile = profile,
                     queue = QueuedCount(),
                     printing = ActiveJobs,
-                    licenca = ModoLicenca()
+                    licenca = ModoLicenca(),
+                    printedOk = PrintedOk,
+                    printedFail = PrintedFail,
+                    lastError = LastError,
+                    lastErrorAt = LastErrorAt.HasValue ? LastErrorAt.Value.ToString("HH:mm:ss") : null,
+                    lastSuccessAt = LastSuccessAt.HasValue ? LastSuccessAt.Value.ToString("HH:mm:ss") : null
                 });
                 return;
             }
@@ -675,6 +819,16 @@ class PrintServer
                 if (!OriginAutorizada(ctx)) { Json(ctx, new { ok = false, licenca = "bloqueada", error = "Uso nao autorizado: este servidor atende apenas origens licenciadas." }, 403); return; }
                 var body = ReadBody(ctx.Request);
                 var doc = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(body);
+
+                string dedupKey = doc.ContainsKey("requestId") ? "req:" + Convert.ToString(doc["requestId"])
+                                 : (doc.ContainsKey("code") && doc["code"] != null ? "ticket:" + Convert.ToString(doc["code"]) : null);
+                if (dedupKey != null && WasRequestRecentlyHandled(dedupKey))
+                {
+                    Log("Ticket duplicado ignorado (reenvio dentro de " + (int)DedupWindow.TotalSeconds + "s): " + dedupKey);
+                    Json(ctx, new { ok = true, duplicate = true, queue = QueuedCount() });
+                    return;
+                }
+
                 if (doc.ContainsKey("printer"))
                 {
                     string wanted = Convert.ToString(doc["printer"]);
@@ -700,6 +854,7 @@ class PrintServer
                 PrinterInfo pi;
                 lock (Lock) pi = Active;
                 EnqueueJob(pi, data, "ticket");
+                if (dedupKey != null) MarkRequestHandled(dedupKey);
                 Json(ctx, new { ok = true, bytes = data.Length, queue = QueuedCount() });
                 return;
             }
@@ -709,6 +864,15 @@ class PrintServer
                 if (!OriginAutorizada(ctx)) { Json(ctx, new { ok = false, licenca = "bloqueada", error = "Uso nao autorizado: este servidor atende apenas origens licenciadas." }, 403); return; }
                 var body = ReadBody(ctx.Request);
                 var doc = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(body);
+
+                string printDedupKey = doc.ContainsKey("requestId") ? "req:" + Convert.ToString(doc["requestId"]) : null;
+                if (printDedupKey != null && WasRequestRecentlyHandled(printDedupKey))
+                {
+                    Log("Impressao duplicada ignorada (reenvio dentro de " + (int)DedupWindow.TotalSeconds + "s): " + printDedupKey);
+                    Json(ctx, new { ok = true, duplicate = true, queue = QueuedCount() });
+                    return;
+                }
+
                 if (doc.ContainsKey("printer"))
                 {
                     string wanted = Convert.ToString(doc["printer"]);
@@ -769,6 +933,7 @@ class PrintServer
                 PrinterInfo pi;
                 lock (Lock) pi = Active;
                 EnqueueJob(pi, data, "print");
+                if (printDedupKey != null) MarkRequestHandled(printDedupKey);
                 Json(ctx, new { ok = true, bytes = data.Length, queue = QueuedCount() });
                 return;
             }
@@ -1221,6 +1386,7 @@ class Properties
             "<h2>TipPrint PrintServer</h2>" +
             "<p class='sub'>Impressora do sistema conectada neste computador.</p>" +
             "<div id='status' class='st off'>Procurando impressora...</div>" +
+            "<div id='health' class='st off' style='display:none;margin-top:8px'></div>" +
             "<div class='card'><h3>Como conectar a impressora (1a vez)</h3>" +
             "<div class='step'><b>1.</b> Ligue a impressora termica e ligue o Bluetooth do computador.<br>" +
             "<b>2.</b> Pareie a impressora no Windows (Configuracoes &gt; Bluetooth).<br>" +
@@ -1246,6 +1412,9 @@ class Properties
             "if(s.connected){st.className='st on';st.textContent='Conectado: '+s.printer+' ('+s.port+') · Perfil '+s.profile+' · '+s.queue+' na fila'+(s.printing?' · imprimindo...':'');}" +
             "else{st.className='st off';st.textContent='Nenhuma impressora conectada. Escolha uma abaixo.';}" +
             "document.getElementById('charsetInfo').textContent='Tabela ativa: '+(s.charset=='cp850'?'Latina CP850 (acentos reais)':'ASCII (acentos normalizados)');" +
+            "var h=document.getElementById('health');" +
+            "if(s.printedFail>0){h.style.display='block';h.className='st off';h.textContent='Falhas de impressao: '+s.printedFail+(s.lastError?(' · Ultimo erro: '+s.lastError+(s.lastErrorAt?(' as '+s.lastErrorAt):'')):'');}" +
+            "else{h.style.display='none';}" +
             "var p=await (await fetch('/printers')).json();" +
             "var d=document.getElementById('printers');d.innerHTML='';" +
             "if(p.printers.length==0){" +
