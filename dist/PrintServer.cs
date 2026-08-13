@@ -14,7 +14,7 @@ class PrintServer
 {
     // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
     // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
-    const string AppVersion = "1.0.5.2.0.0";
+    public const string AppVersion = "1.0.5.2.0.1";
     static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
 
     static int HttpPort = 8080;
@@ -1538,7 +1538,7 @@ class Properties
             "input{width:100%;padding:12px;margin:8px 0;box-sizing:border-box;border:1px solid #ccc;border-radius:8px;font-size:16px}" +
             "</style></head><body>" +
             "<h2>TipPrint PrintServer</h2>" +
-            "<p class='sub'>Impressora do sistema conectada neste computador.</p>" +
+            "<p class='sub'>Impressora do sistema conectada neste computador. Versao " + PrintServer.AppVersion + "</p>" +
             "<div id='status' class='st off'>Procurando impressora...</div>" +
             "<div id='health' class='st off' style='display:none;margin-top:8px'></div>" +
             "<div class='card'><h3>Como conectar a impressora (1a vez)</h3>" +
