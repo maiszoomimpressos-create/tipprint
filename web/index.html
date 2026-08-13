@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="raw-ink">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TipPrint · Conecte. Controle. Imprima.</title>
+<meta name="description" content="TipPrint — impressão térmica direta via Bluetooth, USB e rede. Android, Windows e iOS. Um único ecossistema de impressão.">
+<link rel="icon" type="image/svg+xml" href="assets/logo-tipprint.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="#top">
+      <img src="assets/logo-tipprint.svg" width="44" height="44" alt="">
+      <span class="brand-name">RAW<em>BTS</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#product">Produto</a>
+      <a href="#platforms">Plataformas</a>
+      <a href="#how">Como funciona</a>
+    </nav>
+    <button class="btn btn-primary" data-theme-toggle>RAW TERMINAL</button>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <span class="ticket">Impressão térmica direta · sem nuvem · sem fila escondida</span>
+      <h1>Conecte.<br>Controle.<em>Imprima.</em></h1>
+      <p class="lead">O TipPrint imprime direto do seu aparelho para a impressora térmica — por <strong>Bluetooth</strong>, <strong>USB</strong> ou <strong>rede</strong>. Leve, rápido e 100% local.</p>
+      <div class="hero-actions">
+        <a class="btn btn-thermal" href="#platforms">Começar agora</a>
+        <a class="btn btn-outline" href="#how">Ver como funciona</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="product" class="section">
+    <div class="wrap">
+      <h2 class="section-title">Um ecossistema, três frentes</h2>
+      <div class="grid">
+        <article class="card">
+          <span class="card-tag">CLEAR</span>
+          <h3>Interface operacional</h3>
+          <p>App Android leve e objetivo: descobre impressoras Bluetooth, USB e rede, testa e imprime em segundos.</p>
+        </article>
+        <article class="card">
+          <span class="card-tag">RAW TERMINAL</span>
+          <h3>Modo escuro</h3>
+          <p>Telemetria e log ao vivo em fonte monoespaçada, pensados para PDV, lojas e bilheterias.</p>
+        </article>
+        <article class="card">
+          <span class="card-tag">RAW INK</span>
+          <h3>Identidade de marca</h3>
+          <p>Papel &amp; tinta que celebram a impressão térmica — do canhoto ao ponto térmico.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="platforms" class="section section-alt">
+    <div class="wrap">
+      <h2 class="section-title">Multiplataforma</h2>
+      <div class="grid grid-plat">
+        <article class="plat">
+          <span class="plat-badge">Disponível</span>
+          <h3>Android</h3>
+          <p>APK instalável · Bluetooth, USB, rede · TipPrint receiver compatível.</p>
+        </article>
+        <article class="plat">
+          <span class="plat-badge">Em breve</span>
+          <h3>Windows</h3>
+          <p>Aplicativo desktop com instalador — busca de impressoras e acessórios Bluetooth do PC.</p>
+        </article>
+        <article class="plat">
+          <span class="plat-badge">Futuro</span>
+          <h3>iOS</h3>
+          <p>Mesma identidade, mesma simplicidade.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="section">
+    <div class="wrap">
+      <h2 class="section-title">Impresso na hora</h2>
+      <ol class="steps">
+        <li><b>1.</b> Descubra a impressora — Bluetooth pareado, USB OTG ou IP:9100.</li>
+        <li><b>2.</b> Conecte e valide com cupom de teste.</li>
+        <li><b>3.</b> Envie bytes ESC/POS direto para a impressora. Sem intermediários.</li>
+      </ol>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div>
+      <span class="brand-name">RAW<em>BTS</em></span>
+      <p class="foot-tagline">Conecte · Controle · Imprima.</p>
+    </div>
+    <p class="foot-meta">Design system compartilhado · tokens únicos para Android, Windows, iOS e Web</p>
+  </div>
+</footer>
+
+<!-- Seção de download do APK -->
+<section class="download-section">
+  <div class="wrap">
+    <h2 class="section-title">Aplicativo Android</h2>
+    <p class="download-desc">Experimente o TipPrint no seu dispositivo. O app está em desenvolvimento ativo e já está disponível para teste.</p>
+    <div class="download-btns">
+      <a class="btn btn-thermal" href="downloads/app-debug.apk" target="_blank">Baixar APK Android</a>
+      <a class="btn btn-outline" href="http://localhost:3005/#platforms">Ver plataformas</a>
+    </div>
+    <p class="download-note">O arquivo tem aproximadamente 7,4 MB. O app funciona em Android 24+ (Android 7.0+).</p>
+  </div>
+</section>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const btn = document.querySelector("[data-theme-toggle]");
+  if (!btn || !root) return;
+  const themes = ["raw-ink", "raw-terminal"];
+  const labels = { "raw-ink": "RAW TERMINAL", "raw-terminal": "RAW INK" };
+  btn.addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") || "raw-ink";
+    const next = current === "raw-ink" ? "raw-terminal" : "raw-ink";
+    root.setAttribute("data-theme", next);
+    btn.textContent = labels[next];
+  });
+})();
+</script>
+</body>
+</html>

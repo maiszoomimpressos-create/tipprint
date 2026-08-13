@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TipPrint Impressão</string>
+    <string name="app_tagline">CONECTE · CONTROLE · IMPRIMA</string>
+    <string name="receiver_label">Impressão via TipPrint</string>
+
+    <string name="title_bluetooth">Bluetooth</string>
+    <string name="title_usb">USB</string>
+    <string name="title_net">Rede (Wi-Fi / Ethernet)</string>
+
+    <string name="connect_bluetooth">Conectar Bluetooth</string>
+    <string name="discover_bluetooth">Buscar impressoras próximas</string>
+    <string name="connect_usb">Conectar USB</string>
+    <string name="connect_net">Conectar Rede</string>
+    <string name="print_test">Imprimir cupom de teste</string>
+
+    <string name="label_ip">IP da impressora</string>
+    <string name="label_port">Porta (padrão 9100)</string>
+
+    <string name="select_printer">Selecione a impressora</string>
+    <string name="no_printer_selected">Nenhuma impressora conectada. Conecte primeiro.</string>
+
+    <string name="bluetooth_unavailable">Bluetooth indisponível neste aparelho.</string>
+    <string name="bluetooth_no_devices">Nenhum dispositivo Bluetooth pareado. Pareie a impressora nas configurações do aparelho.</string>
+    <string name="bluetooth_permission_denied">Permissão de Bluetooth negada. Conceda a permissão para continuar.</string>
+    <string name="bluetooth_connected">Bluetooth conectado: %1$s</string>
+
+    <string name="bluetooth_scanning">Buscando impressoras Bluetooth próximas…</string>
+    <string name="bluetooth_scan_failed">Não foi possível iniciar a busca Bluetooth.</string>
+    <string name="bluetooth_none_found">Nenhuma impressora encontrada. Verifique se ela está ligada e próxima do aparelho.</string>
+    <string name="bluetooth_found_title">Impressoras encontradas — toque para parear</string>
+    <string name="bluetooth_pairing">Pareando com %1$s… Se o sistema pedir o PIN, digite 0000.</string>
+    <string name="bluetooth_pair_failed">Falha ao parear. Tente novamente.</string>
+    <string name="bluetooth_bonded">Impressora pareada com sucesso!</string>
+
+    <string name="usb_unavailable">USB host não suportado neste aparelho.</string>
+    <string name="usb_no_devices">Nenhuma impressora USB encontrada. Conecte a impressora via cabo OTG.</string>
+    <string name="usb_requesting_permission">Solicitando permissão de acesso ao dispositivo USB…</string>
+    <string name="usb_permission_denied">Permissão USB negada.</string>
+    <string name="usb_connected">USB conectado: %1$s</string>
+
+    <string name="net_enter_ip">Digite o endereço IP da impressora.</string>
+    <string name="net_connected">Rede conectada: %1$s</string>
+
+    <string name="connecting_bluetooth">Conectando ao Bluetooth %1$s (%2$s)…</string>
+    <string name="connecting_usb">Conectando ao USB %1$s…</string>
+    <string name="connecting_net">Conectando à rede %1$s…</string>
+    <string name="connection_failed">Falha na conexão: %1$s</string>
+
+    <string name="printing">Imprimindo…</string>
+    <string name="print_success">Impressão enviada com sucesso!</string>
+    <string name="print_failed">Falha ao imprimir: %1$s</string>
+
+    <string name="print_channel">Impressões TipPrint</string>
+    <string name="print_notification_title">Impressão em andamento</string>
+    <string name="print_notification_text">Enviando tarefa de impressão…</string>
+
+    <string name="settings">Configurações</string>
+    <string name="settings_title">Configurações</string>
+    <string name="settings_about">Sobre</string>
+    <string name="settings_about_text">Impressão térmica direta via Bluetooth, USB e rede. Sem nuvem, sem intermediários — bytes ESC/POS enviados direto para a impressora.</string>
+    <string name="settings_identity">Identidade</string>
+    <string name="settings_identity_text">CLEAR — interface operacional · RAW INK — identidade de marca · RAW TERMINAL — modo escuro. Design system compartilhado com Windows, iOS e Web.</string>
+    <string name="settings_printing">Impressão</string>
+    <string name="settings_printing_text">Bluetooth · USB · Rede (9100) · Receipt ESC/POS · PrintServer localhost:8080</string>
+    <string name="settings_version">TipPrint v%1$s</string>
+
+    <string name="settings_updates">Atualização do app</string>
+    <string name="settings_updates_text">Ao abrir, o app verifica o servidor de atualização e avisa quando houver versão nova.</string>
+    <string name="label_update_server">Servidor de atualização (URL)</string>
+    <string name="save_update_server">Salvar servidor</string>
+    <string name="update_server_saved">Servidor de atualização salvo.</string>
+    <string name="update_server_invalid">Informe a URL do servidor.</string>
+
+    <string name="update_available_title">Nova versão disponível</string>
+    <string name="update_available_message">TipPrint v%1$s está disponível.\n\n%2$s</string>
+    <string name="update_button">Atualizar</string>
+    <string name="update_later">Agora não</string>
+    <string name="update_downloading">Baixando atualização…</string>
+    <string name="update_waiting_install">Atualização baixada. Confirme a instalação na tela do sistema.</string>
+    <string name="update_download_failed">Falha ao baixar a atualização. Verifique a conexão.</string>
+    <string name="update_open_installer_failed">Não foi possível abrir o instalador.</string>
+</resources>

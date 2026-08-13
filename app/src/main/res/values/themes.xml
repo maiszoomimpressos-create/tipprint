@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      TipPrint Themes
+      - Theme.TipPrint      → CLEAR (light) — tema padrão do app
+      - Theme.TipPrint.Dark → RAW TERMINAL (dark) — mesmo token set (values-night)
+      Tokens: design/tipprint-tokens.json
+    -->
+
+    <style name="Theme.TipPrint" parent="Theme.Material3.Light.NoActionBar">
+        <!-- CLEAR · cores primárias -->
+        <item name="colorPrimary">@color/tipprint_primary</item>
+        <item name="colorOnPrimary">@color/tipprint_on_primary</item>
+        <item name="colorPrimaryContainer">@color/tipprint_primary_soft</item>
+        <item name="colorOnPrimaryContainer">@color/tipprint_on_primary_container</item>
+
+        <!-- RAW INK · acento de marca -->
+        <item name="colorSecondary">@color/tipprint_brand_thermal</item>
+        <item name="colorOnSecondary">@color/tipprint_brand_paper</item>
+
+        <!-- Superfícies -->
+        <item name="colorSurface">@color/tipprint_bg</item>
+        <item name="colorOnSurface">@color/tipprint_ink</item>
+        <item name="colorSurfaceVariant">@color/tipprint_surface</item>
+        <item name="colorOnSurfaceVariant">@color/tipprint_ink_secondary</item>
+        <item name="colorOutline">@color/tipprint_outline</item>
+        <item name="colorOutlineVariant">@color/tipprint_outline</item>
+
+        <!-- Estados -->
+        <item name="colorError">@color/tipprint_error</item>
+        <item name="colorOnError">@color/tipprint_on_error</item>
+        <item name="colorErrorContainer">@color/tipprint_error_soft</item>
+        <item name="colorOnErrorContainer">@color/tipprint_error</item>
+        <item name="colorSurfaceContainerHighest">@color/tipprint_surface_alt</item>
+
+        <!-- Janela -->
+        <item name="android:windowBackground">@color/tipprint_bg</item>
+        <item name="android:statusBarColor">@color/tipprint_bg</item>
+        <item name="android:navigationBarColor">@color/tipprint_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <style name="Theme.TipPrint.Dark" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/tipprint_primary</item>
+        <item name="colorOnPrimary">@color/tipprint_on_primary</item>
+        <item name="colorPrimaryContainer">@color/tipprint_primary_soft</item>
+        <item name="colorOnPrimaryContainer">@color/tipprint_on_primary_container</item>
+
+        <item name="colorSecondary">@color/tipprint_brand_thermal</item>
+        <item name="colorOnSecondary">@color/tipprint_brand_paper</item>
+
+        <item name="colorSurface">@color/tipprint_bg</item>
+        <item name="colorOnSurface">@color/tipprint_ink</item>
+        <item name="colorSurfaceVariant">@color/tipprint_surface</item>
+        <item name="colorOnSurfaceVariant">@color/tipprint_ink_secondary</item>
+        <item name="colorOutline">@color/tipprint_outline</item>
+        <item name="colorOutlineVariant">@color/tipprint_outline</item>
+
+        <item name="colorError">@color/tipprint_error</item>
+        <item name="colorOnError">@color/tipprint_on_error</item>
+        <item name="colorErrorContainer">@color/tipprint_error_soft</item>
+        <item name="colorOnErrorContainer">@color/tipprint_error</item>
+        <item name="colorSurfaceContainerHighest">@color/tipprint_surface_alt</item>
+
+        <item name="android:windowBackground">@color/tipprint_bg</item>
+        <item name="android:statusBarColor">@color/tipprint_bg</item>
+        <item name="android:navigationBarColor">@color/tipprint_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- Estilo de seção (legado da tela atual — mantido) -->
+    <style name="SectionTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+</resources>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      TipPrint Design Tokens — Tipografia (Inter UI + JetBrains Mono p/ telemetria)
+      Fonte única: design/tipprint-tokens.json
+      Nota: mono é reservado a dados técnicos (MAC, IP, bytes, log).
+    -->
+
+    <style name="TextAppearance.TipPrint.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/inter_extra_bold</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">@color/tipprint_ink</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.Display" parent="TextAppearance.TipPrint.Headline">
+        <item name="android:textSize">34sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/inter_extra_bold</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/tipprint_ink</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.Subtitle" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/inter_bold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/tipprint_ink</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.Body" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/inter_regular</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/tipprint_ink</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.BodyStrong" parent="TextAppearance.TipPrint.Body">
+        <item name="android:fontFamily">@font/inter_semi_bold</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/inter_medium</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/tipprint_ink_secondary</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.Overline" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/inter_extra_bold</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textColor">@color/tipprint_ink_secondary</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.Mono" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/jetbrainsmono_regular</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/tipprint_ink_secondary</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.MonoStrong" parent="TextAppearance.TipPrint.Mono">
+        <item name="android:fontFamily">@font/jetbrainsmono_bold</item>
+        <item name="android:textColor">@color/tipprint_ink</item>
+    </style>
+
+    <style name="TextAppearance.TipPrint.MonoCaption" parent="TextAppearance.TipPrint.Mono">
+        <item name="android:textSize">10sp</item>
+    </style>
+
+</resources>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      TipPrint Design Tokens — Espaçamento / Raios / Bordas / Sombras / Controles
+      Fonte única: design/tipprint-tokens.json
+    -->
+
+    <!-- Espaçamento (escala 4dp) -->
+    <dimen name="spacing_none">0dp</dimen>
+    <dimen name="spacing_xxs">4dp</dimen>
+    <dimen name="spacing_xs">8dp</dimen>
+    <dimen name="spacing_sm">12dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">20dp</dimen>
+    <dimen name="spacing_xl">24dp</dimen>
+    <dimen name="spacing_xxl">32dp</dimen>
+
+    <!-- Raios -->
+    <dimen name="radius_sm">12dp</dimen>
+    <dimen name="radius_md">16dp</dimen>
+    <dimen name="radius_lg">20dp</dimen>
+    <dimen name="radius_pill">999dp</dimen>
+
+    <!-- Bordas -->
+    <dimen name="stroke_hairline">1dp</dimen>
+
+    <!-- Sombras (elevação) -->
+    <dimen name="elevation_none">0dp</dimen>
+    <dimen name="elevation_card">1dp</dimen>
+    <dimen name="elevation_floating">6dp</dimen>
+
+    <!-- Controles -->
+    <dimen name="control_min_height">48dp</dimen>
+    <dimen name="control_horizontal_padding">20dp</dimen>
+    <dimen name="control_small_height">36dp</dimen>
+
+    <!-- Ícones -->
+    <dimen name="icon_sm">16dp</dimen>
+    <dimen name="icon_md">20dp</dimen>
+    <dimen name="icon_lg">24dp</dimen>
+</resources>

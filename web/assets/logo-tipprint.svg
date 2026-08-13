@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" role="img" aria-label="TipPrint">
+  <!-- Logotipo RAW INK · canhoto "B" · cores da marca (design/tipprint-tokens.json) -->
+  <path fill="#171310" fill-rule="evenodd" d="M4 1.5h16a2.5 2.5 0 0 1 2.5 2.5v16a2.5 2.5 0 0 1-2.5 2.5H4A2.5 2.5 0 0 1 1.5 20V4A2.5 2.5 0 0 1 4 1.5Zm9.8 0a1.8 1.8 0 1 0-3.6 0 1.8 1.8 0 0 0 3.6 0Zm0 21a1.8 1.8 0 1 0-3.6 0 1.8 1.8 0 0 0 3.6 0Z"/>
+  <path fill="#F7F5F0" d="M6.2 5.2h6v15.4H6.2a1.2 1.2 0 0 1-1.2-1.2V6.4a1.2 1.2 0 0 1 1.2-1.2ZM12.2 12V5.2a3.4 3.4 0 1 1 0 6.8Z"/>
+  <path fill="#F7F5F0" d="M12.4 20.6v-6.4a3.2 3.2 0 1 1 0 6.4Z"/>
+  <circle cx="20" cy="16.6" r="1.1" fill="#E84A1B"/>
+</svg>

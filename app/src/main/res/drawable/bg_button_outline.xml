@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/tipprint_state_pressed_overlay">
+    <!-- Desabilitado: contorno atenuado sobre container padrão -->
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/tipprint_state_disabled_container" />
+            <stroke
+                android:width="@dimen/stroke_hairline"
+                android:color="@color/tipprint_state_disabled_content" />
+            <corners android:radius="@dimen/radius_pill" />
+        </shape>
+    </item>
+    <!-- Habilitado: contorno padrão -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/tipprint_surface_card" />
+            <stroke
+                android:width="@dimen/stroke_hairline"
+                android:color="@color/tipprint_outline" />
+            <corners android:radius="@dimen/radius_pill" />
+        </shape>
+    </item>
+</ripple>

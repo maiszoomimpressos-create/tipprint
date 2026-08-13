@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RawBTS · PROPOSTA 1 · RAW TERMINAL (Protótipo visual)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS RAW TERMINAL ============ */
+:root{
+  --bg:#0B0F14; --panel:#11161D; --panel2:#161D26; --panel3:#1B2430;
+  --line:#222C37; --line2:#2F3C4B;
+  --txt:#DCE5EC; --dim:#8FA0B0; --mute:#5B6B7A;
+  --pri:#2DD4BF; --pri-so:rgba(45,212,191,.12); --pri-line:rgba(45,212,191,.45);
+  --amb:#FFB020; --ok:#2FB96C; --warn:#F5A524; --err:#F04438;
+  --mono:'JetBrains Mono',Consolas,monospace; --ui:'Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#07090C;font-family:var(--ui);color:var(--txt);font-size:14px}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+[hidden]{display:none!important}
+/* ============ BARRA DE DEMONSTRAÇÃO ============ */
+#demo{position:fixed;inset:0 0 auto 0;z-index:999;height:42px;display:flex;align-items:center;gap:8px;
+  padding:0 12px;background:#05070A;border-bottom:1px solid #1C232D;font-size:12px}
+#demo .tag{font-family:var(--mono);color:var(--pri);letter-spacing:.08em;text-transform:uppercase;font-weight:700;white-space:nowrap}
+#demo .sep{width:1px;height:20px;background:#232C37}
+#demo .sc{margin-left:4px;display:flex;gap:4px;overflow-x:auto;flex:1}
+#demo button.demo-btn{font-family:var(--mono);font-size:11px;padding:6px 10px;border:1px solid #232C37;color:#8FA0B0;border-radius:4px;white-space:nowrap}
+#demo button.demo-btn:hover{border-color:#3A4A5B;color:#DCE5EC}
+#demo button.demo-btn.act{background:var(--pri-so);border-color:var(--pri-line);color:var(--pri)}
+#demo .dv{display:flex;gap:4px}
+#demo .dv button{padding:6px 10px;font-family:var(--mono);font-size:11px;border:1px solid #232C37;border-radius:4px;color:#8FA0B0}
+#demo .dv button.act{background:var(--pri-so);border-color:var(--pri-line);color:var(--pri)}
+#demo .note{font-family:var(--mono);font-size:10px;color:#58687A;white-space:nowrap}
+/* ============ PALCO / DISPOSITIVO ============ */
+#stage{padding:58px 20px 32px;display:flex;justify-content:center}
+#device{width:100%;max-width:1180px;background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:relative;
+  transition:max-width .3s,border-radius .3s;min-height:720px}
+#device.phone{max-width:404px;border-radius:34px;border:10px solid #141A21;box-shadow:0 0 0 1px #232C37,0 24px 60px rgba(0,0,0,.55)}
+.app{display:grid;grid-template-columns:210px 1fr;min-height:720px}
+#device.phone .app{grid-template-columns:1fr}
+/* ============ SIDEBAR ============ */
+#side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.brand .mark{width:30px;height:30px;background:var(--pri);border-radius:5px;display:grid;place-items:center;color:#062019;font-family:var(--mono);font-weight:700;font-size:13px}
+.brand .name{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.1em}
+.brand .name span{color:var(--pri)}
+.brand .ver{font-family:var(--mono);font-size:9px;color:var(--mute);display:block;letter-spacing:.2em;margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1}
+.nav button{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:5px;font-size:12.5px;color:var(--dim);text-align:left;font-weight:500}
+.nav button svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6}
+.nav button:hover{background:var(--panel2);color:var(--txt)}
+.nav button.act{background:var(--pri-so);color:var(--pri)}
+.nav button.act svg{stroke:var(--pri)}
+.side-st{font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:.12em;text-transform:uppercase;padding:14px 10px 8px}
+.side-foot{margin-top:14px;border-top:1px solid var(--line);padding:12px 10px 4px;font-family:var(--mono);font-size:10px;color:var(--mute);line-height:1.8}
+.side-foot .t{color:var(--ok);display:flex;align-items:center;gap:6px}
+.side-foot .t i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;animation:blink 1.6s infinite}
+/* ============ MAIN ============ */
+#main{display:flex;flex-direction:column;min-width:0}
+.top{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--panel);justify-content:space-between}
+.top .t-title{font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.top .t-title span{color:var(--mute);font-weight:400}
+.pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;padding:6px 10px;border:1px solid var(--line2);border-radius:999px;color:var(--dim);letter-spacing:.04em}
+.pill b{color:var(--txt);font-weight:600}
+.pill i{width:7px;height:7px;border-radius:50%}
+.pill.ok{color:var(--ok);border-color:rgba(47,185,108,.4)}
+.pill.ok i{background:var(--ok);animation:blink 1.6s infinite}
+.pill.mute i{background:var(--mute)}
+.content{padding:22px;display:flex;flex-direction:column;gap:18px;flex:1}
+/* ============ TELAS ============ */
+.screen{display:none;flex-direction:column;gap:18px;min-width:0}
+.screen.on{display:flex}
+.h-sec{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);display:flex;align-items:center;gap:10px}
+.h-sec::after{content:"";flex:1;height:1px;background:var(--line)}
+h3{font-size:17px;font-weight:700}
+.dim{color:var(--dim)} .mute{color:var(--mute)}
+.mono{font-family:var(--mono)}
+/* status strip */
+.strip{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border:1px solid var(--line);border-radius:6px;background:var(--panel);flex-wrap:wrap}
+.strip .l{display:flex;align-items:center;gap:12px}
+.strip .dot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
+.strip .dot.live{background:var(--ok);box-shadow:0 0 0 0 rgba(47,185,108,.5);animation:pulse 1.8s infinite}
+.strip .dn{font-family:var(--mono);font-weight:700;font-size:15px}
+.strip .dt{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.strip .r{display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--mute)}
+.strip .r b{color:var(--txt)}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px}
+.tile .k{font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:.12em;text-transform:uppercase}
+.tile .v{font-family:var(--mono);font-size:22px;font-weight:700;margin-top:8px;color:var(--txt)}
+.tile .v.g{color:var(--pri)} .tile .v.a{color:var(--amb)} .tile .v.k{color:var(--ok)}
+.tile .s{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:6px}
+/* cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+.card h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.row:last-child{border-bottom:none}
+.row .k{color:var(--dim)} .row .v{font-family:var(--mono);color:var(--txt);font-weight:500;text-align:right}
+.row .v.ok{color:var(--ok)} .row .v.amb{color:var(--amb)}
+/* log terminal */
+.log{background:#070A0E;border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-family:var(--mono);font-size:11px;line-height:1.9;min-height:120px}
+.log .ln{color:var(--mute);white-space:pre-wrap}
+.log .ln b{color:var(--pri)} .log .ln.ok{color:var(--ok)} .log .ln.warn{color:var(--amb)}
+.log .cur{display:inline-block;width:7px;height:13px;background:var(--pri);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--mono);font-size:12px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;padding:11px 18px;border-radius:5px;border:1px solid transparent;transition:.15s}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.btn:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.btn-pri{background:var(--pri);color:#062019}
+.btn-pri:hover{background:#37E9D3}
+.btn-ghost{border-color:var(--line2);color:var(--dim)}
+.btn-ghost:hover{border-color:var(--pri);color:var(--pri)}
+.btn-amb{background:var(--amb);color:#241400}
+.btn-err{background:transparent;border-color:rgba(240,68,56,.5);color:var(--err)}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.5;pointer-events:none}
+btn.loading{}
+/* switches */
+.sw{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px dashed var(--line)}
+.sw .k{font-size:13px} .sw .d{font-size:11.5px;color:var(--mute);margin-top:2px}
+.switch{position:relative;width:38px;height:22px;border-radius:999px;background:var(--panel3);border:1px solid var(--line2);transition:.2s;flex:none}
+.switch.on{background:var(--pri);border-color:var(--pri)}
+.switch i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#8FA0B0;transition:.2s}
+.switch.on i{left:18px;background:#062019}
+/* segmented */
+.seg{display:flex;gap:0;border:1px solid var(--line2);border-radius:5px;overflow:hidden}
+.seg button{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:9px 14px;color:var(--dim);border-right:1px solid var(--line2)}
+.seg button:last-child{border-right:none}
+.seg button.act{background:var(--pri-so);color:var(--pri)}
+/* list printers */
+.prow{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--line);border-radius:6px;background:var(--panel);transition:.15s;flex-wrap:wrap}
+.prow:hover{border-color:var(--line2)}
+.prow+.prow{margin-top:10px}
+.ptype{font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:5px 8px;border-radius:4px;border:1px solid;flex:none}
+.ptype.bt{color:var(--pri);border-color:rgba(45,212,191,.4)}
+.ptype.usb{color:var(--amb);border-color:rgba(255,176,32,.4)}
+.ptype.net{color:#6FABFF;border-color:rgba(111,171,255,.4)}
+.pinfo{flex:1;min-width:180px}
+.pinfo .n{font-size:14px;font-weight:600}
+.pinfo .d{font-family:var(--mono);font-size:10.5px;color:var(--mute);margin-top:3px}
+.pstat{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ok);display:flex;align-items:center;gap:6px}
+.pstat.off{color:var(--mute)}
+.pstat i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.prow .btn{padding:9px 14px;font-size:11px}
+/* radar */
+.radar-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 0}
+.radar{position:relative;width:150px;height:150px;border-radius:50%;border:1px solid var(--line2);overflow:hidden;background:radial-gradient(circle,rgba(45,212,191,.05),transparent 65%)}
+.radar::before{content:"";position:absolute;inset:28% ;border-radius:50%;border:1px solid var(--line2)}
+.radar::after{content:"";position:absolute;inset:2px;border-radius:50%;background:conic-gradient(from 0deg,rgba(45,212,191,.0) 0deg,rgba(45,212,191,.35) 90deg,transparent 90deg);animation:sweep 1.6s linear infinite}
+.radar .r1,.radar .r2{position:absolute;border-radius:50%;border:1px solid rgba(45,212,191,.5)}
+.radar .r1{inset:48%;border:2px solid rgba(45,212,191,.8)}
+.radar .r2{inset:18%;}
+.radar.scanning .r1{animation:ring 1.6s ease-out infinite}
+.radar.scanning .r2{animation:ring 1.6s ease-out .5s infinite}
+.radar .core{position:absolute;inset:47%;background:var(--pri);border-radius:50%}
+.scan-status{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--pri);min-height:18px}
+.scan-meta{font-family:var(--mono);font-size:10.5px;color:var(--mute)}
+.chk{display:flex;flex-direction:column;gap:8px}
+.chk .c{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:9px 12px;border:1px solid var(--line);border-radius:5px;color:var(--mute)}
+.chk .c .st{width:14px;height:14px;border:1px solid var(--line2);border-radius:3px;display:grid;place-items:center;font-size:9px;color:transparent;flex:none}
+.chk .c.done{color:var(--txt);border-color:var(--line2)}
+.chk .c.done .st{background:var(--pri);border-color:var(--pri);color:#062019}
+.chk .c.on .st{border-color:var(--pri);color:var(--pri);animation:blink 1s steps(1) infinite}
+/* conn banner */
+.conn{display:flex;align-items:center;gap:16px;padding:18px;border:1px solid rgba(47,185,108,.35);background:linear-gradient(180deg,rgba(47,185,108,.08),transparent);border-radius:7px;flex-wrap:wrap}
+.conn .ic{width:52px;height:52px;border-radius:8px;background:var(--panel2);border:1px solid var(--line2);display:grid;place-items:center;flex:none}
+.conn .ic svg{width:26px;height:26px;stroke:var(--ok);fill:none;stroke-width:1.6}
+.conn .ci{flex:1;min-width:150px}
+.conn .ci .n{font-family:var(--mono);font-size:17px;font-weight:700}
+.conn .ci .s{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
+.conn .ci .s span{display:flex;align-items:center;gap:5px}
+.conn .ci .s b{color:var(--ok);font-weight:600}
+/* print progress */
+.progress{height:22px;border:1px solid var(--line2);border-radius:4px;overflow:hidden;background:var(--panel3);position:relative}
+.progress .fill{height:100%;width:0%;background:repeating-linear-gradient(90deg,var(--pri) 0 6px,var(--pri-so) 6px 12px);transition:width .12s linear}
+.progress .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#0B1A16;font-weight:700}
+.pmono{font-family:var(--mono);font-size:12px;color:var(--pri);min-height:18px}
+/* paper receipt */
+.paper{background:#F4F1EA;color:#14100B;border-radius:5px;padding:16px 14px;font-family:var(--mono);font-size:10px;line-height:1.75;width:248px;margin:0 auto;box-shadow:0 6px 18px rgba(0,0,0,.4);transition:width .3s}
+.paper.w80{width:336px;font-size:13px}
+.paper .ct{text-align:center}
+.paper .b{font-weight:700}
+.paper .db{color:#55493B}
+.paper .dd{display:flex;justify-content:space-between;gap:8px}
+.paper .cut{text-align:center;letter-spacing:.4em;color:#8A8275;margin-top:6px}
+.paper svg{display:block;margin:4px auto 0}
+/* splash */
+#s-splash{min-height:100%;display:none;flex-direction:column}
+#s-splash.on{display:flex}
+.splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;position:relative;overflow:hidden;min-height:640px}
+.splash::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:34px 34px;opacity:.5;mask-image:radial-gradient(circle at center,#000 30%,transparent 75%)}
+.splash-m{position:relative;max-width:560px;width:100%;text-align:center}
+.splash .mark-lg{width:86px;height:86px;margin:0 auto 22px;background:var(--pri);border-radius:14px;display:grid;place-items:center;color:#062019;font-family:var(--mono);font-weight:700;font-size:34px;box-shadow:0 0 60px rgba(45,212,191,.35)}
+.splash h1{font-family:var(--mono);font-size:clamp(34px,6vw,52px);letter-spacing:.06em;font-weight:700}
+.splash h1 span{color:var(--pri)}
+.splash .tag{font-family:var(--mono);font-size:clamp(12px,2vw,14px);letter-spacing:.34em;text-transform:uppercase;color:var(--dim);margin:14px 0 30px}
+.splash .rows3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:30px;text-align:left}
+.splash .rows3 div{border:1px solid var(--line);border-radius:5px;padding:12px;background:var(--panel)}
+.splash .rows3 .n{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--pri);text-transform:uppercase}
+.splash .rows3 .t{font-size:12.5px;font-weight:600;color:var(--txt);margin-top:6px}
+.splash .rows3 .d{font-size:10.5px;color:var(--mute);margin-top:3px;font-family:var(--mono)}
+.splash .btn{font-size:13px;padding:14px 26px}
+.splash .ver{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:22px;letter-spacing:.2em}
+/* list jobs */
+.job{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:11.5px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.job:last-child{border-bottom:none}
+.job .id{color:var(--pri)} .job .st{color:var(--ok)} .job .st.wait{color:var(--amb)}
+/* done */
+.done-box{display:flex;flex-direction:column;align-items:center;text-align:center;padding:34px 22px;border:1px solid rgba(47,185,108,.4);border-radius:8px;background:linear-gradient(180deg,rgba(47,185,108,.1),transparent)}
+.done-box .chk{width:64px;height:64px;border-radius:50%;border:2px solid var(--ok);display:grid;place-items:center;color:var(--ok)}
+.done-box .chk svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:2.4}
+.done-box h3{margin-top:16px;font-family:var(--mono);letter-spacing:.08em}
+.done-box .sub{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:6px}
+.done-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0;width:100%;max-width:460px}
+/* animations */
+@keyframes blink{50%{opacity:.35}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,185,108,.5)}70%{box-shadow:0 0 0 8px rgba(47,185,108,0)}100%{box-shadow:0 0 0 0 rgba(47,185,108,0)}}
+@keyframes sweep{to{transform:rotate(360deg)}}
+@keyframes ring{0%{transform:scale(.2);opacity:.9}100%{transform:scale(3.4);opacity:0}}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.screen.on>*{animation:fadeup .3s ease both}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* bottomnav */
+#bnav{display:none}
+#device.phone #side{display:none}
+#device.phone #bnav{display:flex;position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line);z-index:50}
+#bnav{flex:none;justify-content:space-around;padding:6px 4px calc(8px + env(safe-area-inset-bottom))}
+#bnav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:var(--mute);padding:6px 10px;border-radius:6px}
+#bnav button svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.6}
+#bnav button.act{color:var(--pri)}
+@media(max-width:980px){.tiles{grid-template-columns:repeat(2,1fr)}#side{display:none}#bnav{display:flex}.app{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ========== BARRA DE DEMONSTRAÇÃO (não faz parte do produto) ========== -->
+<div id="demo">
+  <span class="tag">RAW TERMINAL</span>
+  <span class="sep"></span>
+  <div class="sc">
+    <button class="demo-btn act" data-screen="splash">Início</button>
+    <button class="demo-btn" data-screen="dashboard">Dashboard</button>
+    <button class="demo-btn" data-screen="discover">Descobrir</button>
+    <button class="demo-btn" data-screen="found">Encontradas</button>
+    <button class="demo-btn" data-screen="connected">Conectada</button>
+    <button class="demo-btn" data-screen="test">Teste</button>
+    <button class="demo-btn" data-screen="printing">Imprimindo</button>
+    <button class="demo-btn" data-screen="done">Concluída</button>
+    <button class="demo-btn" data-screen="settings">Config</button>
+  </div>
+  <span class="sep"></span>
+  <div class="dv">
+    <button id="dvDesk" class="act">Desktop</button>
+    <button id="dvPhone">Celular</button>
+  </div>
+  <span class="sep"></span>
+  <span class="note">PROTÓTIPO VISUAL · dados fictícios · sem código real do app</span>
+</div>
+
+<div id="stage">
+<div id="device">
+
+<div class="app">
+  <!-- ===== SIDEBAR ===== -->
+  <aside id="side">
+    <div class="brand">
+      <div class="mark">B</div>
+      <div>
+        <div class="name">RAW<span>BTS</span></div>
+        <span class="ver">v1.0 BUILD 07</span>
+      </div>
+    </div>
+    <div class="nav">
+      <button data-go="dashboard" class="act"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Painel</button>
+      <button data-go="discover"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v3l2 1.5"/></svg>Descobrir</button>
+      <button data-go="connected"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6"/></svg>Impressora</button>
+      <button data-go="test"><svg viewBox="0 0 24 24"><path d="M12 3v12M12 15l4 4M12 15l-4 4"/><path d="M4 21h16"/></svg>Teste</button>
+      <button data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>Config</button>
+    </div>
+    <div class="side-foot">
+      <div class="t"><i></i>NÚCLEO ATIVO</div>
+      ESC/POS · QR GS( k<br>
+      BT SPP · USB · TCP:9100<br>
+      <span style="color:var(--dim)">localhost:8080 status OK</span>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div id="main">
+    <div class="top">
+      <div class="t-title">Raw<span>BTS</span> · <span id="topTitle">PAINEL DE CONTROLE</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="topPill" class="pill mute"><i></i>NENHUMA IMPRESSORA</span>
+        <span class="pill"><b style="color:var(--amb)">FILA</b> 2</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+    <!-- SPLASH -->
+    <section id="s-splash" class="screen">
+      <div class="splash">
+        <div class="splash-m">
+          <div class="mark-lg">B</div>
+          <h1>RAW<span>BTS</span></h1>
+          <div class="tag">CONECTE · CONTROLE · IMPRIMA</div>
+          <div class="rows3">
+            <div><div class="n">CONECTE</div><div class="t">Qualquer transporte</div><div class="d">BT · USB · REDE</div></div>
+            <div><div class="n">CONTROLE</div><div class="t">Fila e perfil</div><div class="d">fraca · seguro · forte</div></div>
+            <div><div class="n">IMPRIMA</div><div class="t">ESC/POS completo</div><div class="d">QR · EAN13 · CUPOM</div></div>
+          </div>
+          <button class="btn btn-pri" data-go="dashboard">ABRIR TERMINAL →
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <div class="ver">MOTOR THERMAL v2.4 · RELEASE CANDIDATE 1</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="s-dashboard" class="screen">
+      <div class="strip">
+        <div class="l">
+          <span class="dot live"></span>
+          <div>
+            <div class="dn" id="stripName">Nenhuma impressora ativa</div>
+            <div class="dt" id="stripDet">AGUARDANDO CONEXÃO · VARREDURA MIN. A CADA 30s</div>
+          </div>
+        </div>
+        <div class="r"><span>UP <b>04:12:07</b></span><span>FILA <b>2</b></span><span>IMPRIMINDO <b>0</b></span></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">IMPRESSÕES HOJE</div><div class="v g">34</div><div class="s">+12 vs ontem</div></div>
+        <div class="tile"><div class="k">EM FILA</div><div class="v a">2</div><div class="s">job #1041 · #1042</div></div>
+        <div class="tile"><div class="k">PERFIL ATIVO</div><div class="v">fraca</div><div class="s">chunks 512 B · pausa 300 ms</div></div>
+        <div class="tile"><div class="k">BYTES ENVIADOS</div><div class="v k">412,6 KB</div><div class="s">sessão atual</div></div>
+      </div>
+      <div class="card">
+        <h4>IMPRESSORA ATIVA</h4>
+        <div class="rows">
+          <div class="row"><span class="k">Modelo</span><span class="v">KP-1025 (58mm)</span></div>
+          <div class="row"><span class="k">Conexão</span><span class="v ok">BLUETOOTH · SPP</span></div>
+          <div class="row"><span class="k">Endereço</span><span class="v">86:67:7A:B6:30:57</span></div>
+          <div class="row"><span class="k">Largura</span><span class="v">58 mm · 32 col</span></div>
+          <div class="row"><span class="k">Charset</span><span class="v">ASCII (normalizado)</span></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-pri" data-go="test">TESTAR IMPRESSÃO</button>
+          <button class="btn btn-ghost" data-go="discover">MUDAR IMPRESSORA</button>
+        </div>
+      </div>
+      <div class="card">
+        <h4>LOG DO TERMINAL · TAIL -f</h4>
+        <div class="log" id="termLog">
+          <div class="ln">ok 11:02:04 [net] 192.168.0.24:9100 respondendo (EPSON TM-T20)</div>
+          <div class="ln">ok 11:02:11 [bt]  KP-1025 pareada · perfil <b>fraca</b></div>
+          <div class="ln">ok 11:02:19 job <b>#1040</b> cupom_teste · 1.240 B · 1.2s</div>
+          <div class="ln">ok 11:03:02 job <b>#1041</b> ingresso_1883 · 2.048 B · fila</div>
+          <div class="ln">~ 11:03:05 aguardando drenar buffer (875 B pendentes)</div>
+          <div class="ln">ok 11:03:11 job <b>#1042</b> ingresso_1884 · 2.048 B · fila</div>
+          <span class="cur"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- DISCOVER -->
+    <section id="s-discover" class="screen">
+      <div class="h-sec">VARREDURA DE IMPRESSORAS</div>
+      <div class="radar-wrap">
+        <div class="radar" id="radar"><span class="r1"></span><span class="r2"></span><span class="core"></span></div>
+        <div class="scan-status" id="scanStatus">PRONTO PARA VARRER</div>
+        <div class="scan-meta">bluetooth · usb host · rede (porta 9100)</div>
+      </div>
+      <div class="chk">
+        <div class="c" id="ck1"><span class="st">✓</span>BLUETOOTH · SPP 00001101-0000-1000-8000-00805F9B34FB</div>
+        <div class="c" id="ck2"><span class="st">✓</span>USB HOST · classe printer (0x07) · bulk 4096 B</div>
+        <div class="c" id="ck3"><span class="st">✓</span>REDE · escaneamento de porta 9100 na subnet</div>
+      </div>
+      <button class="btn btn-pri btn-block" id="startScan">INICIAR VARREDURA</button>
+      <p class="dim" style="font-size:12px;font-family:var(--mono);color:var(--mute)">DICA: aproxime a impressora, ligue-a e deixe o NFC/BT pareado. A varredura leva ~2s.</p>
+    </section>
+
+    <!-- FOUND -->
+    <section id="s-found" class="screen">
+      <div class="h-sec">3 IMPRESSORAS ENCONTRADAS · 2 DISPONÍVEIS</div>
+      <div class="prow">
+        <span class="ptype bt">BT</span>
+        <div class="pinfo"><div class="n">KP-1025</div><div class="d">86:67:7A:B6:30:57 · 58mm · pareada</div></div>
+        <span class="pstat"><i></i>PAREDA</span>
+        <button class="btn btn-pri cbtn" data-dev="KP-1025">CONECTAR</button>
+      </div>
+      <div class="prow">
+        <span class="ptype net">REDE</span>
+        <div class="pinfo"><div class="n">EPSON TM-T20</div><div class="d">192.168.0.24:9100 · 80mm · via Ethernet</div></div>
+        <span class="pstat off"><i></i>OK</span>
+        <button class="btn btn-ghost cbtn" data-dev="EPSON TM-T20">CONECTAR</button>
+      </div>
+      <div class="prow">
+        <span class="ptype usb">USB</span>
+        <div class="pinfo"><div class="n">Gprinter GP-3150T</div><div class="d">VID_6868 · classe 0x07 · 80mm</div></div>
+        <span class="pstat off"><i></i>HOST</span>
+        <button class="btn btn-ghost cbtn" data-dev="Gprinter GP-3150T">CONECTAR</button>
+      </div>
+      <div class="card" style="background:transparent;border-style:dashed">
+        <h4>NÃO ENCONTROU?</h4>
+        <p class="dim" style="font-size:12.5px;line-height:1.7">1. Ligue a impressora e aproxime do aparelho.<br>2. Pareie antes: Configurações → Bluetooth.<br>3. Para rede, confira se a impressora está na mesma rede e na porta 9100.</p>
+      </div>
+    </section>
+
+    <!-- CONNECTED -->
+    <section id="s-connected" class="screen">
+      <div class="conn">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6"/></svg></div>
+        <div class="ci">
+          <div class="n">KP-1025</div>
+          <div class="s"><span>BLUETOOTH <b>●</b></span><span>58mm</span><span>86:67:7A:B6:30:57</span></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-pri" data-go="test">TESTAR</button>
+          <button class="btn btn-err">DESCONECTAR</button>
+        </div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">PERFIL</div><div class="v">fraca</div><div class="s">chunks 512 B</div></div>
+        <div class="tile"><div class="k">PAUSA ENTRE BLOCO</div><div class="v a">300 ms</div><div class="s">buffer pequeno</div></div>
+        <div class="tile"><div class="k">FILA</div><div class="v">2</div><div class="s">#1041 · #1042</div></div>
+        <div class="tile"><div class="k">CHARSET</div><div class="v">ASCII</div><div class="s">acentos norm.</div></div>
+      </div>
+      <div class="card">
+        <h4>TRABALHOS NA FILA</h4>
+        <div class="job"><span class="id">#1042</span><span>ingresso_1884.ticket</span><span class="mute">2.048 B</span><span class="st wait">AGUARDANDO</span></div>
+        <div class="job"><span class="id">#1041</span><span>ingresso_1883.ticket</span><span class="mute">2.048 B</span><span class="st">IMPRIMINDO</span></div>
+        <div class="job"><span class="id">#1040</span><span>cupom_teste.escpos</span><span class="mute">1.240 B</span><span class="st">CONCLUÍDO</span></div>
+      </div>
+      <div class="card">
+        <h4>CAPABILITIES DETECTADAS</h4>
+        <div class="rows">
+          <div class="row"><span class="k">Modelo</span><span class="v">KP-1025</span></div>
+          <div class="row"><span class="k">QR Support</span><span class="v ok">TRUE · GS ( k</span></div>
+          <div class="row"><span class="k">Barcode</span><span class="v ok">EAN-13</span></div>
+          <div class="row"><span class="k">Estabilidade</span><span class="v amb">BUFFER 512 B · ENVIAR COM PAUSA</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEST -->
+    <section id="s-test" class="screen">
+      <div class="h-sec">TESTE DE IMPRESSÃO · ESC/POS</div>
+      <div class="card" style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <h4>PREVIEW DO CUPOM</h4>
+          <div class="paper" id="paperPreview">
+            <div class="ct b">TESTE RAWBTS</div>
+            <div class="ct db">Impressora: KP-1025</div>
+            <div class="ct db">Bluetooth / USB / Rede</div>
+            <div style="margin:6px 0;border-top:1px dashed #B9AO90"></div>
+            <div class="dd"><span>Produto</span><span>Valor</span></div>
+            <div class="dd"><span>Tesoura sem fio</span><span>R$ 34,90</span></div>
+            <div class="dd"><span>Cabo USB 2M</span><span>R$ 12,00</span></div>
+            <div class="dd"><span>Caneta azul</span><span>R$ 2,50</span></div>
+            <div style="margin:6px 0;border-top:1px dashed #B9A090"></div>
+            <div class="dd b"><span>TOTAL</span><span>R$ 49,40</span></div>
+            <div class="ct"><span id="qrBox1"></span></div>
+            <div class="ct db">Aponte a câmera para validar</div>
+            <div class="cut">- - - - - CORTE - - - - -</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <h4>PARÂMETROS</h4>
+          <div class="rows">
+            <div class="row"><span class="k">Largura</span><span class="v">
+              <span class="seg" id="wSeg">
+                <button class="act" data-w="58">58mm</button><button data-w="80">80mm</button>
+              </span></span></div>
+            <div class="row"><span class="k">Charset</span><span class="v">ISO-8859-1</span></div>
+            <div class="row"><span class="k">Ritmo</span><span class="v">perfil: fraca</span></div>
+            <div class="row"><span class="k">Estimado</span><span class="v">~1.240 B · 0.9 s</span></div>
+          </div>
+          <button class="btn btn-pri btn-block" id="startPrint" style="margin-top:16px">IMPRIMIR CUPOM DE TESTE</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRINTING -->
+    <section id="s-printing" class="screen">
+      <div class="h-sec">TRANSMISSÃO EM CURSO</div>
+      <div class="card">
+        <div class="pmono" id="printMono">ENVIANDO PARA KP-1025 [BT] …</div>
+        <div class="progress" style="margin-top:10px"><div class="fill" id="pfill"></div><div class="txt" id="ptxt">0%</div></div>
+        <div class="rows" style="margin-top:14px">
+          <div class="row"><span class="k">Bytes</span><span class="v" id="pbytes">0 / 1.240 B</span></div>
+          <div class="row"><span class="k">Chunks</span><span class="v" id="pchunks">0 / 3</span></div>
+          <div class="row"><span class="k">Fila restante</span><span class="v amb">2 trabalhos</span></div>
+          <div class="row"><span class="k">Status impressora</span><span class="v ok">BUFFER DRENANDO …</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h4>LOG</h4>
+        <div class="log">
+          <div class="ln">ok 11:04:01 job <b>#1043</b> cupom_teste · iniciado</div>
+          <div class="ln">ok 11:04:01 enviando chunk <b>512 B</b> …</div>
+          <div class="ln" id="plog3">~ 11:04:02 aguardando drenar buffer …</div>
+          <span class="cur"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- DONE -->
+    <section id="s-done" class="screen">
+      <div class="done-box">
+        <div class="chk"><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg></div>
+        <h3>IMPRESSÃO CONCLUÍDA</h3>
+        <div class="sub">cupom_teste · KP-1025 · BLUETOOTH</div>
+        <div class="done-stats">
+          <div class="tile"><div class="k">BYTES</div><div class="v">1.240</div></div>
+          <div class="tile"><div class="k">TEMPO</div><div class="v">1.2 s</div></div>
+          <div class="tile"><div class="k">FILA</div><div class="v a">2</div></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-pri" data-go="printing">IMPRIMIR NOVAMENTE</button>
+          <button class="btn btn-ghost" data-go="dashboard">VOLTAR AO PAINEL</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="s-settings" class="screen">
+      <div class="h-sec">CONFIGURAÇÕES</div>
+      <div class="card">
+        <h4>IMPRESSÃO</h4>
+        <div class="row" style="padding:11px 0"><span class="k" style="flex:none">Tabela de caracteres</span><span class="seg" style="margin-left:auto">
+          <button class="act segA">ASCII</button><button class="segB">CP850</button></span></div>
+        <div class="row" style="padding:11px 0"><span class="k">Largura padrão</span><span class="v">58 mm</span></div>
+        <div class="row" style="padding:11px 0"><span class="k">Ritmo automático</span><span class="v ok">ATIVO · perfil por modelo</span></div>
+        <div class="row" style="padding:11px 0"><span class="k">Notificação ao print</span><span class="v">via PrintService</span></div>
+      </div>
+      <div class="card">
+        <h4>SISTEMA</h4>
+        <div class="sw"><div><div class="k">Iniciar com o aparelho</div><div class="d">Reconecta a última impressora</div></div><button class="switch on" data-sw><i></i></button></div>
+        <div class="sw"><div><div class="k">Vibração nas confirmações</div><div class="d">Feedback tátil</div></div><button class="switch on" data-sw><i></i></button></div>
+        <div class="sw"><div><div class="k">Tema escuro do terminal</div><div class="d">Recomendado para PDV</div></div><button class="switch on" data-sw><i></i></button></div>
+        <div class="sw"><div><div class="k">Modo debug USB</div><div class="d">Loga bytes enviados</div></div><button class="switch" data-sw><i></i></button></div>
+      </div>
+      <div class="card">
+        <h4>SOBRE</h4>
+        <div class="rows">
+          <div class="row"><span class="k">Versão</span><span class="v">1.0.0-build 07</span></div>
+          <div class="row"><span class="k">Motor ESC/POS</span><span class="v">v2.4 · QR GS ( k</span></div>
+          <div class="row"><span class="k">Compatibilidade RawBT</span><span class="v ok">ATIVA</span></div>
+          <div class="row"><span class="k">Servidor local</span><span class="v">localhost:8080 OK</span></div>
+        </div>
+      </div>
+    </section>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <nav id="bnav">
+    <button data-go="dashboard" class="act"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>PAINEL</button>
+    <button data-go="discover"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v3l2 1.5"/></svg>DESCOBRIR</button>
+    <button data-go="connected"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6"/></svg>PRINT</button>
+    <button data-go="test"><svg viewBox="0 0 24 24"><path d="M12 3v12M12 15l4 4M12 15l-4 4"/><path d="M4 21h16"/></svg>TESTE</button>
+    <button data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>CONFIG</button>
+  </nav>
+</div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const SCREENS=['splash','dashboard','discover','found','connected','test','printing','done','settings'];
+const TITLES={splash:'APRESENTAÇÃO',dashboard:'PAINEL DE CONTROLE',discover:'VARREDURA',found:'IMPRESSORAS ENCONTRADAS',connected:'IMPRESSORA ATIVA',test:'TESTE DE IMPRESSÃO',printing:'TRANSMISSÃO',done:'CONCLUÍDA',settings:'CONFIGURAÇÕES'};
+let timers=[];
+function go(id){
+  SCREENS.forEach(s=>{const el=$(s);if(el)el.classList.toggle('on',s===id)});
+  document.querySelectorAll('.demo-btn').forEach(b=>b.classList.toggle('act',b.dataset.screen===id));
+  document.querySelectorAll('#side .nav button,#bnav button').forEach(b=>b.classList.toggle('act',b.dataset.go===id));
+  const t=$('topTitle');if(t)t.textContent=TITLES[id]||'';
+  const strip=$('stripName');if(strip){
+    if(id==='connected'||id==='test'||id==='printing'||id==='done'){strip.textContent='KP-1025';$('stripDet').textContent='BLUETOOTH · 58mm · 86:67:7A:B6:30:57';const p=$('topPill');p.className='pill ok';p.innerHTML='<i></i>KP-1025 · BT · 58mm';
+      document.querySelectorAll('#side .nav button')[2].classList.add('act');
+    }else{strip.textContent='Nenhuma impressora ativa';$('stripDet').textContent='AGUARDANDO CONEXÃO';}}
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+document.querySelectorAll('.demo-btn').forEach(b=>b.addEventListener('click',()=>go(b.dataset.screen)));
+// device toggle
+$('dvDesk').onclick=()=>{$('device').classList.remove('phone');$('dvDesk').classList.add('act');$('dvPhone').classList.remove('act')};
+$('dvPhone').onclick=()=>{$('device').classList.add('phone');$('dvPhone').classList.add('act');$('dvDesk').classList.remove('act')};
+// scan flow
+$('startScan').onclick=function(){
+  if(this.dataset.running)return;this.dataset.running=1;this.textContent='VARRENDO…';this.disabled=true;
+  $('radar').classList.add('scanning');$('scanStatus').textContent='VARRENDO · BT · USB · REDE';$('ck1').classList.add('on');$('ck2').classList.add('on');$('ck3').classList.add('on');
+  timers.push(setTimeout(()=>{$('radar').classList.remove('scanning');$('scanStatus').textContent='3 DISPOSITIVOS ENCONTRADOS';timers.push(setTimeout(()=>go('found'),600))},2000));
+};
+// connect flow
+document.querySelectorAll('.cbtn').forEach(b=>b.onclick=()=>{const d=b.dataset.dev;b.textContent='CONECTANDO…';b.disabled=true;
+  timers.push(setTimeout(()=>{go('connected');$('stripName').textContent=d;$('stripDet').textContent='BLUETOOTH · 58mm · conectado';const p=$('topPill');p.className='pill ok';p.innerHTML='<i></i>'+d.slice(0,12)+' · BT';},1400))});
+// width toggle
+document.querySelectorAll('#wSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#wSeg button').forEach(x=>x.classList.remove('act'));b.classList.add('act');$('paperPreview').classList.toggle('w80',b.dataset.w==='80')});
+// char seg
+document.querySelectorAll('.segA,.segB').forEach(b=>b.onclick=()=>{document.querySelectorAll('.segA,.segB').forEach(x=>x.classList.remove('act'));b.classList.add('act')});
+// switches
+document.querySelectorAll('[data-sw]').forEach(s=>s.onclick=()=>s.classList.toggle('on'));
+// print flow
+let pInt=null;
+function runPrint(label){
+  $('printMono').textContent='ENVIANDO PARA KP-1025 [BT] · '+label+' …';
+  let p=0;const total=1240;const chunks=3;
+  $('pfill').style.width='0%';$('ptxt').textContent='0%';$('pbytes').textContent='0 / 1.240 B';$('pchunks').textContent='0 / '+chunks;
+  $('plog3')&&($('plog3').innerHTML='ok 11:04:02 chunk <b>1/3</b> enviado · 512 B');
+  if(pInt)clearInterval(pInt);
+  pInt=setInterval(()=>{p+=2.38;if(p>=100){p=100;clearInterval(pInt);$('pfill').style.width='100%';$('ptxt').textContent='100%';$('pbytes').textContent=total+' / '+total+' B';$('pchunks').textContent=chunks+' / '+chunks;
+      $('printMono').textContent='TRANSMISSÃO OK · aguardando confirmação…';
+      timers.push(setTimeout(()=>go('done'),900));return}
+    $('pfill').style.width=p+'%';$('ptxt').textContent=Math.floor(p)+'%';
+    $('pbytes').textContent=Math.floor(p/100*total)+' / '+total+' B';
+    $('pchunks').textContent=Math.min(chunks,Math.floor(p/100*chunks)+1)+' / '+chunks;
+    $('plog3')&&($('plog3').innerHTML='ok 11:04:0'+(1+Math.floor(p/33))+' enviando blocos · byte <b>'+Math.floor(p/100*total)+'</b>');
+  },110);
+}
+$('startPrint').onclick=()=>{go('printing');runPrint('cupom_teste')};
+document.querySelectorAll('[data-go="printing"]').forEach(b=>b.onclick=()=>{runPrint('cupom_teste')});
+// terminal log ticker
+setInterval(()=>{const el=$('termLog');if(!el||!$('dashboard').classList.contains('on'))return;
+  const lines=['ok 11:04:1'+(2+Math.floor(Math.random()*5))+' heartbeat · fila <b>2</b> · buffer OK',
+    'ok ack da impressora · <b>0</b> erros de transmissão',
+    '~ watchdog: porta COM4 aberta · reconexão em 0 tentativas'];
+  const d=document.createElement('div');d.className='ln';d.innerHTML=lines[Math.floor(Math.random()*lines.length)];
+  const cur=el.querySelector('.cur');el.insertBefore(d,cur);
+  while(el.children.length>7)el.removeChild(el.children[1]);
+},2400);
+// QR fake
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function qrSVG(seed,n=21,s=3){const r=mulberry32(seed);let out='';
+  const dark=(x,y)=>{let d;/* finder corners */[(0,0),(n-7,0),(0,n-7)].forEach(c=>{if(x>=c[0]&&x<c[0]+7&&y>=c[1]&&y<c[1]+7){const dx=x-c[0]-3,dy=y-c[1]-3;const m=Math.max(Math.abs(dx),Math.abs(dy));if(m<=1)out+='D';else out+=m===3?'D':'W';}});
+    if(out.length>0)return out;out+=r()>0.46?'D':'W';return out};
+  let svg='';
+  for(let y=0;y<n;y++){for(let x=0;x<n;x++){sheet: {let res='';/* finder */[[0,0],[n-7,0],[0,n-7]].forEach(f=>{if(x>=f[0]&&x<f[0]+7&&y>=f[1]&&y<f[1]+7){const dx=x-f[0]-3,dy=y-f[1]-3;const m=Math.max(Math.abs(dx),Math.abs(dy));res=m<=1||m===3?'D':'W';break sheet}});
+    if(!res)res=r()>0.46?'D':'W';if(res==='D')svg+='<rect x="'+(x*s)+'" y="'+(y*s)+'" width="'+s+'" height="'+s+'"/>';}}}
+  return svg;}
+$('qrBox1').innerHTML='<svg width="63" height="63" shape-rendering="crispEdges">'+qrSVG(7)+'</svg>';
+// init
+go('splash');
+</script>
+</body>
+</html>

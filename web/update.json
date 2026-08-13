@@ -1,0 +1,7 @@
+{
+  "appId": "br.com.tipprint",
+  "versionCode": 1,
+  "versionName": "1.0.0",
+  "apkPath": "/downloads/app-debug.apk",
+  "notes": "Versão inicial — canal de atualização e correção de permissões Bluetooth para Android 12+."
+}

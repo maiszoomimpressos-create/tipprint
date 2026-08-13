@@ -1,0 +1,70 @@
+<Window x:Class="TipPrint.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TipPrint Desktop"
+        Width="860" Height="560"
+        MinWidth="640" MinHeight="420"
+        Background="{StaticResource TipPrint.Bg.Brush}"
+        Foreground="{StaticResource TipPrint.Ink.Brush}"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Marca -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+            <Border Width="40" Height="40" CornerRadius="10" Background="{StaticResource TipPrint.BrandInk.Brush}"
+                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                <TextBlock Text="B" FontFamily="Consolas" FontWeight="Bold" FontSize="19"
+                           Foreground="{StaticResource TipPrint.BrandPaper.Brush}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="RAW BTS" FontFamily="Consolas" FontWeight="Bold" FontSize="16"
+                           CharacterSpacing="120"/>
+                <TextBlock Text="CONECTE · CONTROLE · IMPRIMA" FontFamily="Consolas" FontSize="9"
+                           Foreground="{StaticResource TipPrint.InkSecondary.Brush}" CharacterSpacing="180"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Áreas operacionais (integração prevista nas próximas etapas) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Padding="16"
+                    Background="{StaticResource TipPrint.SurfaceCard.Brush}"
+                    BorderBrush="{StaticResource TipPrint.Outline.Brush}" BorderThickness="1" CornerRadius="12">
+                <StackPanel>
+                    <TextBlock Text="IMPRESSORAS" FontFamily="Consolas" FontSize="10" FontWeight="Bold"
+                               Foreground="{StaticResource TipPrint.BrandThermal.Brush}" CharacterSpacing="160"/>
+                    <TextBlock Text="Bluetooth · USB · Rede" Margin="0,4,0,10" FontSize="13" Opacity="0.7"/>
+                    <TextBlock Text="Busca de impressoras no PC — próxima etapa." FontSize="12" Opacity="0.55"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Padding="16"
+                    Background="{StaticResource TipPrint.SurfaceCard.Brush}"
+                    BorderBrush="{StaticResource TipPrint.Outline.Brush}" BorderThickness="1" CornerRadius="12">
+                <StackPanel>
+                    <TextBlock Text="ACESSÓRIOS BLUETOOTH" FontFamily="Consolas" FontSize="10" FontWeight="Bold"
+                               Foreground="{StaticResource TipPrint.Primary.Brush}" CharacterSpacing="160"/>
+                    <TextBlock Text="Acessórios que se comunicam com impressoras" Margin="0,4,0,10" FontSize="13" Opacity="0.7"/>
+                    <TextBlock Text="Descoberta via Bluetooth do PC — próxima etapa." FontSize="12" Opacity="0.55"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Rodapé -->
+        <TextBlock Grid.Row="2" Margin="0,16,0,0" FontFamily="Consolas" FontSize="10"
+                   Foreground="{StaticResource TipPrint.InkMuted.Brush}"
+                   Text="TipPrint · fundação desktop consumindo design/tipprint-tokens.json"/>
+    </Grid>
+</Window>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RawBTS · PROPOSTA 3 · RAW INK (Protótipo visual)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS RAW INK ============ */
+:root{
+  --paper:#F7F5F0; --paper2:#EFEBE2; --paper3:#E8E2D6;
+  --ink:#171310; --ink2:#4A453F; --dim:#7A7368;
+  --thermal:#E84A1B; --thermal-so:#FBE9E1; --moss:#3F6C51; --moss-so:#E9F0EA;
+  --err:#B3261E; --err-so:#F8E6E4;
+  --serif:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#E8E4DB;font-family:var(--serif);color:var(--ink);font-size:14px}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+[hidden]{display:none!important}
+::selection{background:var(--ink);color:var(--paper)}
+/* ============ BARRA DE DEMONSTRAÇÃO ============ */
+#demo{position:fixed;inset:0 0 auto 0;z-index:999;height:42px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#171310;font-size:12px}
+#demo .tag{color:#FF7A4D;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;white-space:nowrap}
+#demo .sep{width:1px;height:20px;background:#3A342C}
+#demo .sc{margin-left:4px;display:flex;gap:4px;overflow-x:auto;flex:1}
+#demo button.demo-btn{font-family:var(--mono);font-size:10.5px;padding:6px 10px;border:1px solid #3A342C;color:#A69E90;border-radius:2px;white-space:nowrap}
+#demo button.demo-btn:hover{border-color:#7A7368;color:#F7F5F0}
+#demo button.demo-btn.act{background:var(--thermal);border-color:var(--thermal);color:#fff}
+#demo .dv{display:flex;gap:4px}
+#demo .dv button{padding:6px 10px;font-family:var(--mono);font-size:10.5px;border:1px solid #3A342C;border-radius:2px;color:#A69E90}
+#demo .dv button.act{background:var(--thermal);border-color:var(--thermal);color:#fff}
+#demo .note{font-family:var(--mono);font-size:9.5px;color:#6E675B;white-space:nowrap}
+/* ============ PALCO / DISPOSITIVO ============ */
+#stage{padding:58px 20px 34px;display:flex;justify-content:center}
+#device{width:100%;max-width:1120px;background:var(--paper);border:1.5px solid var(--ink);border-radius:8px;overflow:hidden;position:relative;min-height:720px;transition:.3s}
+#device.phone{max-width:402px;border-radius:28px;border:10px solid #171310;box-shadow:0 30px 70px rgba(23,19,16,.45)}
+.app{display:grid;grid-template-columns:200px 1fr;min-height:720px}
+#device.phone .app{grid-template-columns:1fr}
+/* ============ SIDEBAR ============ */
+#side{background:var(--paper2);border-right:1.5px solid var(--ink);display:flex;flex-direction:column;padding:20px 14px}
+.brand{padding:0 8px 16px;border-bottom:1px solid var(--ink);position:relative;margin-bottom:18px}
+.brand::after{content:"";position:absolute;left:-6px;right:-6px;bottom:-7px;border-top:2px dashed var(--ink);opacity:.55}
+.brand .name{font-weight:700;font-size:22px;letter-spacing:.02em;line-height:1}
+.brand .name span{color:var(--thermal)}
+.brand .ver{font-family:var(--mono);font-size:9px;color:var(--dim);display:block;margin-top:5px;letter-spacing:.12em}
+.brand .cut{font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:14px;letter-spacing:.3em;text-align:center}
+.nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.nav button{display:flex;align-items:center;gap:9px;padding:10px 10px;border:1px solid transparent;font-size:13px;font-weight:600;color:var(--ink2);text-align:left;border-radius:4px}
+.nav button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7}
+.nav button:hover{border-color:var(--ink);background:var(--paper)}
+.nav button.act{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.side-foot{margin-top:16px;border-top:1px solid var(--ink);padding:14px 6px 4px;font-family:var(--mono);font-size:9.5px;color:var(--dim);line-height:2;letter-spacing:.05em}
+.side-foot .t{font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px}
+.side-foot .t i{width:8px;height:8px;background:var(--moss);border-radius:50%;display:inline-block;animation:blink 1.8s infinite}
+/* ============ MAIN ============ */
+#main{display:flex;flex-direction:column;min-width:0;position:relative}
+/* perforation top */
+#main::before{content:"·· · · ··· · · ··";position:absolute;top:0;left:0;right:0;text-align:center;font-family:var(--mono);font-size:8px;letter-spacing:.5em;color:var(--dim);line-height:1;padding-top:4px;opacity:.8}
+.topbar{display:flex;align-items:center;gap:14px;padding:18px 22px 10px;justify-content:space-between;flex-wrap:wrap;margin-top:6px}
+.topbar .crumb{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.topbar .crumb b{color:var(--thermal)}
+.topbar .r{display:flex;gap:10px;align-items:center}
+.stamp{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;padding:6px 12px;border:1.5px solid var(--moss);color:var(--moss);transform:rotate(-1deg);flex:none;background:var(--moss-so)}
+.stamp.ok{border-color:var(--moss);color:var(--moss)}
+.stamp.warn{border-color:var(--thermal);color:var(--thermal);background:var(--thermal-so)}
+.stamp.off{border-color:var(--dim);color:var(--dim);background:transparent}
+.content{padding:8px 24px 30px;display:flex;flex-direction:column;gap:22px;flex:1}
+/* ============ TELAS ============ */
+.screen{display:none;flex-direction:column;gap:22px;min-width:0}
+.screen.on{display:flex;animation:fadeup .35s ease both}
+.h-sec{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:12px}
+.h-sec::after{content:"";flex:1;border-top:1px dashed var(--ink);opacity:.4}
+h3{font-size:22px;font-weight:700;letter-spacing:-.01em}
+h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;margin-bottom:12px;color:var(--ink2)}
+.dim{color:var(--dim)} .mute{color:var(--dim)}
+/* paper cards */
+.pcard{background:var(--paper);border:1.5px solid var(--ink);border-radius:6px;padding:18px;position:relative}
+.pcard.grey{background:var(--paper2)}
+.divider-perf{border-top:2px dashed var(--ink);opacity:.55;margin:14px 0}
+/* ledgers */
+.rows{display:flex;flex-direction:column}
+.lrow{display:flex;align-items:baseline;gap:8px;padding:8px 0;font-size:13px}
+.lrow .k{color:var(--dim);white-space:nowrap}
+.lrow .dots{flex:1;border-bottom:1.5px dotted var(--dim);opacity:.6;transform:translateY(-3px)}
+.lrow .v{font-weight:700;white-space:nowrap}
+.lrow .v.ok{color:var(--moss)} .lrow .v.amb{color:var(--thermal)}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{background:var(--paper);border:1.5px solid var(--ink);border-radius:6px;padding:14px 14px 12px}
+.tile .k{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.tile .v{font-size:24px;font-weight:700;margin-top:7px;letter-spacing:-.02em}
+.tile .v.b{color:var(--thermal)} .tile .v.o{color:var(--thermal)} .tile .v.g{color:var(--moss)}
+.tile .s{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:6px}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:700;padding:12px 20px;border-radius:4px;border:1.5px solid var(--ink);transition:.15s;letter-spacing:.02em}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.btn:focus-visible{outline:2px solid var(--thermal);outline-offset:2px}
+.btn-pri{background:var(--ink);color:var(--paper)}
+.btn-pri:hover{background:var(--thermal);border-color:var(--thermal)}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn-ghost:hover{background:var(--ink);color:var(--paper)}
+.btn-soft{background:var(--thermal-so);border-color:var(--thermal);color:var(--thermal)}
+.btn-err{background:transparent;border-color:var(--err);color:var(--err)}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.45;pointer-events:none}
+/* switches */
+.sw{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1.5px dotted var(--dim)}
+.sw .k{font-size:14px;font-weight:600} .sw .d{font-size:11.5px;color:var(--dim);margin-top:2px}
+.sw .box{width:18px;height:18px;border:1.5px solid var(--ink);border-radius:3px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;color:transparent;flex:none}
+.sw.on .box{background:var(--ink);color:var(--paper)}
+/* printers found list — receipt style */
+.prow{display:flex;align-items:center;gap:14px;padding:14px 15px;background:var(--paper);border:1.5px solid var(--ink);border-radius:6px;flex-wrap:wrap;position:relative}
+.prow+.prow{margin-top:12px}
+.prow .no{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--thermal);flex:none}
+.ptype{font-family:var(--mono);font-size:9px;letter-spacing:.14em;border:1.5px solid var(--ink);padding:4px 8px;border-radius:3px;flex:none}
+.ptype.bt{color:var(--thermal);border-color:var(--thermal)}
+.ptype.usb{color:var(--ink)}
+.ptype.net{color:var(--moss);border-color:var(--moss)}
+.pinfo{flex:1;min-width:170px}
+.pinfo .n{font-size:15px;font-weight:700}
+.pinfo .d{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:3px}
+.pstat{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--moss);display:flex;align-items:center;gap:5px}
+.pstat::before{content:"●";font-size:8px}
+.pstat.off{color:var(--dim)}
+/* scan */
+.scan-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;padding:28px 0;text-align:center}
+.scan-paper{position:relative;width:170px;height:196px;background:var(--paper);border:1.5px solid var(--ink);border-radius:4px;padding:14px;font-family:var(--mono);font-size:9.5px;overflow:hidden;box-shadow:8px 8px 0 rgba(23,19,16,.08)}
+.scan-paper::before{content:"INICIANDO";position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:10px;letter-spacing:.3em;background:var(--paper);transition:.3s;z-index:2}
+.scan-paper.scanning::before{content:"PROCURANDO";opacity:.15}
+.scan-paper.scanning::after{content:"";position:absolute;left:0;right:0;height:34px;background:linear-gradient(180deg,transparent,rgba(232,74,27,.28),transparent);top:-40px;animation:printline 1.4s ease-in-out infinite;z-index:1}
+.scan-paper .l{height:6px;background:rgba(23,19,16,.25);border-radius:2px;margin:9px 0}
+.scan-paper .l.lg{width:80%} .scan-paper .l.sm{width:55%}
+.scan-paper .q{text-align:center;font-size:8px;color:var(--thermal);margin:8px 0;letter-spacing:.2em}
+.scan-status{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink);min-height:18px}
+.scan-meta{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.08em}
+/* connected stamp card */
+.conn{display:flex;align-items:center;gap:16px;padding:20px;background:var(--paper);border:1.5px solid var(--ink);border-radius:6px;flex-wrap:wrap;position:relative;overflow:hidden}
+.conn .stamp-big{position:absolute;right:16px;top:50%;transform:translateY(-50%) rotate(-8deg);font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.28em;color:var(--moss);border:3px double var(--moss);padding:8px 16px;opacity:.9;background:rgba(233,240,234,.6);pointer-events:none}
+.conn .ic{width:54px;height:54px;border:1.5px solid var(--ink);border-radius:50%;display:grid;place-items:center;flex:none;background:var(--ink);color:var(--paper)}
+.conn .ic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8}
+.conn .ci{flex:1;min-width:160px}
+.conn .ci .n{font-size:19px;font-weight:700}
+.conn .ci .s{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:4px;letter-spacing:.06em}
+.conn .ci .s b{color:var(--ink)}
+/* progress */
+.progress{height:18px;border:1.5px solid var(--ink);border-radius:3px;background:var(--paper);overflow:hidden;position:relative}
+.progress .fill{height:100%;width:0%;background:var(--thermal);transition:width .12s linear}
+.progress .fill.dark{background:var(--ink)}
+.progress .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--paper);mix-blend-mode:difference}
+.pmono{font-family:var(--mono);font-size:11.5px;color:var(--ink);letter-spacing:.06em;min-height:18px}
+/* receipt preview — the real paper */
+.receipt{background:#FDFCF8;border:1.5px solid var(--ink);width:248px;margin:0 auto;padding:20px 14px;font-family:var(--mono);font-size:10px;line-height:1.8;position:relative;transition:width .3s}
+.receipt.w80{width:336px;font-size:13px}
+.receipt::before,.receipt::after{content:"";position:absolute;left:-9px;right:-9px;height:12px;background:var(--paper);border:1.5px solid var(--ink);z-index:1}
+.receipt::before{top:-8px;border-bottom:none;border-radius:10px 10px 0 0}
+.receipt::after{bottom:-8px;border-top:none;border-radius:0 0 10px 10px}
+.receipt .ct{text-align:center}
+.receipt .b{font-weight:700}
+.receipt .db{color:var(--dim)}
+.receipt .dd{display:flex;justify-content:space-between;gap:8px}
+.receipt .dd .dot-line{flex:1;border-bottom:1.5px dotted var(--dim);transform:translateY(-3px)}
+.receipt svg{display:block;margin:4px auto 0}
+.receipt .cut{text-align:center;margin-top:8px;color:var(--dim);font-size:9px;letter-spacing:.5em}
+/* splash */
+.splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 24px;text-align:center;min-height:640px;background:
+  repeating-linear-gradient(0deg,transparent 0 27px,rgba(23,19,16,.045) 27px 28px)}
+.splash-m{max-width:620px;width:100%}
+.ticket-stub{width:64px;height:64px;margin:0 auto 20px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:26px;font-weight:700;position:relative;border-radius:4px}
+.ticket-stub::before,.ticket-stub::after{content:"";position:absolute;width:16px;height:16px;background:var(--paper2);border:1.5px solid var(--ink);border-radius:50%;top:50%;transform:translateY(-50%)}
+.ticket-stub::before{left:-9px}
+.ticket-stub::after{right:-9px;background:var(--paper);border-radius:3px;width:14px;height:4px;border:none;border-top:1.5px dashed var(--ink)}
+.splash h1{font-size:clamp(46px,8vw,72px);font-weight:700;letter-spacing:-.02em;line-height:1;text-transform:uppercase}
+.splash h1 span{color:var(--thermal)}
+.splash .tag{font-family:var(--mono);font-size:clamp(12px,2vw,14px);letter-spacing:.34em;text-transform:uppercase;margin:18px 0 30px;color:var(--ink2)}
+.splash .manif{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:34px;text-align:left}
+.splash .manif div{border:1.5px solid var(--ink);border-radius:5px;padding:14px;background:var(--paper)}
+.splash .manif .n{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--thermal);font-weight:700}
+.splash .manif .t{font-size:16px;font-weight:700;margin-top:8px}
+.splash .manif .d{font-family:var(--mono);font-size:9.5px;color:var(--dim);margin-top:4px}
+.splash .btn{font-size:15px;padding:15px 30px}
+.splash .ver{font-family:var(--mono);font-size:9.5px;color:var(--dim);margin-top:24px;letter-spacing:.24em;text-transform:uppercase}
+/* jobs */
+.job{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:11px;padding:9px 0;border-bottom:1.5px dotted var(--dim)}
+.job:last-child{border-bottom:none}
+.job .id{color:var(--thermal);font-weight:700}
+.job .st{font-size:9px;letter-spacing:.14em;font-weight:700;margin-left:auto}
+.job .st.d1{color:var(--moss)} .job .st.d2{color:var(--thermal)} .job .st.d3{color:var(--dim)}
+/* done */
+.done-box{display:flex;flex-direction:column;align-items:center;text-align:center;padding:36px 22px}
+.done-box .stamp-xl{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--moss);border:3px double var(--moss);padding:14px 26px;transform:rotate(-3deg);animation:stampin .45s cubic-bezier(.2,1.4,.4,1) both;background:var(--moss-so)}
+.done-box h3{margin-top:24px;font-size:24px;text-transform:uppercase;letter-spacing:.02em}
+.done-box .sub{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:6px;letter-spacing:.06em}
+.done-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0;width:100%;max-width:460px}
+/* animations */
+@keyframes blink{50%{opacity:.3}}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes printline{0%{top:-40px}100%{top:105%}}
+@keyframes stampin{0%{opacity:0;transform:rotate(-14deg) scale(1.4)}60%{opacity:1}100%{opacity:1;transform:rotate(-3deg) scale(1)}}
+@keyframes typescan{from{opacity:.2}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* bottomnav */
+#device.phone #side{display:none}
+#device.phone #bnav{display:flex}
+#bnav{display:none;position:sticky;bottom:0;background:var(--ink);color:var(--paper);padding:6px 4px calc(10px + env(safe-area-inset-bottom));z-index:50}
+#bnav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:#B3AB9C;padding:6px 10px;border-radius:4px}
+#bnav button svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8}
+#bnav button.act{color:#FF8A5C}
+@media(max-width:1020px){.tiles{grid-template-columns:repeat(2,1fr)}#side{display:none}#bnav{display:flex}.app{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ========== BARRA DE DEMONSTRAÇÃO (não faz parte do produto) ========== -->
+<div id="demo">
+  <span class="tag">RAW INK</span>
+  <span class="sep"></span>
+  <div class="sc">
+    <button class="demo-btn act" data-screen="splash">Início</button>
+    <button class="demo-btn" data-screen="dashboard">Dashboard</button>
+    <button class="demo-btn" data-screen="discover">Descobrir</button>
+    <button class="demo-btn" data-screen="found">Encontradas</button>
+    <button class="demo-btn" data-screen="connected">Conectada</button>
+    <button class="demo-btn" data-screen="test">Teste</button>
+    <button class="demo-btn" data-screen="printing">Imprimindo</button>
+    <button class="demo-btn" data-screen="done">Concluída</button>
+    <button class="demo-btn" data-screen="settings">Config</button>
+  </div>
+  <span class="sep"></span>
+  <div class="dv">
+    <button id="dvDesk" class="act">Desktop</button>
+    <button id="dvPhone">Celular</button>
+  </div>
+  <span class="sep"></span>
+  <span class="note">PROTÓTIPO VISUAL · dados fictícios</span>
+</div>
+
+<div id="stage">
+<div id="device">
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside id="side">
+    <div class="brand">
+      <div class="name">RAW<span>BTS</span></div>
+      <span class="ver">ED. TÉRMICA · Nº 07</span>
+      <div class="cut">- - - CORTE AQUI - - -</div>
+    </div>
+    <div class="nav">
+      <button data-go="dashboard" class="act"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Painel</button>
+      <button data-go="discover"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v3l2 1.5"/></svg>Descobrir</button>
+      <button data-go="connected"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6"/></svg>Impressora</button>
+      <button data-go="test"><svg viewBox="0 0 24 24"><path d="M12 3v12M12 15l4 4M12 15l-4 4"/><path d="M4 21h16"/></svg>Cupom</button>
+      <button data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>Config</button>
+    </div>
+    <div class="side-foot">
+      <div class="t"><i></i>CARIMBO ATIVO</div>
+      ESC/POS · QR · EAN-13<br>
+      BT / USB / REDE · 9100<br>
+      <span style="color:var(--ink2)">edições: 34 cupons hoje</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="topbar">
+      <div class="crumb">RAW BTS <b>/</b> <span id="crumb">APRESENTAÇÃO</span></div>
+      <div class="r">
+        <span class="stamp" id="stampTop">● IMPRESSORA ATIVA · KP-1025</span>
+        <span class="stamp warn" style="border-color:var(--thermal);color:var(--thermal);background:var(--thermal-so)">FILA x2</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+    <!-- SPLASH -->
+    <section id="s-splash" class="screen">
+      <div class="splash">
+        <div class="splash-m">
+          <div class="ticket-stub">B</div>
+          <h1>Raw<span>BTS</span></h1>
+          <div class="tag">Conecte · Controle · Imprima</div>
+          <div class="manif">
+            <div><div class="n">Item 01 — CONECTE</div><div class="t">Bluetooth · USB · Rede</div><div class="d">cada transporte, um carimbo</div></div>
+            <div><div class="n">Item 02 — CONTROLE</div><div class="t">Fila sem travar</div><div class="d">ritmo automático por modelo</div></div>
+            <div><div class="n">Item 03 — IMPRIMA</div><div class="t">QR · EAN-13 · Cupom</div><div class="d">papel quente, tinta na hora</div></div>
+          </div>
+          <button class="btn btn-pri" data-go="dashboard">Abrir o cupom →
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <div class="ver">Android · Windows · iOS (em breve)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="s-dashboard" class="screen">
+      <div class="pcard">
+        <h4>Registro do dia</h4>
+        <div class="lrow"><span class="k">Impressora em serviço</span><span class="dots"></span><span class="v">KP-1025 · 58mm · BT</span></div>
+        <div class="lrow"><span class="k">Última impressão</span><span class="dots"></span><span class="v">há 42 s · ingresso_1882</span></div>
+        <div class="lrow"><span class="k">Fila atual</span><span class="dots"></span><span class="v amb">2 trabalhos</span></div>
+        <div class="lrow"><span class="k">Ritmo</span><span class="dots"></span><span class="v">fraca · seguro</span></div>
+        <div class="divider-perf"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-pri" data-go="test">IMPRIMIR CUPOM TESTE</button>
+          <button class="btn btn-ghost" data-go="discover">TROCAR IMPRESSORA</button>
+        </div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">Cupons hoje</div><div class="v b">34</div><div class="s">+12 em relação a ontem</div></div>
+        <div class="tile"><div class="k">Na fila</div><div class="v o">2</div><div class="s">#1041 · #1042</div></div>
+        <div class="tile"><div class="k">Bytes na sessão</div><div class="v" style="font-size:19px">412,6 KB</div><div class="s">this session</div></div>
+        <div class="tile"><div class="k">Sucesso</div><div class="v g">99,2%</div><div class="s">30 dias</div></div>
+      </div>
+      <div class="pcard">
+        <h4>Últimas impressões — recibo de fim de dia</h4>
+        <div class="job"><span class="id">#1042</span><span>ingresso_1884</span><span style="color:var(--dim)">2.048 B</span><span class="st d2">AGUARDANDO</span></div>
+        <div class="job"><span class="id">#1041</span><span>ingresso_1883</span><span style="color:var(--dim)">2.048 B</span><span class="st d2">IMPRIMINDO</span></div>
+        <div class="job"><span class="id">#1040</span><span>cupom_teste</span><span style="color:var(--dim)">1.240 B</span><span class="st d1">CONCLUÍDO ✓</span></div>
+        <div class="divider-perf"></div>
+        <div class="ct" style="font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:var(--dim)">FIM DO REGISTRO - - - - - - - -</div>
+      </div>
+    </section>
+
+    <!-- DISCOVER -->
+    <section id="s-discover" class="screen">
+      <div class="h-sec">Em busca de impressoras</div>
+      <div class="scan-wrap">
+        <div class="scan-paper" id="scanPaper">
+          <div class="q">QR · ESC/POS</div>
+          <div class="l lg"></div><div class="l"></div><div class="l sm"></div><div class="l lg"></div><div class="l"></div>
+          <div class="l sm" style="margin-bottom:14px"></div>
+          <div class="dd"><span>__________</span><span>__________</span></div>
+        </div>
+        <div class="scan-status" id="scanStatus">PRONTO PARA VARRER</div>
+        <div class="scan-meta">bluetooth · usb host · porta 9100 na rede</div>
+      </div>
+      <div class="pcard grey">
+        <h4>Check-list da varredura</h4>
+        <div class="lrow"><span class="k" id="ck1">Bluetooth ativo e permissões</span><span class="dots"></span><span class="v" id="ck1s">ok</span></div>
+        <div class="lrow"><span class="k" id="ck2">USB host disponível</span><span class="dots"></span><span class="v" id="ck2s">ok</span></div>
+        <div class="lrow"><span class="k" id="ck3">Rede local (9100)</span><span class="dots"></span><span class="v" id="ck3s">ok</span></div>
+      </div>
+      <button class="btn btn-pri btn-block" id="startScan">INICIAR VARREDURA</button>
+      <p class="dim" style="font-family:var(--mono);font-size:11px;line-height:1.9">Aviso: ligue a impressora antes. Bluetooth? Pareie nas configurações. Rede? Mesma rede Wi-Fi, porta 9100.</p>
+    </section>
+
+    <!-- FOUND -->
+    <section id="s-found" class="screen">
+      <div class="h-sec">3 resultados encontrados</div>
+      <div class="prow">
+        <span class="no">01</span><span class="ptype bt">BT</span>
+        <div class="pinfo"><div class="n">KP-1025</div><div class="d">86:67:7A:B6:30:57 · 58mm · pareada</div></div>
+        <span class="pstat">PAREADA</span>
+        <button class="btn btn-pri cbtn" data-dev="KP-1025">CONECTAR</button>
+      </div>
+      <div class="prow">
+        <span class="no">02</span><span class="ptype net">REDE</span>
+        <div class="pinfo"><div class="n">EPSON TM-T20</div><div class="d">192.168.0.24:9100 · 80mm</div></div>
+        <span class="pstat off">OK</span>
+        <button class="btn btn-ghost cbtn" data-dev="EPSON TM-T20">CONECTAR</button>
+      </div>
+      <div class="prow">
+        <span class="no">03</span><span class="ptype usb">USB</span>
+        <div class="pinfo"><div class="n">Gprinter GP-3150T</div><div class="d">VID_6868 · classe 0x07 · 80mm</div></div>
+        <span class="pstat off">HOST</span>
+        <button class="btn btn-ghost cbtn" data-dev="Gprinter">CONECTAR</button>
+      </div>
+      <div class="pcard grey">
+        <h4>Não veio na busca?</h4>
+        <p style="font-size:13px;color:var(--ink2);line-height:1.9">1. Ligue a impressora e aproxime.<br>2. Pareie via Bluetooth do sistema.<br>3. Rede: confira o IP na mesma rede (porta 9100).<br>4. Varra novamente.</p>
+      </div>
+    </section>
+
+    <!-- CONNECTED -->
+    <section id="s-connected" class="screen">
+      <div class="conn">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6"/></svg></div>
+        <div class="ci">
+          <div class="n" id="connName">KP-1025</div>
+          <div class="s">BLUETOOTH · <b>58mm</b> · 86:67:7A:B6:30:57</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-pri" data-go="test">TESTAR CUPOM</button>
+          <button class="btn btn-err">DESCONECTAR</button>
+        </div>
+        <div class="stamp-big">CONECTADO</div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">Perfil</div><div class="v">fraca</div><div class="s">chunks 512 B</div></div>
+        <div class="tile"><div class="k">Pausa ENVIO</div><div class="v o">300 ms</div><div class="s">buffer pequeno</div></div>
+        <div class="tile"><div class="k">Charset</div><div class="v">ASCII</div><div class="s">acentos simplificados</div></div>
+        <div class="tile"><div class="k">Fila</div><div class="v">2</div><div class="s">#1041 · #1042</div></div>
+      </div>
+      <div class="pcard">
+        <h4>Capacidades — inspeção</h4>
+        <div class="lrow"><span class="k">QR Code (GS ( k)</span><span class="dots"></span><span class="v ok">SIM</span></div>
+        <div class="lrow"><span class="k">EAN-13</span><span class="dots"></span><span class="v ok">SIM</span></div>
+        <div class="lrow"><span class="k">Corte automático</span><span class="dots"></span><span class="v ok">SIM</span></div>
+        <div class="lrow"><span class="k">Gaveta</span><span class="dots"></span><span class="v">SIM</span></div>
+        <div class="lrow"><span class="k">Largura</span><span class="dots"></span><span class="v">58 mm / 32 col</span></div>
+      </div>
+      <div class="pcard">
+        <h4>Trabalhos na fila</h4>
+        <div class="job"><span class="id">#1042</span><span>ingresso_1884</span><span style="color:var(--dim)">2.048 B</span><span class="st d2">AGUARDANDO</span></div>
+        <div class="job"><span class="id">#1041</span><span>ingresso_1883</span><span style="color:var(--dim)">2.048 B</span><span class="st d2">IMPRIMINDO</span></div>
+        <div class="job"><span class="id">#1040</span><span>cupom_teste</span><span style="color:var(--dim)">1.240 B</span><span class="st d1">CONCLUÍDO ✓</span></div>
+      </div>
+    </section>
+
+    <!-- TEST -->
+    <section id="s-test" class="screen">
+      <div class="h-sec">Cupom de teste</div>
+      <div class="pcard" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:240px;text-align:center">
+          <h4>Folha quente · 58mm</h4>
+          <div class="receipt" id="receipt" style="margin-top:14px">
+            <div class="ct b">TESTE RAWBTS</div>
+            <div class="ct db">Impressora: KP-1025</div>
+            <div class="ct b" style="color:var(--thermal);font-size:8px;letter-spacing:.3em">::: PAPEL TÉRMICO :::</div>
+            <div class="dd"><span>Tesoura sem fio</span><span class="dot-line"></span><span>R$ 34,90</span></div>
+            <div class="dd"><span>Cabo USB 2M</span><span class="dot-line"></span><span>R$ 12,00</span></div>
+            <div class="dd"><span>Caneta azul</span><span class="dot-line"></span><span>R$ 2,50</span></div>
+            <div class="dd b"><span>TOTAL</span><span class="dot-line" style="border-top-style:solid"></span><span>R$ 49,40</span></div>
+            <div class="ct"><span id="qrBox1"></span></div>
+            <div class="ct db">Valide na portaria ✂</div>
+            <div class="cut">- - - CORTE AQUI - - -</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:230px">
+          <h4>Parâmetros do cupom</h4>
+          <div class="lrow"><span class="k">Largura</span><span class="dots"></span><span class="v">
+            <span class="seg" style="display:inline-flex;gap:6px">
+              <button class="btn btn-pri" style="padding:7px 14px;font-size:11px" data-w="58">58mm</button>
+              <button class="btn btn-ghost" style="padding:7px 14px;font-size:11px" data-w="80">80mm</button>
+            </span></span></div>
+          <div class="lrow"><span class="k">Charset</span><span class="dots"></span><span class="v">ISO-8859-1</span></div>
+          <div class="lrow"><span class="k">Ritmo</span><span class="dots"></span><span class="v">fraca · seguro</span></div>
+          <div class="lrow"><span class="k">Estimativa</span><span class="dots"></span><span class="v">1.240 B · 0,9s</span></div>
+          <button class="btn btn-pri btn-block" id="startPrint" style="margin-top:18px">ENVIAR PARA O PAPEL
+          <svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6"/></svg></button>
+          <p class="dim" style="font-family:var(--mono);font-size:10.5px;margin-top:12px;line-height:1.8">O envio respeita o ritmo detectado para esta impressora — sem travar o buffer.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRINTING -->
+    <section id="s-printing" class="screen">
+      <div class="h-sec">Imprimindo… sai o cupom</div>
+      <div class="pcard">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:17px;font-weight:700" id="printLabel">O papel está saindo…</div>
+            <div class="pmono" id="printMono">ENVIANDO · KP-1025 [BT] · 512B/bloco</div>
+          </div>
+          <span class="stamp ok">● TRANSMITINDO</span>
+        </div>
+        <div class="progress" style="margin-top:16px;height:20px"><div class="fill" id="pfill"></div><div class="txt" id="ptxt">0%</div></div>
+        <div class="lrow" style="margin-top:14px"><span class="k">Bytes</span><span class="dots"></span><span class="v" id="pbytes">0 de 1.240 B</span></div>
+        <div class="lrow"><span class="k">Chunks</span><span class="dots"></span><span class="v" id="pchunks">0 de 3 blocos</span></div>
+        <div class="lrow"><span class="k">Fila restante</span><span class="dots"></span><span class="v amb">2 trabalhos</span></div>
+      </div>
+      <div class="pcard grey">
+        <h4>Nota do impressor</h4>
+        <p style="font-family:var(--mono);font-size:11px;color:var(--ink2);line-height:2">Impressoras 58mm têm buffer pequeno. O RawBTS envia em blocos de 512B com pausas de 300ms. Você pode fechar o app — a impressão segue em segundo plano.</p>
+      </div>
+    </section>
+
+    <!-- DONE -->
+    <section id="s-done" class="screen">
+      <div class="done-box">
+        <div class="stamp-xl">Impresso ✓</div>
+        <h3>O cupom saiu do papel</h3>
+        <div class="sub">cupom_teste · KP-1025 · BLUETOOTH</div>
+        <div class="done-stats">
+          <div class="tile"><div class="k">Bytes</div><div class="v" style="font-size:20px">1.240</div></div>
+          <div class="tile"><div class="k">Tempo</div><div class="v" style="font-size:20px">1,2 s</div></div>
+          <div class="tile"><div class="k">Fila restante</div><div class="v o" style="font-size:20px">2</div></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+          <button class="btn btn-pri" data-go="printing">IMPRIMIR DE NOVO</button>
+          <button class="btn btn-ghost" data-go="dashboard">VOLTAR AO REGISTRO</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="s-settings" class="screen">
+      <div class="h-sec">Configurações</div>
+      <div class="pcard">
+        <h4>Impressão</h4>
+        <div class="lrow"><span class="k">Tabela de caracteres</span><span class="dots"></span><span class="v">
+          <span style="display:inline-flex;gap:6px"><button class="btn btn-pri segA" style="padding:6px 12px;font-size:11px">ASCII</button><button class="btn btn-ghost segB" style="padding:6px 12px;font-size:11px">CP850</button></span></span></div>
+        <div class="lrow"><span class="k">Largura padrão</span><span class="dots"></span><span class="v">58 mm</span></div>
+        <div class="lrow"><span class="k">Ritmo automático</span><span class="dots"></span><span class="v ok">LIGADO · por modelo</span></div>
+        <div class="lrow"><span class="k">Notificação de impressão</span><span class="dots"></span><span class="v">via PrintService</span></div>
+      </div>
+      <div class="pcard">
+        <h4>Sistema</h4>
+        <div class="sw"><div><div class="k">Iniciar com o aparelho</div><div class="d">reconecta a última impressora</div></div><button class="sw box" data-sw></button><span style="display:none"></span></div>
+        <div class="sw"><div><div class="k">Vibração nas confirmações</div><div class="d">feedback tátil</div></div><button class="box on" data-sw>✓</button></div>
+        <div class="sw"><div><div class="k">Papel escurecido (tema escuro)</div><div class="d">economia de bateria</div></div><button class="box on" data-sw>✓</button></div>
+        <div class="sw"><div><div class="k">Modo diagnóstico USB</div><div class="d">log de bytes enviados</div></div><button class="box" data-sw></button></div>
+      </div>
+      <div class="pcard">
+        <h4>Sobre — assinatura do impressor</h4>
+        <div class="lrow"><span class="k">Versão</span><span class="dots"></span><span class="v">1.0.0 · ed. 07</span></div>
+        <div class="lrow"><span class="k">Motor</span><span class="dots"></span><span class="v">ESC/POS v2.4</span></div>
+        <div class="lrow"><span class="k">RawBT comp.</span><span class="dots"></span><span class="v ok">SIM</span></div>
+        <div class="lrow"><span class="k">Servidor local</span><span class="dots"></span><span class="v">localhost:8080</span></div>
+      </div>
+    </section>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav id="bnav">
+    <button data-go="dashboard" class="act"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>PAINEL</button>
+    <button data-go="discover"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v3l2 1.5"/></svg>DESCOBRIR</button>
+    <button data-go="connected"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6"/></svg>IMPRIMIR</button>
+    <button data-go="test"><svg viewBox="0 0 24 24"><path d="M12 3v12M12 15l4 4M12 15l-4 4"/><path d="M4 21h16"/></svg>CUPOM</button>
+    <button data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>CONFIG</button>
+  </nav>
+</div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const SCREENS=['splash','dashboard','discover','found','connected','test','printing','done','settings'];
+const CRUMB={splash:'APRESENTAÇÃO',dashboard:'PAINEL',discover:'DESCOBRIR',found:'RESULTADOS',connected:'IMPRESSORA',test:'CUPOM',printing:'IMPRIMINDO',done:'CONCLUÍDO',settings:'CONFIG'};
+let timers=[];
+function go(id){
+  SCREENS.forEach(s=>{const el=$(s);if(el)el.classList.toggle('on',s===id)});
+  document.querySelectorAll('.demo-btn').forEach(b=>b.classList.toggle('act',b.dataset.screen===id));
+  document.querySelectorAll('#side .nav button,#bnav button').forEach(b=>b.classList.toggle('act',b.dataset.go===id));
+  const c=$('crumb');if(c)c.textContent=CRUMB[id]||'';
+  const st=$('stampTop');
+  if(id==='connected'||id==='test'||id==='printing'||id==='done'){
+    st.className='stamp';st.textContent='● KP-1025 · BLUETOOTH';
+  }else{st.className='stamp off';st.textContent='SEM IMPRESSORA ATIVA';}
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+document.querySelectorAll('.demo-btn').forEach(b=>b.addEventListener('click',()=>go(b.dataset.screen)));
+$('dvDesk').onclick=()=>{$('device').classList.remove('phone');$('dvDesk').classList.add('act');$('dvPhone').classList.remove('act')};
+$('dvPhone').onclick=()=>{$('device').classList.add('phone');$('dvPhone').classList.add('act');$('dvDesk').classList.remove('act')};
+$('startScan').onclick=function(){
+  if(this.dataset.running)return;this.dataset.running=1;this.textContent='VARRENDO…';this.disabled=true;
+  $('scanPaper').classList.add('scanning');$('scanStatus').textContent='PROCURANDO · BT · USB · REDE';
+  const marks=['▐','▐▌','▐▌▐'];
+  let i=0;const t=setInterval(()=>{$('scanStatus').textContent='PROCURANDO '+marks[i++%3]},300);
+  timers.push(setTimeout(()=>{clearInterval(t);$('scanPaper').classList.remove('scanning');
+    $('scanStatus').textContent='3 RESULTADOS · CARIMBO OK';
+    timers.push(setTimeout(()=>go('found'),700));},2200));
+};
+document.querySelectorAll('.cbtn').forEach(b=>b.onclick=()=>{b.textContent='CONECTANDO…';b.disabled=true;
+  const d=b.dataset.dev;
+  timers.push(setTimeout(()=>{go('connected');$('connName').textContent=d;
+    const st=$('stampTop');st.className='stamp';st.textContent='● '+d+' · CONECTADO';},1500))});
+document.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-w]').forEach(x=>{x.classList.remove('btn-pri');x.classList.add('btn-ghost')});b.classList.remove('btn-ghost');b.classList.add('btn-pri');
+  $('receipt').classList.toggle('w80',b.dataset.w==='80')});
+document.querySelectorAll('.segA,.segB').forEach(b=>b.onclick=()=>{document.querySelectorAll('.segA,.segB').forEach(x=>{x.classList.remove('btn-pri');x.classList.add('btn-ghost')});b.classList.remove('btn-ghost');b.classList.add('btn-pri')});
+document.querySelectorAll('[data-sw]').forEach(s=>s.onclick=()=>{s.classList.toggle('on');if(s.classList.contains('on'))s.textContent='✓'});
+let pInt=null;
+function runPrint(label){
+  $('printLabel').textContent='O papel está saindo… ('+label+')';
+  let p=0;const total=1240;const chunks=3;
+  $('pfill').style.width='0%';$('ptxt').textContent='0%';$('pbytes').textContent='0 de '+total+' B';$('pchunks').textContent='0 de '+chunks+' blocos';
+  $('printMono').textContent='ENVIANDO · KP-1025 [BT] · 512B/bloco';
+  if(pInt)clearInterval(pInt);
+  pInt=setInterval(()=>{p+=2.4;if(p>=100){p=100;clearInterval(pInt);$('pfill').style.width='100%';$('ptxt').textContent='100%';
+    $('printMono').textContent='TRANSMISSÃO OK · carimbando…';
+    timers.push(setTimeout(()=>go('done'),950));return}
+    $('pfill').style.width=p+'%';$('ptxt').textContent=Math.floor(p)+'%';
+    $('pbytes').textContent=Math.floor(p/100*total)+' de '+total+' B';
+    $('pchunks').textContent=Math.min(chunks,Math.floor(p/100*chunks)+1)+' de '+chunks+' blocos';
+  },110);
+}
+$('startPrint').onclick=()=>{go('printing');runPrint('cupom_teste')};
+document.querySelectorAll('[data-go="printing"]').forEach(b=>b.onclick=()=>{runPrint('nova tiragem')});
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function qrSVG(seed,n=21,s=3){const r=mulberry32(seed);let svg='';
+  for(let y=0;y<n;y++){for(let x=0;x<n;x++){let res='';
+    [[0,0],[n-7,0],[0,n-7]].forEach(f=>{if(x>=f[0]&&x<f[0]+7&&y>=f[1]&&y<f[1]+7){const dx=x-f[0]-3,dy=y-f[1]-3;const m=Math.max(Math.abs(dx),Math.abs(dy));res=m<=1||m===3?'D':'W';}});
+    if(!res)res=r()>0.46?'D':'W';
+    if(res==='D')svg+='<rect x="'+(x*s)+'" y="'+(y*s)+'" width="'+s+'" height="'+s+'"/>';}}
+  return svg;}
+$('qrBox1').innerHTML='<svg width="63" height="63" shape-rendering="crispEdges">'+qrSVG(7)+'</svg>';
+go('splash');
+</script>
+</body>
+</html>

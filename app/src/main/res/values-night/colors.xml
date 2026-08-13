@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      TipPrint Design Tokens — DARK (RAW TERMINAL)
+      Fonte única: design/tipprint-tokens.json — os valores são sobrescritos automaticamente
+      em modo noturno (values-night). Componentes referenciam os nomes tipprint_*.
+    -->
+    <color name="tipprint_bg">#0B0F14</color>
+    <color name="tipprint_surface">#11161D</color>
+    <color name="tipprint_surface_alt">#161D26</color>
+    <color name="tipprint_surface_card">#161D26</color>
+    <color name="tipprint_outline">#2A3644</color>
+    <color name="tipprint_ink">#DCE5EC</color>
+    <color name="tipprint_ink_secondary">#8FA0B0</color>
+    <color name="tipprint_ink_muted">#5B6B7A</color>
+    <color name="tipprint_primary">#60A5FA</color>
+    <color name="tipprint_primary_dark">#3B82F6</color>
+    <color name="tipprint_primary_soft">#16283F</color>
+    <color name="tipprint_on_primary">#0F172A</color>
+    <color name="tipprint_on_primary_container">#BFD9FF</color>
+    <color name="tipprint_success">#2FB96C</color>
+    <color name="tipprint_success_soft">#123523</color>
+    <color name="tipprint_warning">#F5A524</color>
+    <color name="tipprint_warning_soft">#3A2A12</color>
+    <color name="tipprint_error">#F04438</color>
+    <color name="tipprint_error_soft">#3A1513</color>
+    <color name="tipprint_on_error">#FFFFFF</color>
+
+    <!-- RAW INK: identidade da marca (fixa nos dois temas) -->
+    <color name="tipprint_brand_ink">#171310</color>
+    <color name="tipprint_brand_paper">#F7F5F0</color>
+    <color name="tipprint_brand_paper_alt">#EFEBE2</color>
+    <color name="tipprint_brand_thermal">#E84A1B</color>
+    <color name="tipprint_brand_thermal_soft">#FBE9E1</color>
+    <color name="tipprint_brand_moss">#3F6C51</color>
+
+    <!-- Estados (overlays sobre a base escura) -->
+    <color name="tipprint_state_hover_overlay">#0FDCE5EC</color>
+    <color name="tipprint_state_pressed_overlay">#24DCE5EC</color>
+    <color name="tipprint_state_focus_overlay">#2960A5FA</color>
+    <color name="tipprint_state_disabled_content">#61DCE5EC</color>
+    <color name="tipprint_state_disabled_container">#1FDCE5EC</color>
+
+    <!-- Aliases legados em modo noturno (mantêm contraste mínimo coerente) -->
+    <color name="primary">@color/tipprint_primary</color>
+    <color name="primary_dark">@color/tipprint_primary_dark</color>
+    <color name="accent">@color/tipprint_brand_thermal</color>
+    <color name="background">@color/tipprint_bg</color>
+    <color name="text_primary">@color/tipprint_ink</color>
+    <color name="text_secondary">@color/tipprint_ink_secondary</color>
+</resources>

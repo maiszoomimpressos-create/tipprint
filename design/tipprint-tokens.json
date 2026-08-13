@@ -1,0 +1,123 @@
+{
+  "schema": "tipprint/tokens/v1",
+  "product": "TipPrint",
+  "direction": {
+    "uiBase": "CLEAR",
+    "brand": "RAW INK",
+    "darkTheme": "RAW TERMINAL"
+  },
+  "platforms": ["android", "windows", "ios", "web"],
+  "color": {
+    "light": {
+      "bg": "#FFFFFF",
+      "surface": "#F6F7F9",
+      "surfaceAlt": "#EDF0F4",
+      "surfaceCard": "#FFFFFF",
+      "outline": "#E5E9F0",
+      "ink": "#0F172A",
+      "inkSecondary": "#64748B",
+      "inkMuted": "#94A3B8",
+      "primary": "#2563EB",
+      "primaryDark": "#1D4ED8",
+      "primarySoft": "#EFF4FF",
+      "onPrimary": "#FFFFFF",
+      "onPrimaryContainer": "#1D4ED8",
+      "success": "#16A34A",
+      "successSoft": "#EAF6EE",
+      "warning": "#D97706",
+      "warningSoft": "#FEF3E2",
+      "error": "#DC2626",
+      "errorSoft": "#FDECEC",
+      "onError": "#FFFFFF"
+    },
+    "dark": {
+      "bg": "#0B0F14",
+      "surface": "#11161D",
+      "surfaceAlt": "#161D26",
+      "surfaceCard": "#161D26",
+      "outline": "#2A3644",
+      "ink": "#DCE5EC",
+      "inkSecondary": "#8FA0B0",
+      "inkMuted": "#5B6B7A",
+      "primary": "#60A5FA",
+      "primaryDark": "#3B82F6",
+      "primarySoft": "#16283F",
+      "onPrimary": "#0F172A",
+      "onPrimaryContainer": "#BFD9FF",
+      "success": "#2FB96C",
+      "successSoft": "#123523",
+      "warning": "#F5A524",
+      "warningSoft": "#3A2A12",
+      "error": "#F04438",
+      "errorSoft": "#3A1513",
+      "onError": "#FFFFFF"
+    },
+    "brand": {
+      "ink": "#171310",
+      "paper": "#F7F5F0",
+      "paperAlt": "#EFEBE2",
+      "thermal": "#E84A1B",
+      "thermalSoft": "#FBE9E1",
+      "moss": "#3F6C51",
+      "accentLegacy": "#E84A1B"
+    }
+  },
+  "typography": {
+    "families": {
+      "ui": { "android": "inter", "web": "Inter", "windows": "Inter", "ios": "Inter" },
+      "mono": { "android": "jetbrainsmono", "web": "JetBrains Mono", "windows": "JetBrains Mono", "ios": "JetBrains Mono" }
+    },
+    "weights": { "regular": 400, "medium": 500, "semiBold": 600, "bold": 700, "extraBold": 800 },
+    "scale": {
+      "overline":  12,
+      "caption":   12,
+      "bodySmall": 13,
+      "body":      14,
+      "bodyLarge": 16,
+      "subtitle":  16,
+      "title":     18,
+      "headline":  22,
+      "display":   34,
+      "monoBody":  12,
+      "monoCaption": 10
+    },
+    "roles": {
+      "headline":  { "size": "headline", "weight": "extraBold", "color": "ink", "family": "ui" },
+      "title":     { "size": "title", "weight": "extraBold", "color": "ink", "family": "ui" },
+      "subtitle":  { "size": "subtitle", "weight": "bold", "color": "ink", "family": "ui" },
+      "body":      { "size": "body", "weight": "regular", "color": "ink", "family": "ui" },
+      "bodyStrong":{ "size": "body", "weight": "semiBold", "color": "ink", "family": "ui" },
+      "caption":   { "size": "caption", "weight": "medium", "color": "inkSecondary", "family": "ui" },
+      "overline":  { "size": "overline", "weight": "extraBold", "color": "inkSecondary", "family": "ui", "letterSpacing": 0.1 },
+      "mono":      { "size": "monoBody", "weight": "regular", "color": "inkSecondary", "family": "mono" },
+      "monoStrong":{ "size": "monoBody", "weight": "bold", "color": "ink", "family": "mono" }
+    }
+  },
+  "spacing": {
+    "none": 0, "xxs": 4, "xs": 8, "sm": 12, "md": 16, "lg": 20, "xl": 24, "xxl": 32
+  },
+  "radius": { "sm": 12, "md": 16, "lg": 20, "pill": 999 },
+  "border": { "hairline": 1 },
+  "shadow": {
+    "android": { "card": 1, "floating": 6 },
+    "lightElevation": "0 1px 2px rgba(15,23,42,0.04)",
+    "lightHover": "0 8px 24px rgba(15,23,42,0.06)",
+    "darkElevation": "elevation by surface tone (no shadow)"
+  },
+  "motion": { "fast": 150, "base": 250, "slow": 350, "easing": "standard" },
+  "controls": { "minHeight": 48, "horizontalPadding": 20 },
+  "states": {
+    "hoverOverlay":   { "light": "rgba(15,23,42,0.04)",  "dark": "rgba(220,229,236,0.06)" },
+    "pressedOverlay": { "light": "rgba(15,23,42,0.10)",  "dark": "rgba(220,229,236,0.14)" },
+    "focusOverlay":   { "light": "rgba(37,99,235,0.12)", "dark": "rgba(96,165,250,0.16)" },
+    "disabledContent":   { "light": "rgba(15,23,42,0.38)", "dark": "rgba(220,229,236,0.38)" },
+    "disabledContainer": { "light": "rgba(15,23,42,0.12)", "dark": "rgba(220,229,236,0.12)" }
+  },
+  "icons": { "sm": 16, "md": 20, "lg": 24, "style": "outlined", "stroke": 1.8 },
+  "brandAssets": {
+    "logo": "RAW INK ticket-stub 'B' mark",
+    "logoFile": "app/src/main/res/drawable/ic_logo_tipprint.xml",
+    "launcherFile": "app/src/main/res/drawable/ic_launcher.xml",
+    "tagline": "Conecte. Controle. Imprima."
+  }
+}

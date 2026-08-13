@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAWBTS UI PREVIEW · Protótipos de identidade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0B0F14;color:#DCE5EC;font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:48px 24px 64px}
+.wrap{max-width:1080px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:38px}
+.brand{display:flex;align-items:center;gap:14px}
+.mark{width:44px;height:44px;border-radius:12px;background:#2DD4BF;display:grid;place-items:center;color:#062019;font-family:'JetBrains Mono';font-weight:700;font-size:19px}
+.brand .t{font-family:'JetBrains Mono';font-weight:700;letter-spacing:.06em;font-size:17px}
+.brand .t span{color:#2DD4BF}
+.brand .s{font-family:'JetBrains Mono';font-size:10px;color:#5B6B7A;letter-spacing:.18em;margin-top:3px}
+.note{font-size:12px;color:#8FA0B0;text-align:right;line-height:1.7;max-width:340px}
+.note b{color:#DCE5EC}
+h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+.sub{color:#8FA0B0;font-size:14px;line-height:1.7;margin-bottom:30px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.card{border:1px solid #222C37;border-radius:12px;overflow:hidden;background:#11161D;display:flex;flex-direction:column;transition:.2s}
+.card:hover{border-color:#3A4A5B;transform:translateY(-3px)}
+.swatch{height:86px;position:relative;display:flex;align-items:flex-end;padding:12px;}
+.swatch .lbl{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:rgba(7,9,12,.72);padding:5px 9px;border-radius:5px;color:#DCE5EC}
+.s1{background:linear-gradient(120deg,#0B0F14 35%,#1C242C 65%,#2DD4BF)}
+.s2{background:linear-gradient(120deg,#FFFFFF 30%,#EFF4FF 60%,#2563EB)}
+.s3{background:linear-gradient(120deg,#F7F5F0 35%,#E8E2D6 60%,#E84A1B)}
+.body{padding:20px 20px 22px;display:flex;flex-direction:column;flex:1}
+.card h2{font-size:18px;font-weight:800;letter-spacing:-.01em;margin-bottom:6px}
+.tag{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px}
+.tag.t1{color:#2DD4BF}.tag.t2{color:#2563EB}.tag.t3{color:#E84A1B}
+.card p{font-size:12.5px;color:#8FA0B0;line-height:1.75;flex:1;margin-bottom:16px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.chip{font-family:'JetBrains Mono';font-size:9.5px;padding:4px 8px;border:1px solid #2A3644;border-radius:4px;color:#8FA0B0}
+.open{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:700;padding:12px 18px;border-radius:8px;text-decoration:none;transition:.15s}
+.open svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none}
+.o1{background:#2DD4BF;color:#062019}.o1:hover{background:#37E9D3}
+.o2{background:#2563EB;color:#fff}.o2:hover{background:#1D4ED8}
+.o3{background:#E84A1B;color:#fff}.o3:hover{background:#D43D0E}
+.foot{margin-top:42px;padding-top:20px;border-top:1px solid #1C232D;font-family:'JetBrains Mono';font-size:11px;color:#5B6B7A;line-height:2}
+.foot b{color:#8FA0B0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="brand">
+      <div class="mark">B</div>
+      <div>
+        <div class="t">RAW<span>BTS</span></div>
+        <div class="s">PROTÓTIPOS DE IDENTIDADE</div>
+      </div>
+    </div>
+    <div class="note"><b>Nada de código funcional foi alterado.</b><br>Somente demonstração visual para escolha de direção.</div>
+  </div>
+
+  <h1>RAWBTS UI PREVIEW</h1>
+  <p class="sub">Escolha uma proposta para visualizar. Cada protótipo é um aplicativo navegável completo, com as 9 telas (apresentação, dashboard, descoberta, resultados, impressora conectada, teste, imprimindo, concluída e configurações) e fluxos simulados. Use a barra no topo de cada protótipo para trocar de tela e o modo Celular/Desktop para ver o comportamento responsivo.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="swatch s1"><span class="lbl">Dark · teal · milho</span></div>
+      <div class="body">
+        <div class="tag t1">Proposta 1</div>
+        <h2>RAW TERMINAL</h2>
+        <p>Estética industrial de sala de controle. Interface escura, telemetria em fonte monoespaçada, log ao vivo, radar de varredura. Pensada para o ambiente real de PDV, lojas e bilheterias.</p>
+        <div class="meta">
+          <span class="chip">Inter + JetBrains Mono</span>
+          <span class="chip">Cantos retos 4-6px</span>
+          <span class="chip">Sidebar + bottom nav</span>
+          <span class="chip">Log tail -f</span>
+          <span class="chip">Always-on dark</span>
+        </div>
+        <a class="open o1" href="raw-terminal/index.html">Abrir RAW TERMINAL
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="swatch s2"><span class="lbl" style="color:#0F172A">Light · cobalto · pills</span></div>
+      <div class="body">
+        <div class="tag t2">Proposta 2</div>
+        <h2>CLEAR</h2>
+        <p>Produto SaaS claro e arejado, guiado por passos (1 Descubra → 2 Conecte → 3 Imprima). Botões pílula, cards suaves e linguagem amigável. Máxima facilidade para usuários leigos.</p>
+        <div class="meta">
+          <span class="chip">Inter</span>
+          <span class="chip">Pílulas 999px</span>
+          <span class="chip">Assistente 3 passos</span>
+          <span class="chip">Cards 16-20px raio</span>
+          <span class="chip">Claro + dark auto</span>
+        </div>
+        <a class="open o2" href="clear/index.html">Abrir CLEAR
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="swatch s3"><span class="lbl" style="color:#171310">Papel · tinta · laranja térmico</span></div>
+      <div class="body">
+        <div class="tag t3">Proposta 3</div>
+        <h2>RAW INK</h2>
+        <p>Identidade editorial de papel &amp; tinta que celebra a impressão térmica: recibos renderizados, carimbos de status, perfurações tracejadas e tipografia display. Forte memorabilidade de marca.</p>
+        <div class="meta">
+          <span class="chip">Space Grotesk + IBM Plex Mono</span>
+          <span class="chip">Cantos afiados</span>
+          <span class="chip">Carimbos + perfurações</span>
+          <span class="chip">Recibo animado</span>
+          <span class="chip">Papel / tinta escura</span>
+        </div>
+        <a class="open o3" href="raw-ink/index.html">Abrir RAW INK
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Onde estão os arquivos:<br>
+    <b>ui-preview/raw-terminal/index.html</b> · <b>ui-preview/clear/index.html</b> · <b>ui-preview/raw-ink/index.html</b><br>
+    Os protótipos são 100% estáticos (HTML/CSS/JS). Nenhuma lógica do app Android, PrintServer, API ou banco foi tocada.
+  </div>
+</div>
+</body>
+</html>

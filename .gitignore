@@ -1,0 +1,22 @@
+# Gradle / Android
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+.cxx/
+captures/
+
+# Ambiente e segredos
+.env
+*.keystore
+*.jks
+
+# Node
+node_modules/
+
+# Sistema
+Thumbs.db
+.DS_Store

@@ -1,0 +1,87 @@
+<!-- Auto-generated por design/tools/generate.mjs — NÃO editar à mão.
+     Fonte única: design/tipprint-tokens.json
+     Uso: mesclar em App.xaml do TipPrint.Desktop e reparar referências com {StaticResource TipPrint.*} -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- bg (light) -->
+  <Color x:Key="TipPrint.bg.Color">#FFFFFF</Color>
+  <SolidColorBrush x:Key="TipPrint.bg.Brush" Color="{StaticResource TipPrint.bg.Color}" />
+  <!-- surface (light) -->
+  <Color x:Key="TipPrint.surface.Color">#F6F7F9</Color>
+  <SolidColorBrush x:Key="TipPrint.surface.Brush" Color="{StaticResource TipPrint.surface.Color}" />
+  <!-- surfaceAlt (light) -->
+  <Color x:Key="TipPrint.surfaceAlt.Color">#EDF0F4</Color>
+  <SolidColorBrush x:Key="TipPrint.surfaceAlt.Brush" Color="{StaticResource TipPrint.surfaceAlt.Color}" />
+  <!-- surfaceCard (light) -->
+  <Color x:Key="TipPrint.surfaceCard.Color">#FFFFFF</Color>
+  <SolidColorBrush x:Key="TipPrint.surfaceCard.Brush" Color="{StaticResource TipPrint.surfaceCard.Color}" />
+  <!-- outline (light) -->
+  <Color x:Key="TipPrint.outline.Color">#E5E9F0</Color>
+  <SolidColorBrush x:Key="TipPrint.outline.Brush" Color="{StaticResource TipPrint.outline.Color}" />
+  <!-- ink (light) -->
+  <Color x:Key="TipPrint.ink.Color">#0F172A</Color>
+  <SolidColorBrush x:Key="TipPrint.ink.Brush" Color="{StaticResource TipPrint.ink.Color}" />
+  <!-- inkSecondary (light) -->
+  <Color x:Key="TipPrint.inkSecondary.Color">#64748B</Color>
+  <SolidColorBrush x:Key="TipPrint.inkSecondary.Brush" Color="{StaticResource TipPrint.inkSecondary.Color}" />
+  <!-- inkMuted (light) -->
+  <Color x:Key="TipPrint.inkMuted.Color">#94A3B8</Color>
+  <SolidColorBrush x:Key="TipPrint.inkMuted.Brush" Color="{StaticResource TipPrint.inkMuted.Color}" />
+  <!-- primary (light) -->
+  <Color x:Key="TipPrint.primary.Color">#2563EB</Color>
+  <SolidColorBrush x:Key="TipPrint.primary.Brush" Color="{StaticResource TipPrint.primary.Color}" />
+  <!-- primaryDark (light) -->
+  <Color x:Key="TipPrint.primaryDark.Color">#1D4ED8</Color>
+  <SolidColorBrush x:Key="TipPrint.primaryDark.Brush" Color="{StaticResource TipPrint.primaryDark.Color}" />
+  <!-- primarySoft (light) -->
+  <Color x:Key="TipPrint.primarySoft.Color">#EFF4FF</Color>
+  <SolidColorBrush x:Key="TipPrint.primarySoft.Brush" Color="{StaticResource TipPrint.primarySoft.Color}" />
+  <!-- onPrimary (light) -->
+  <Color x:Key="TipPrint.onPrimary.Color">#FFFFFF</Color>
+  <SolidColorBrush x:Key="TipPrint.onPrimary.Brush" Color="{StaticResource TipPrint.onPrimary.Color}" />
+  <!-- onPrimaryContainer (light) -->
+  <Color x:Key="TipPrint.onPrimaryContainer.Color">#1D4ED8</Color>
+  <SolidColorBrush x:Key="TipPrint.onPrimaryContainer.Brush" Color="{StaticResource TipPrint.onPrimaryContainer.Color}" />
+  <!-- success (light) -->
+  <Color x:Key="TipPrint.success.Color">#16A34A</Color>
+  <SolidColorBrush x:Key="TipPrint.success.Brush" Color="{StaticResource TipPrint.success.Color}" />
+  <!-- successSoft (light) -->
+  <Color x:Key="TipPrint.successSoft.Color">#EAF6EE</Color>
+  <SolidColorBrush x:Key="TipPrint.successSoft.Brush" Color="{StaticResource TipPrint.successSoft.Color}" />
+  <!-- warning (light) -->
+  <Color x:Key="TipPrint.warning.Color">#D97706</Color>
+  <SolidColorBrush x:Key="TipPrint.warning.Brush" Color="{StaticResource TipPrint.warning.Color}" />
+  <!-- warningSoft (light) -->
+  <Color x:Key="TipPrint.warningSoft.Color">#FEF3E2</Color>
+  <SolidColorBrush x:Key="TipPrint.warningSoft.Brush" Color="{StaticResource TipPrint.warningSoft.Color}" />
+  <!-- error (light) -->
+  <Color x:Key="TipPrint.error.Color">#DC2626</Color>
+  <SolidColorBrush x:Key="TipPrint.error.Brush" Color="{StaticResource TipPrint.error.Color}" />
+  <!-- errorSoft (light) -->
+  <Color x:Key="TipPrint.errorSoft.Color">#FDECEC</Color>
+  <SolidColorBrush x:Key="TipPrint.errorSoft.Brush" Color="{StaticResource TipPrint.errorSoft.Color}" />
+  <!-- onError (light) -->
+  <Color x:Key="TipPrint.onError.Color">#FFFFFF</Color>
+  <SolidColorBrush x:Key="TipPrint.onError.Brush" Color="{StaticResource TipPrint.onError.Color}" />
+  <!-- ink (brand) -->
+  <Color x:Key="TipPrint.BrandInk.Color">#171310</Color>
+  <SolidColorBrush x:Key="TipPrint.BrandInk.Brush" Color="{StaticResource TipPrint.BrandInk.Color}" />
+  <!-- paper (brand) -->
+  <Color x:Key="TipPrint.BrandPaper.Color">#F7F5F0</Color>
+  <SolidColorBrush x:Key="TipPrint.BrandPaper.Brush" Color="{StaticResource TipPrint.BrandPaper.Color}" />
+  <!-- paperAlt (brand) -->
+  <Color x:Key="TipPrint.BrandPaperAlt.Color">#EFEBE2</Color>
+  <SolidColorBrush x:Key="TipPrint.BrandPaperAlt.Brush" Color="{StaticResource TipPrint.BrandPaperAlt.Color}" />
+  <!-- thermal (brand) -->
+  <Color x:Key="TipPrint.BrandThermal.Color">#E84A1B</Color>
+  <SolidColorBrush x:Key="TipPrint.BrandThermal.Brush" Color="{StaticResource TipPrint.BrandThermal.Color}" />
+  <!-- thermalSoft (brand) -->
+  <Color x:Key="TipPrint.BrandThermalSoft.Color">#FBE9E1</Color>
+  <SolidColorBrush x:Key="TipPrint.BrandThermalSoft.Brush" Color="{StaticResource TipPrint.BrandThermalSoft.Color}" />
+  <!-- moss (brand) -->
+  <Color x:Key="TipPrint.BrandMoss.Color">#3F6C51</Color>
+  <SolidColorBrush x:Key="TipPrint.BrandMoss.Brush" Color="{StaticResource TipPrint.BrandMoss.Color}" />
+  <!-- accentLegacy (brand) -->
+  <Color x:Key="TipPrint.BrandAccentLegacy.Color">#E84A1B</Color>
+  <SolidColorBrush x:Key="TipPrint.BrandAccentLegacy.Brush" Color="{StaticResource TipPrint.BrandAccentLegacy.Color}" />
+</ResourceDictionary>

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RawBTS · PROPOSTA 2 · CLEAR (Protótipo visual)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS CLEAR ============ */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --surface2:#EDF0F4;
+  --line:#E5E9F0; --ink:#0F172A; --dim:#64748B; --mute:#94A3B8;
+  --pri:#2563EB; --pri-so:#EFF4FF; --pri-deep:#1D4ED8;
+  --ok:#16A34A; --ok-so:#EAF6EE; --warn:#D97706; --warn-so:#FEF3E2;
+  --err:#DC2626; --err-so:#FDECEC;
+  --ui:'Inter',system-ui,-apple-system,sans-serif;
+  --r:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#EEF1F6;font-family:var(--ui);color:var(--ink);font-size:14px}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+[hidden]{display:none!important}
+/* ============ BARRA DE DEMONSTRAÇÃO ============ */
+#demo{position:fixed;inset:0 0 auto 0;z-index:999;height:42px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#0F172A;font-size:12px}
+#demo .tag{color:#93C5FD;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:11px;white-space:nowrap}
+#demo .sep{width:1px;height:20px;background:#334155}
+#demo .sc{margin-left:4px;display:flex;gap:6px;overflow-x:auto;flex:1}
+#demo button.demo-btn{font-size:11.5px;font-weight:600;padding:6px 12px;border:1px solid #334155;border-radius:999px;color:#CBD5E1;white-space:nowrap}
+#demo button.demo-btn:hover{border-color:#64748B;color:#fff}
+#demo button.demo-btn.act{background:#2563EB;border-color:#2563EB;color:#fff}
+#demo .dv{display:flex;gap:6px}
+#demo .dv button{padding:6px 12px;font-size:11.5px;font-weight:600;border:1px solid #334155;border-radius:999px;color:#CBD5E1}
+#demo .dv button.act{background:#2563EB;border-color:#2563EB;color:#fff}
+#demo .note{font-size:10px;color:#64748B;white-space:nowrap}
+/* ============ PALCO / DISPOSITIVO ============ */
+#stage{padding:62px 20px 34px;display:flex;justify-content:center}
+#device{width:100%;max-width:1120px;background:var(--bg);border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(15,23,42,.12);position:relative;transition:.3s;min-height:720px}
+#device.phone{max-width:400px;border-radius:40px;box-shadow:0 0 0 10px #0F172A,0 30px 60px rgba(15,23,42,.35)}
+.app{display:grid;grid-template-columns:216px 1fr;min-height:720px}
+#device.phone .app{grid-template-columns:1fr}
+/* ============ SIDEBAR ============ */
+#side{background:#FBFCFE;border-right:1px solid var(--line);display:flex;flex-direction:column;padding:22px 14px}
+.brand{display:flex;align-items:center;gap:11px;padding:0 8px 22px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.brand .mark{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#2563EB,#1D4ED8);display:grid;place-items:center;color:#fff;font-weight:900;font-size:15px;box-shadow:0 6px 14px rgba(37,99,235,.35)}
+.brand .name{font-weight:800;font-size:16px;letter-spacing:-.01em}
+.brand .name span{color:var(--pri)}
+.brand .ver{font-size:10px;color:var(--mute);display:block;font-weight:500;margin-top:1px}
+.nav{display:flex;flex-direction:column;gap:3px;flex:1;margin-top:10px}
+.nav button{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:12px;font-size:13.5px;font-weight:600;color:var(--dim);text-align:left}
+.nav button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav button:hover{background:var(--surface);color:var(--ink)}
+.nav button.act{background:var(--pri-so);color:var(--pri-deep)}
+.side-foot{margin-top:14px;background:var(--surface);border-radius:14px;padding:14px;font-size:11.5px;color:var(--dim);line-height:1.8}
+.side-foot .t{display:flex;align-items:center;gap:7px;font-weight:700;color:var(--ok)}
+.side-foot .t i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;animation:pulse 1.8s infinite}
+/* ============ MAIN ============ */
+#main{display:flex;flex-direction:column;min-width:0;background:#FCFDFE}
+/* wizard steps */
+.steps{display:flex;align-items:center;gap:8px;padding:14px 24px 0}
+.step{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--mute);white-space:nowrap}
+.step .n{width:22px;height:22px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--dim)}
+.step.done{color:var(--pri-deep)}
+.step.done .n{background:var(--pri);color:#fff}
+.step.now{color:var(--ink)}
+.step.now .n{background:var(--pri-so);color:var(--pri-deep);box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+.step-line{flex:1;height:2px;background:var(--line);border-radius:2px;min-width:16px}
+.step-line.on{background:var(--pri)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px 12px;flex-wrap:wrap}
+.top .t-title{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;padding:8px 13px;border-radius:999px;background:var(--surface);color:var(--dim)}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.pill.ok{background:var(--ok-so);color:var(--ok)}
+.pill.ok i{background:var(--ok);animation:pulse 1.8s infinite}
+.pill.queue{background:var(--warn-so);color:var(--warn)}
+.content{padding:22px 24px 28px;display:flex;flex-direction:column;gap:20px;flex:1}
+/* ============ TELAS ============ */
+.screen{display:none;flex-direction:column;gap:20px;min-width:0}
+.screen.on{display:flex;animation:fadeup .35s ease both}
+.h-sec{font-size:13px;font-weight:800;color:var(--dim);display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.05em}
+.h-sec::after{content:"";flex:1;height:1px;background:var(--line)}
+h3{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.dim{color:var(--dim)} .mute{color:var(--mute)}
+/* hero card */
+.hero{background:linear-gradient(135deg,#EFF4FF,#FFFFFF 60%);border:1px solid #DCE6FB;border-radius:20px;padding:22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.hero .hic{width:54px;height:54px;border-radius:16px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;flex:none;box-shadow:0 6px 16px rgba(15,23,42,.07)}
+.hero .hic svg{width:26px;height:26px;stroke:var(--pri);fill:none;stroke-width:1.8}
+.hero .hi{flex:1;min-width:160px}
+.hero .hi .n{font-size:17px;font-weight:800}
+.hero .hi .s{font-size:12.5px;color:var(--dim);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.hero .hi .s b{color:var(--ok);font-weight:700}
+.hero .hi .s .chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--dim)}
+/* kpi tiles */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.tile .k{font-size:11px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-size:24px;font-weight:900;letter-spacing:-.02em;margin-top:8px}
+.tile .v.b{color:var(--pri)} .tile .v.o{color:var(--warn)} .tile .v.g{color:var(--ok)}
+.tile .s{font-size:11px;color:var(--dim);margin-top:6px}
+/* cards */
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.card h4{font-size:12.5px;font-weight:800;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F0F2F6;font-size:13.5px}
+.row:last-child{border-bottom:none}
+.row .k{color:var(--dim)} .row .v{font-weight:700;text-align:right}
+.row .v.ok{color:var(--ok)} .row .v.amb{color:var(--warn)}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:700;padding:13px 22px;border-radius:999px;transition:.18s;border:1px solid transparent}
+.btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}
+.btn:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.btn-pri{background:var(--pri);color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.3)}
+.btn-pri:hover{background:var(--pri-deep);transform:translateY(-1px)}
+.btn-soft{background:var(--pri-so);color:var(--pri-deep)}
+.btn-soft:hover{background:#E2EBFC}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--dim)}
+.btn-ghost:hover{border-color:var(--dim);color:var(--ink)}
+.btn-err{background:var(--err-so);color:var(--err)}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.5;pointer-events:none}
+/* switches */
+.sw{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid #F0F2F6}
+.sw .k{font-size:14px;font-weight:600} .sw .d{font-size:12px;color:var(--mute);margin-top:2px}
+.switch{position:relative;width:42px;height:24px;border-radius:999px;background:#DCE1E8;transition:.2s;flex:none}
+.switch.on{background:var(--pri)}
+.switch i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch.on i{left:21px}
+/* segmented */
+.seg{display:inline-flex;background:var(--surface);border-radius:999px;padding:4px;gap:2px}
+.seg button{font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;color:var(--dim)}
+.seg button.act{background:#fff;color:var(--pri-deep);box-shadow:0 1px 4px rgba(15,23,42,.12)}
+/* printer rows */
+.prow{display:flex;align-items:center;gap:14px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:var(--r);transition:.15s;flex-wrap:wrap}
+.prow:hover{border-color:#C9D6F6;box-shadow:0 4px 14px rgba(37,99,235,.08)}
+.prow+.prow{margin-top:12px}
+.ptype{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;flex:none}
+.ptype svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2}
+.ptype.bt{background:#2563EB}
+.ptype.usb{background:#D97706}
+.ptype.net{background:#0D9488}
+.pinfo{flex:1;min-width:170px}
+.pinfo .n{font-size:15px;font-weight:700}
+.pinfo .d{font-size:12px;color:var(--dim);margin-top:3px}
+.pstat{font-size:11.5px;font-weight:800;color:var(--ok);background:var(--ok-so);border-radius:999px;padding:5px 12px;display:flex;align-items:center;gap:5px}
+.pstat.off{color:var(--dim);background:var(--surface)}
+.prow .btn{padding:10px 18px;font-size:13px}
+/* orb scan */
+.orb-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px 0;text-align:center}
+.orb{position:relative;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 50% 42%,#BFD3FB,#EFF4FF 62%,#fff);display:grid;place-items:center;box-shadow:0 10px 30px rgba(37,99,235,.18)}
+.orb::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(37,99,235,.25);animation:halo 1.8s ease-out infinite}
+.orb .ic{width:56px;height:56px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 4px 12px rgba(37,99,235,.2)}
+.orb .ic svg{width:28px;height:28px;stroke:var(--pri);fill:none;stroke-width:1.8}
+.scan-status{font-size:14px;font-weight:800;color:var(--pri-deep)}
+.scan-meta{font-size:12px;color:var(--dim)}
+.chk{display:flex;flex-direction:column;gap:9px}
+.chk .c{display:flex;align-items:center;gap:11px;font-size:13px;font-weight:600;padding:12px 15px;background:#fff;border:1px solid var(--line);border-radius:14px;color:var(--dim)}
+.chk .c .st{width:20px;height:20px;border:2px solid #CBD5E1;border-radius:7px;display:grid;place-items:center;font-size:11px;color:transparent;flex:none;font-weight:900;transition:.2s}
+.chk .c.done{color:var(--ink);border-color:#C9D6F6}
+.chk .c.done .st{background:var(--pri);border-color:var(--pri);color:#fff}
+.chk .c.on .st{border-color:var(--pri);color:var(--pri);animation:blink 1s steps(1) infinite}
+/* conn banner */
+.conn{display:flex;align-items:center;gap:16px;padding:20px;background:linear-gradient(135deg,var(--ok-so),#fff 65%);border:1px solid #C4E6D2;border-radius:20px;flex-wrap:wrap}
+.conn .ic{width:52px;height:52px;border-radius:16px;background:var(--ok);display:grid;place-items:center;flex:none;box-shadow:0 8px 18px rgba(22,163,74,.3)}
+.conn .ic svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2}
+.conn .ci{flex:1;min-width:160px}
+.conn .ci .n{font-size:18px;font-weight:800}
+.conn .ci .s{font-size:12.5px;color:var(--dim);margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.conn .ci .s .bd{font-weight:800;color:var(--ok)}
+/* progress */
+.progress{height:20px;border-radius:999px;background:var(--surface);overflow:hidden;position:relative}
+.progress .fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#3B82F6,#2563EB);transition:width .12s linear;position:relative}
+.progress .fill::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.5) 50%,transparent 70%);animation:shimmer 1.2s linear infinite}
+.progress .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--ink)}
+.pmono{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;color:var(--pri-deep);font-weight:600;min-height:18px}
+/* paper receipt */
+.paper{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 14px;font-family:ui-monospace,Consolas,monospace;font-size:10px;line-height:1.75;width:250px;margin:0 auto;box-shadow:0 8px 24px rgba(15,23,42,.1);transition:width .3s}
+.paper.w80{width:340px;font-size:13px}
+.paper .ct{text-align:center}
+.paper .b{font-weight:700}
+.paper .db{color:#64748B}
+.paper .dd{display:flex;justify-content:space-between;gap:8px}
+.paper .cut{text-align:center;letter-spacing:.4em;color:#CBD5E1;margin-top:6px}
+.paper svg{display:block;margin:4px auto 0}
+/* splash */
+.splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 24px;text-align:center;min-height:640px;background:
+  radial-gradient(600px 300px at 50% -10%,rgba(37,99,235,.1),transparent),
+  radial-gradient(500px 260px at 90% 110%,rgba(13,148,136,.08),transparent)}
+.splash-m{max-width:600px;width:100%}
+.splash .mark-lg{width:92px;height:92px;margin:0 auto 24px;border-radius:26px;background:linear-gradient(135deg,#3B82F6,#1D4ED8);display:grid;place-items:center;color:#fff;font-weight:900;font-size:38px;box-shadow:0 18px 44px rgba(37,99,235,.4)}
+.splash h1{font-size:clamp(40px,7vw,60px);font-weight:900;letter-spacing:-.03em}
+.splash h1 span{color:var(--pri)}
+.splash .tag{font-size:clamp(14px,2.4vw,17px);font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:var(--dim);margin:16px 0 34px}
+.splash .rows3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:36px;text-align:left}
+.splash .rows3 div{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.splash .rows3 .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;margin-bottom:10px}
+.splash .rows3 .ic svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2}
+.splash .rows3 .c1{background:var(--pri)} .splash .rows3 .c2{background:var(--ok)} .splash .rows3 .c3{background:#0D9488}
+.splash .rows3 .n{font-size:14px;font-weight:800}
+.splash .rows3 .d{font-size:11.5px;color:var(--mute);margin-top:4px;line-height:1.5}
+.splash .btn{font-size:15px;padding:15px 30px}
+.splash .ver{font-size:11px;color:var(--mute);margin-top:24px;font-weight:600}
+/* jobs */
+.job{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;padding:10px 0;border-bottom:1px solid #F0F2F6}
+.job:last-child{border-bottom:none}
+.job .id{font-family:ui-monospace,Consolas,monospace;color:var(--pri);font-weight:700}
+.job .st{font-size:11.5px;font-weight:800;color:var(--ok);background:var(--ok-so);border-radius:999px;padding:4px 10px}
+.job .st.wait{color:var(--warn);background:var(--warn-so)}
+/* done */
+.done-box{display:flex;flex-direction:column;align-items:center;text-align:center;padding:38px 22px}
+.done-box .chk{width:78px;height:78px;border-radius:50%;background:var(--ok-so);display:grid;place-items:center}
+.done-box .chk svg{width:42px;height:42px;stroke:var(--ok);fill:none;stroke-width:2.2;stroke-dasharray:60;stroke-dashoffset:60;animation:draw .6s ease forwards}
+.done-box h3{margin-top:20px;font-size:22px}
+.done-box .sub{font-size:13px;color:var(--dim);margin-top:6px}
+.done-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0;width:100%;max-width:460px}
+/* animations */
+@keyframes blink{50%{opacity:.35}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.45)}70%{box-shadow:0 0 0 9px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+@keyframes halo{0%{transform:scale(.8);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* bottomnav */
+#device.phone #side{display:none}
+#device.phone #bnav{display:flex}
+#bnav{display:none;position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:6px 6px calc(10px + env(safe-area-inset-bottom));z-index:50}
+#bnav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:700;color:var(--mute);padding:6px 10px;border-radius:12px}
+#bnav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9}
+#bnav button.act{color:var(--pri)}
+@media(max-width:1020px){.tiles{grid-template-columns:repeat(2,1fr)}#side{display:none}#bnav{display:flex}.app{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ========== BARRA DE DEMONSTRAÇÃO (não faz parte do produto) ========== -->
+<div id="demo">
+  <span class="tag">CLEAR</span>
+  <span class="sep"></span>
+  <div class="sc">
+    <button class="demo-btn act" data-screen="splash">Início</button>
+    <button class="demo-btn" data-screen="dashboard">Dashboard</button>
+    <button class="demo-btn" data-screen="discover">Descobrir</button>
+    <button class="demo-btn" data-screen="found">Encontradas</button>
+    <button class="demo-btn" data-screen="connected">Conectada</button>
+    <button class="demo-btn" data-screen="test">Teste</button>
+    <button class="demo-btn" data-screen="printing">Imprimindo</button>
+    <button class="demo-btn" data-screen="done">Concluída</button>
+    <button class="demo-btn" data-screen="settings">Config</button>
+  </div>
+  <span class="sep"></span>
+  <div class="dv">
+    <button id="dvDesk" class="act">Desktop</button>
+    <button id="dvPhone">Celular</button>
+  </div>
+  <span class="sep"></span>
+  <span class="note">PROTÓTIPO VISUAL · dados fictícios</span>
+</div>
+
+<div id="stage">
+<div id="device">
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside id="side">
+    <div class="brand">
+      <div class="mark">B</div>
+      <div>
+        <div class="name">Raw<span>BTS</span></div>
+        <span class="ver">Versão 1.0.0 · build 07</span>
+      </div>
+    </div>
+    <div class="nav">
+      <button data-go="dashboard" class="act"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Painel</button>
+      <button data-go="discover"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v3l2 1.5"/></svg>Descobrir</button>
+      <button data-go="connected"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6" rx="1"/></svg>Impressora</button>
+      <button data-go="test"><svg viewBox="0 0 24 24"><path d="M12 3v12M12 15l4 4M12 15l-4 4"/><path d="M4 21h16"/></svg>Teste</button>
+      <button data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>Config</button>
+    </div>
+    <div class="side-foot">
+      <div class="t"><i></i>Serviço ativo</div>
+      Motor ESC/POS · QR e código de barras<br>
+      Conecta via Bluetooth, USB ou rede<br>
+      Compatível com impressão RawBT
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="steps">
+      <div class="step" data-st="1"><span class="n">1</span>Descobrir</div>
+      <div class="step-line" data-sl="1"></div>
+      <div class="step" data-st="2"><span class="n">2</span>Conectar</div>
+      <div class="step-line" data-sl="2"></div>
+      <div class="step" data-st="3"><span class="n">3</span>Imprimir</div>
+    </div>
+    <div class="top">
+      <div class="t-title">RawBTS <span style="color:var(--mute);font-weight:700;font-size:14px">·</span> <span id="topTitle" style="font-size:14px;color:var(--dim);font-weight:700">Apresentação</span></div>
+      <div style="display:flex;gap:8px">
+        <span id="topPill" class="pill"><i></i>Nenhuma impressora</span>
+        <span class="pill queue">Fila: 2 trabalhos</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+    <!-- SPLASH -->
+    <section id="s-splash" class="screen">
+      <div class="splash">
+        <div class="splash-m">
+          <div class="mark-lg">B</div>
+          <h1>Raw<span>BTS</span></h1>
+          <div class="tag">Conecte · Controle · Imprima</div>
+          <div class="rows3">
+            <div><div class="ic c1"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div><div class="n">Simples</div><div class="d">Descubra sua impressora e conecte em 3 passos, sem complicação.</div></div>
+            <div><div class="ic c2"><svg viewBox="0 0 24 24"><path d="M12 3v12M12 15l4 4M12 15l-4 4"/></svg></div><div class="n">Confiável</div><div class="d">Fila inteligente e ritmo automático para não travar sua impressora.</div></div>
+            <div><div class="ic c3"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6"/><rect x="3" y="9" width="18" height="6" rx="1"/></svg></div><div class="n">Universal</div><div class="d">Bluetooth, USB e rede — no Android, no Windows e, em breve, iOS.</div></div>
+          </div>
+          <button class="btn btn-pri" data-go="dashboard">Abrir o app →
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <div class="ver">v1.0 · Android · Windows · iOS (em breve)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="s-dashboard" class="screen">
+      <div class="hero">
+        <div class="hic"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6" rx="1"/></svg></div>
+        <div class="hi">
+          <div class="n" id="heroName">Nenhuma impressora conectada</div>
+          <div class="s">
+            <span class="chip">Bluetooth</span><span class="chip">58 mm</span><span class="chip">KP-1025</span>
+            <span style="margin-left:auto"><b>●</b> pronto para configurar</span>
+          </div>
+        </div>
+        <button class="btn btn-pri" data-go="discover">Encontrar impressora</button>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">Impressões hoje</div><div class="v b">34</div><div class="s">+12 comparado a ontem</div></div>
+        <div class="tile"><div class="k">Na fila</div><div class="v o">2</div><div class="s">trabalho #1041 e #1042</div></div>
+        <div class="tile"><div class="k">Última impressão</div><div class="v" style="font-size:16px;margin-top:12px">há 42 s</div><div class="s">ingresso_1882 · OK</div></div>
+        <div class="tile"><div class="k">Taxa de sucesso</div><div class="v g">99,2%</div><div class="s">últimos 30 dias</div></div>
+      </div>
+      <div class="card">
+        <h4>Minha impressora</h4>
+        <div class="rows">
+          <div class="row"><span class="k">Modelo</span><span class="v">KP-1025 · 58 mm</span></div>
+          <div class="row"><span class="k">Conexão</span><span class="v ok">Bluetooth conectado</span></div>
+          <div class="row"><span class="k">Endereço</span><span class="v">86:67:7A:B6:30:57</span></div>
+          <div class="row"><span class="k">Ritmo de impressão</span><span class="v">automático · lento e seguro</span></div>
+          <div class="row"><span class="k">Tabela de caracteres</span><span class="v">ASCII (acentos simplificados)</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Impressões recentes</h4>
+        <div class="job"><span class="id">#1042</span><span style="flex:1">ingresso_1884 · 2.048 B</span><span style="color:var(--mute);font-size:12px">aguardando</span><span class="st wait">NA FILA</span></div>
+        <div class="job"><span class="id">#1041</span><span style="flex:1">ingresso_1883 · 2.048 B</span><span style="color:var(--mute);font-size:12px">imprimindo</span><span class="st">IMPRIMINDO</span></div>
+        <div class="job"><span class="id">#1040</span><span style="flex:1">cupom_teste · 1.240 B</span><span style="color:var(--mute);font-size:12px">há 3 min</span><span class="st">CONCLUÍDO</span></div>
+      </div>
+    </section>
+
+    <!-- DISCOVER -->
+    <section id="s-discover" class="screen">
+      <div class="h-sec">Passo 1 · Descubra</div>
+      <div class="orb-wrap">
+        <div class="orb"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v3l2 1.5"/></svg></div></div>
+        <div class="scan-status" id="scanStatus">Pronto para procurar impressoras</div>
+        <div class="scan-meta">Vamos procurar impressoras Bluetooth, USB e de rede perto de você.</div>
+      </div>
+      <div class="chk">
+        <div class="c" id="ck1"><span class="st">✓</span>Permissão de Bluetooth concedida</div>
+        <div class="c" id="ck2"><span class="st">✓</span>Acesso USB host verificado</div>
+        <div class="c" id="ck3"><span class="st">✓</span>Rede local disponível (porta 9100)</div>
+      </div>
+      <button class="btn btn-pri btn-block" id="startScan">Iniciar busca</button>
+      <p class="dim" style="font-size:12.5px;line-height:1.7">Dica: ligue a impressora e deixe-a próxima. Se for Bluetooth, pareie antes em <b>Configurações → Bluetooth</b>. Se for rede, confira o IP (porta 9100).</p>
+    </section>
+
+    <!-- FOUND -->
+    <section id="s-found" class="screen">
+      <div class="h-sec">Passo 1 ✓ · 3 impressoras encontradas</div>
+      <div class="prow">
+        <span class="ptype bt"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6" rx="1"/></svg></span>
+        <div class="pinfo"><div class="n">KP-1025</div><div class="d">Bluetooth · 86:67:7A:B6:30:57 · 58 mm</div></div>
+        <span class="pstat"><i></i>PAREADA</span>
+        <button class="btn btn-pri cbtn" data-dev="KP-1025">Conectar</button>
+      </div>
+      <div class="prow">
+        <span class="ptype net"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+        <div class="pinfo"><div class="n">EPSON TM-T20</div><div class="d">Rede · 192.168.0.24:9100 · 80 mm</div></div>
+        <span class="pstat off"><i></i>DISPONÍVEL</span>
+        <button class="btn btn-ghost cbtn" data-dev="EPSON TM-T20">Conectar</button>
+      </div>
+      <div class="prow">
+        <span class="ptype usb"><svg viewBox="0 0 24 24"><path d="M9 3h6v3l2 2v5h-2v4H9v-4H7V8l2-2V3z"/><circle cx="12" cy="13" r="1"/></svg></span>
+        <div class="pinfo"><div class="n">Gprinter GP-3150T</div><div class="d">USB · cabo OTG conectado · 80 mm</div></div>
+        <span class="pstat off"><i></i>DISPONÍVEL</span>
+        <button class="btn btn-ghost cbtn" data-dev="Gprinter">Conectar</button>
+      </div>
+      <div class="card" style="background:var(--surface);border-style:dashed">
+        <h4>Não encontrou sua impressora?</h4>
+        <p style="font-size:13px;color:var(--dim);line-height:1.8">1. Ligue a impressora perto do aparelho.<br>2. Bluetooth: pareie antes nas configurações do sistema.<br>3. Rede: confirme se está na mesma rede Wi-Fi da impressora.<br>4. Tente novamente a busca.</p>
+      </div>
+    </section>
+
+    <!-- CONNECTED -->
+    <section id="s-connected" class="screen">
+      <div class="conn">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div>
+        <div class="ci">
+          <div class="n" id="connName">KP-1025</div>
+          <div class="s"><span class="bd">● Conectado</span> via Bluetooth <span class="chip" style="font-size:11px">58 mm</span></div>
+        </div>
+        <button class="btn btn-soft" data-go="test">Testar impressão</button>
+        <button class="btn btn-err">Desconectar</button>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">Conexão</div><div class="v" style="font-size:16px;margin-top:12px">Bluetooth</div><div class="s">SPP estável · 4 h ativa</div></div>
+        <div class="tile"><div class="k">Largura</div><div class="v">58 mm</div><div class="s">32 colunas</div></div>
+        <div class="tile"><div class="k">Trabalhos na fila</div><div class="v o">2</div><div class="s">#1041 · #1042</div></div>
+        <div class="tile"><div class="k">Ritmo</div><div class="v" style="font-size:15px;margin-top:12px">automático</div><div class="s">perfil lento e seguro</div></div>
+      </div>
+      <div class="card">
+        <h4>Trabalhos da impressora</h4>
+        <div class="job"><span class="id">#1042</span><span style="flex:1">ingresso_1884.ticket</span><span style="color:var(--mute);font-size:12px">2.048 B</span><span class="st wait">AGUARDANDO</span></div>
+        <div class="job"><span class="id">#1041</span><span style="flex:1">ingresso_1883.ticket</span><span style="color:var(--mute);font-size:12px">2.048 B</span><span class="st">IMPRIMINDO</span></div>
+        <div class="job"><span class="id">#1040</span><span style="flex:1">cupom_teste</span><span style="color:var(--mute);font-size:12px">1.240 B</span><span class="st">CONCLUÍDO</span></div>
+      </div>
+      <div class="card">
+        <h4>Capacidades identificadas</h4>
+        <div class="rows">
+          <div class="row"><span class="k">Código QR</span><span class="v ok">Compatível (ESC/POS)</span></div>
+          <div class="row"><span class="k">Código de barras EAN-13</span><span class="v ok">Compatível</span></div>
+          <div class="row"><span class="k">Corte de papel</span><span class="v ok">Automático</span></div>
+          <div class="row"><span class="k">Abertura de gaveta</span><span class="v">Suportada</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEST -->
+    <section id="s-test" class="screen">
+      <div class="h-sec">Passo 3 · Teste de impressão</div>
+      <div class="card" style="display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:230px;text-align:center">
+          <h4>Pré-visualização do cupom</h4>
+          <div class="paper" id="paperPreview" style="margin-top:12px">
+            <div class="ct b">TESTE RAWBTS</div>
+            <div class="ct db">Impressora: KP-1025</div>
+            <div class="ct db">Bluetooth / USB / Rede</div>
+            <div style="margin:6px 0;border-top:1px dashed #CBD5E1"></div>
+            <div class="dd"><span>Produto</span><span>Valor</span></div>
+            <div class="dd"><span>Tesoura sem fio</span><span>R$ 34,90</span></div>
+            <div class="dd"><span>Cabo USB 2M</span><span>R$ 12,00</span></div>
+            <div class="dd"><span>Caneta azul</span><span>R$ 2,50</span></div>
+            <div style="margin:6px 0;border-top:1px dashed #CBD5E1"></div>
+            <div class="dd b"><span>TOTAL</span><span>R$ 49,40</span></div>
+            <div class="ct"><span id="qrBox1"></span></div>
+            <div class="ct db">Validação com QR Code</div>
+            <div class="cut">- - - - - CORTE - - - - -</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:230px">
+          <h4>Ajustes do cupom</h4>
+          <div class="rows">
+            <div class="row"><span class="k">Largura do papel</span><span class="v">
+              <span class="seg" id="wSeg"><button class="act" data-w="58">58 mm</button><button data-w="80">80 mm</button></span></span></div>
+            <div class="row"><span class="k">Tabela de caracteres</span><span class="v">ASCII</span></div>
+            <div class="row"><span class="k">Impressora</span><span class="v">KP-1025 · Bluetooth</span></div>
+            <div class="row"><span class="k">Estimativa</span><span class="v">1.240 B · ~1 s</span></div>
+          </div>
+          <button class="btn btn-pri btn-block" id="startPrint" style="margin-top:18px">Imprimir cupom de teste
+          <svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6" rx="1"/></svg></button>
+          <p class="dim" style="font-size:12px;margin-top:12px">O cupom usará o ritmo seguro detectado para esta impressora.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRINTING -->
+    <section id="s-printing" class="screen">
+      <div class="h-sec">Imprimindo…</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:16px;font-weight:800" id="printLabel">Impressão em andamento</div>
+            <div class="pmono" id="printMono">Enviando para KP-1025 [Bluetooth] …</div>
+          </div>
+          <span class="pill ok"><i></i>Impressora conectada</span>
+        </div>
+        <div class="progress" style="margin-top:16px;height:22px"><div class="fill" id="pfill"></div><div class="txt" id="ptxt">0%</div></div>
+        <div class="rows" style="margin-top:16px">
+          <div class="row"><span class="k">Bytes enviados</span><span class="v" id="pbytes">0 de 1.240 B</span></div>
+          <div class="row"><span class="k">Fila restante</span><span class="v amb">2 trabalhos</span></div>
+          <div class="row"><span class="k">Ritmo utilizado</span><span class="v">lento e seguro · pausas automáticas</span></div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--surface);border-style:dashed">
+        <h4>Enquanto isso…</h4>
+        <p style="font-size:13px;color:var(--dim);line-height:1.8">O RawBTS envia em pequenos blocos com pausas para impressoras 58 mm não travarem. Você pode fechar o app — a impressão continua em segundo plano.</p>
+      </div>
+    </section>
+
+    <!-- DONE -->
+    <section id="s-done" class="screen">
+      <div class="done-box">
+        <div class="chk"><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg></div>
+        <h3>Impressão concluída!</h3>
+        <div class="sub">cupom_teste · KP-1025 · Bluetooth</div>
+        <div class="done-stats">
+          <div class="tile"><div class="k">Bytes</div><div class="v" style="font-size:20px">1.240</div></div>
+          <div class="tile"><div class="k">Tempo</div><div class="v" style="font-size:20px">1,2 s</div></div>
+          <div class="tile"><div class="k">Restam na fila</div><div class="v o" style="font-size:20px">2</div></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+          <button class="btn btn-pri" data-go="printing">Imprimir novamente</button>
+          <button class="btn btn-ghost" data-go="dashboard">Voltar ao painel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="s-settings" class="screen">
+      <div class="h-sec">Configurações</div>
+      <div class="card">
+        <h4>Impressão</h4>
+        <div class="row"><span class="k">Tabela de caracteres</span><span class="v">
+          <span class="seg" style="background:var(--surface)"><button class="act segA">ASCII · sem acentos</button><button class="segB">CP850 · com acentos</button></span></span></div>
+        <div class="row"><span class="k">Largura padrão</span><span class="v">58 mm</span></div>
+        <div class="row"><span class="k">Ritmo de impressão</span><span class="v ok">Automático · recomendado</span></div>
+        <div class="row"><span class="k">Notificação ao imprimir</span><span class="v">Ativada</span></div>
+      </div>
+      <div class="card">
+        <h4>Sistema</h4>
+        <div class="sw"><div><div class="k">Iniciar com o aparelho</div><div class="d">Reconecta sua impressora automaticamente</div></div><button class="switch on" data-sw><i></i></button></div>
+        <div class="sw"><div><div class="k">Vibração nas confirmações</div><div class="d">Feedback tátil ao conectar e imprimir</div></div><button class="switch on" data-sw><i></i></button></div>
+        <div class="sw"><div><div class="k">Tema escuro</div><div class="d">Acompanha o sistema</div></div><button class="switch" data-sw><i></i></button></div>
+        <div class="sw"><div><div class="k">Modo de diagnóstico</div><div class="d">Registra detalhes de envio para suporte</div></div><button class="switch" data-sw><i></i></button></div>
+      </div>
+      <div class="card">
+        <h4>Sobre o RawBTS</h4>
+        <div class="rows">
+          <div class="row"><span class="k">Versão</span><span class="v">1.0.0 · build 07</span></div>
+          <div class="row"><span class="k">Motor de impressão</span><span class="v">ESC/POS 2.4</span></div>
+          <div class="row"><span class="k">Compatível com RawBT</span><span class="v ok">Sim</span></div>
+          <div class="row"><span class="k">Ajuda e suporte</span><span class="v" style="color:var(--pri)">rawbts.com/ajuda</span></div>
+        </div>
+      </div>
+    </section>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav id="bnav">
+    <button data-go="dashboard" class="act"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>PAINEL</button>
+    <button data-go="discover"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v3l2 1.5"/></svg>DESCOBRIR</button>
+    <button data-go="connected"><svg viewBox="0 0 24 24"><path d="M6 9V3M18 9V3M6 21v-6M18 21v-6M3 9h18M3 15h18"/><rect x="5" y="9" width="14" height="6" rx="1"/></svg>IMPRIMIR</button>
+    <button data-go="test"><svg viewBox="0 0 24 24"><path d="M12 3v12M12 15l4 4M12 15l-4 4"/><path d="M4 21h16"/></svg>TESTE</button>
+    <button data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>CONFIG</button>
+  </nav>
+</div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const SCREENS=['splash','dashboard','discover','found','connected','test','printing','done','settings'];
+const TITLES={splash:'Apresentação',dashboard:'Painel',discover:'Descobrir impressora',found:'Impressoras encontradas',connected:'Minha impressora',test:'Teste de impressão',printing:'Imprimindo',done:'Concluída',settings:'Configurações'};
+let timers=[];
+function setSteps(id){const map={splash:0,dashboard:0,discover:1,found:1,connected:2,test:3,printing:3,done:3,settings:0};
+  const n=map[id]||0;
+  document.querySelectorAll('.step').forEach((s,i)=>s.classList.toggle('now',i+1===n));
+  document.querySelectorAll('.step').forEach((s,i)=>s.classList.toggle('done',i+1<n));
+  document.querySelectorAll('.step-line').forEach((l,i)=>l.classList.toggle('on',i<n));}
+function go(id){
+  SCREENS.forEach(s=>{const el=$(s);if(el)el.classList.toggle('on',s===id)});
+  document.querySelectorAll('.demo-btn').forEach(b=>b.classList.toggle('act',b.dataset.screen===id));
+  document.querySelectorAll('#side .nav button,#bnav button').forEach(b=>b.classList.toggle('act',b.dataset.go===id));
+  const t=$('topTitle');if(t)t.textContent=TITLES[id]||'';
+  setSteps(id);
+  if(id==='connected'||id==='test'||id==='printing'||id==='done'){
+    const p=$('topPill');p.className='pill ok';p.innerHTML='<i></i>KP-1025 · Bluetooth';$('heroName').textContent='KP-1025 · Bluetooth · 58 mm';
+  }else{$('topPill').className='pill';$('topPill').innerHTML='<i></i>Nenhuma impressora';$('heroName').textContent='Nenhuma impressora conectada';}
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+document.querySelectorAll('.demo-btn').forEach(b=>b.addEventListener('click',()=>go(b.dataset.screen)));
+$('dvDesk').onclick=()=>{$('device').classList.remove('phone');$('dvDesk').classList.add('act');$('dvPhone').classList.remove('act')};
+$('dvPhone').onclick=()=>{$('device').classList.add('phone');$('dvPhone').classList.add('act');$('dvDesk').classList.remove('act')};
+$('startScan').onclick=function(){
+  if(this.dataset.running)return;this.dataset.running=1;this.textContent='Procurando…';this.disabled=true;
+  $('scanStatus').textContent='Procurando impressoras…';
+  ['ck1','ck2','ck3'].forEach(i=>{$(i).classList.add('on')});
+  timers.push(setTimeout(()=>{['ck1','ck2','ck3'].forEach(i=>{$(i).classList.remove('on');$(i).classList.add('done')});
+    $('scanStatus').textContent='3 impressoras encontradas!';
+    timers.push(setTimeout(()=>go('found'),700));},2200));
+};
+document.querySelectorAll('.cbtn').forEach(b=>b.onclick=()=>{b.textContent='Conectando…';b.disabled=true;
+  const d=b.dataset.dev;
+  timers.push(setTimeout(()=>{go('connected');$('connName').textContent=d;const p=$('topPill');p.className='pill ok';p.innerHTML='<i></i>'+d+' · Conectado';$('heroName').textContent=d;},1500))});
+document.querySelectorAll('#wSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#wSeg button').forEach(x=>x.classList.remove('act'));b.classList.add('act');$('paperPreview').classList.toggle('w80',b.dataset.w==='80')});
+document.querySelectorAll('.segA,.segB').forEach(b=>b.onclick=()=>{document.querySelectorAll('.segA,.segB').forEach(x=>x.classList.remove('act'));b.classList.add('act')});
+document.querySelectorAll('[data-sw]').forEach(s=>s.onclick=()=>s.classList.toggle('on'));
+let pInt=null;
+function runPrint(label){
+  $('printLabel').textContent='Imprimindo '+label;
+  let p=0;const total=1240;
+  $('pfill').style.width='0%';$('ptxt').textContent='0%';$('pbytes').textContent='0 de '+total+' B';
+  $('printMono').textContent='Enviando para KP-1025 [Bluetooth] …';
+  if(pInt)clearInterval(pInt);
+  pInt=setInterval(()=>{p+=2.4;if(p>=100){p=100;clearInterval(pInt);$('pfill').style.width='100%';$('ptxt').textContent='100%';
+    $('printMono').textContent='Transmissão concluída · confirmando com a impressora…';
+    timers.push(setTimeout(()=>go('done'),950));return}
+    $('pfill').style.width=p+'%';$('ptxt').textContent=Math.floor(p)+'%';
+    $('pbytes').textContent=Math.floor(p/100*total)+' de '+total+' B';
+  },110);
+}
+$('startPrint').onclick=()=>{go('printing');runPrint('cupom de teste')};
+document.querySelectorAll('[data-go="printing"]').forEach(b=>b.onclick=()=>{runPrint('novamente')});
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function qrSVG(seed,n=21,s=3){const r=mulberry32(seed);let svg='';
+  for(let y=0;y<n;y++){for(let x=0;x<n;x++){let res='';
+    [[0,0],[n-7,0],[0,n-7]].forEach(f=>{if(x>=f[0]&&x<f[0]+7&&y>=f[1]&&y<f[1]+7){const dx=x-f[0]-3,dy=y-f[1]-3;const m=Math.max(Math.abs(dx),Math.abs(dy));res=m<=1||m===3?'D':'W';}});
+    if(!res)res=r()>0.46?'D':'W';
+    if(res==='D')svg+='<rect x="'+(x*s)+'" y="'+(y*s)+'" width="'+s+'" height="'+s+'"/>';}}
+  return svg;}
+$('qrBox1').innerHTML='<svg width="63" height="63" shape-rendering="crispEdges">'+qrSVG(7)+'</svg>';
+go('splash');
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/tipprint_state_pressed_overlay">
+    <!-- Desabilitado: container atenuado (mesma geometria do estado normal) -->
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/tipprint_state_disabled_container" />
+            <corners android:radius="@dimen/radius_pill" />
+        </shape>
+    </item>
+    <!-- Habilitado: filled primário -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/tipprint_primary" />
+            <corners android:radius="@dimen/radius_pill" />
+        </shape>
+    </item>
+</ripple>

@@ -1,0 +1,45 @@
+package br.com.tipprint.printer
+
+object SampleReceipt {
+
+    fun build(printerName: String): ByteArray {
+        val pos = EscPos()
+        pos.init()
+            .setCharset()
+            .align(EscPos.Align.CENTER)
+            .fontSize(EscPos.FontSize.DOUBLE_BOTH)
+            .enableBold(true)
+            .line("TESTE RAW BTS")
+            .enableBold(false)
+            .fontSize(EscPos.FontSize.NORMAL)
+            .line()
+            .line("Impressora: $printerName")
+            .line()
+            .line("Impressao de teste via")
+            .line("Bluetooth / USB / Rede")
+            .line()
+            .align(EscPos.Align.LEFT)
+            .line("--------------------------------")
+            .line("Produto                Valor")
+            .line("--------------------------------")
+            .line("TESOURA SEM FIO       R$ 34,90")
+            .line("CABO USB 2M           R$ 12,00")
+            .line("CANETA AZUL            R$ 2,50")
+            .line("--------------------------------")
+            .line("TOTAL                 R$ 49,40")
+            .line()
+            .align(EscPos.Align.CENTER)
+            .qrCode("RAWBTS-TESTE-01", size = 8)
+            .line()
+            .line("Codigo QR gerado")
+            .line("pelo motor ESC/POS")
+            .line()
+            .align(EscPos.Align.LEFT)
+            .barcodeEan13("7891234567890")
+            .line()
+            .line("Obrigado pela preferencia!")
+            .feed(4)
+            .cut()
+        return pos.bytes
+    }
+}

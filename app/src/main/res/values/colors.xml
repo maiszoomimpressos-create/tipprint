@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      TipPrint Design Tokens — LIGHT (CLEAR)
+      Fonte única: design/tipprint-tokens.json
+    -->
+    <color name="tipprint_bg">#FFFFFF</color>
+    <color name="tipprint_surface">#F6F7F9</color>
+    <color name="tipprint_surface_alt">#EDF0F4</color>
+    <color name="tipprint_surface_card">#FFFFFF</color>
+    <color name="tipprint_outline">#E5E9F0</color>
+    <color name="tipprint_ink">#0F172A</color>
+    <color name="tipprint_ink_secondary">#64748B</color>
+    <color name="tipprint_ink_muted">#94A3B8</color>
+    <color name="tipprint_primary">#2563EB</color>
+    <color name="tipprint_primary_dark">#1D4ED8</color>
+    <color name="tipprint_primary_soft">#EFF4FF</color>
+    <color name="tipprint_on_primary">#FFFFFF</color>
+    <color name="tipprint_on_primary_container">#1D4ED8</color>
+    <color name="tipprint_success">#16A34A</color>
+    <color name="tipprint_success_soft">#EAF6EE</color>
+    <color name="tipprint_warning">#D97706</color>
+    <color name="tipprint_warning_soft">#FEF3E2</color>
+    <color name="tipprint_error">#DC2626</color>
+    <color name="tipprint_error_soft">#FDECEC</color>
+    <color name="tipprint_on_error">#FFFFFF</color>
+
+    <!-- RAW INK: identidade da marca -->
+    <color name="tipprint_brand_ink">#171310</color>
+    <color name="tipprint_brand_paper">#F7F5F0</color>
+    <color name="tipprint_brand_paper_alt">#EFEBE2</color>
+    <color name="tipprint_brand_thermal">#E84A1B</color>
+    <color name="tipprint_brand_thermal_soft">#FBE9E1</color>
+    <color name="tipprint_brand_moss">#3F6C51</color>
+
+    <!-- Estados (overlays sobre a base; mesmo token set em values-night) -->
+    <color name="tipprint_state_hover_overlay">#0A0F172A</color>
+    <color name="tipprint_state_pressed_overlay">#1A0F172A</color>
+    <color name="tipprint_state_focus_overlay">#1F2563EB</color>
+    <color name="tipprint_state_disabled_content">#610F172A</color>
+    <color name="tipprint_state_disabled_container">#1F0F172A</color>
+
+    <!-- Aliases legados (herdados do layout atual — novos componentes usam tipprint_*) -->
+    <color name="primary">@color/tipprint_primary</color>
+    <color name="primary_dark">@color/tipprint_primary_dark</color>
+    <color name="accent">@color/tipprint_brand_thermal</color>
+    <color name="background">@color/tipprint_bg</color>
+    <color name="text_primary">@color/tipprint_ink</color>
+    <color name="text_secondary">@color/tipprint_ink_secondary</color>
+</resources>

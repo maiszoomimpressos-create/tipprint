@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      TipPrint Design Tokens — Motion
+      Fonte única: design/tipprint-tokens.json
+    -->
+    <integer name="motion_fast">150</integer>
+    <integer name="motion_base">250</integer>
+    <integer name="motion_slow">350</integer>
+</resources>

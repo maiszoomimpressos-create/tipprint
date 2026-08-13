@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  TipPrint · Logo RAW INK (canhoto "B")
+  Conceito: canhoto de ingresso / cupom térmico — fundo tinta, "B" papel, ponto térmico.
+  Cores referenciam os tokens de marca (design/tipprint-tokens.json → tipprint_brand_*).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Fundo tinta com dois recortes de canhoto -->
+    <path
+        android:fillColor="@color/tipprint_brand_ink"
+        android:fillType="evenOdd"
+        android:pathData="M4,1.5 L20,1.5 A2.5,2.5 0 0 1 22.5,4 L22.5,20 A2.5,2.5 0 0 1 20,22.5 L4,22.5 A2.5,2.5 0 0 1 1.5,20 L1.5,4 A2.5,2.5 0 0 1 4,1.5 Z
+        M13.8,1.5 A1.8,1.8 0 1 1 10.2,1.5 A1.8,1.8 0 1 1 13.8,1.5 Z
+        M13.8,22.5 A1.8,1.8 0 1 1 10.2,22.5 A1.8,1.8 0 1 1 13.8,22.5 Z" />
+
+    <!-- "B" papel: haste + dois lobos -->
+    <path
+        android:fillColor="@color/tipprint_brand_paper"
+        android:pathData="M6.2,5.2 L12.2,5.2 L12.2,20.6 L6.2,20.6 A1.2,1.2 0 0 1 5,19.4 L5,6.4 A1.2,1.2 0 0 1 6.2,5.2 Z" />
+    <path
+        android:fillColor="@color/tipprint_brand_paper"
+        android:pathData="M12.2,12 L12.2,5.2 A3.4,3.4 0 1 1 12.2,12 Z" />
+    <path
+        android:fillColor="@color/tipprint_brand_paper"
+        android:pathData="M12.4,20.6 L12.4,14.2 A3.2,3.2 0 1 1 12.4,20.6 Z" />
+
+    <!-- Ponto térmico: detalhe de marca -->
+    <path
+        android:fillColor="@color/tipprint_brand_thermal"
+        android:pathData="M21.1,16.6 A1.1,1.1 0 1 1 18.9,16.6 A1.1,1.1 0 1 1 21.1,16.6 Z" />
+</vector>
