@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.0.9",
+  "versionName": "1.0.5.0.1.0",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Pareamento mais resistente: tenta 2x com ate 95s e avisa pra aceitar o pareamento NO CELULAR (PIN aparece na tela dele). Lista agora mostra TODOS os dispositivos achados, ate os sem nome (achava qualquer um)."
+  "notes": "CORRECAO IMPORTANTE: o pareamento estava quebrado (erro interno ao tentar parear qualquer dispositivo). Corrigido - tenta 2x com ate 95s e, se nao conseguir, abre sozinho o pareamento do Windows pra voce aceitar la."
 }

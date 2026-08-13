@@ -243,12 +243,31 @@ function runPs(script) {
   });
 }
 
+function runPsLong(script, timeoutMs) {
+  return new Promise((resolve) => {
+    execFile(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-Command', script],
+      { timeout: timeoutMs, windowsHide: true },
+      (err, stdout) => {
+        if (err) return resolve(null);
+        try {
+          const parsed = JSON.parse(stdout.trim());
+          resolve(Array.isArray(parsed) ? parsed : [parsed]);
+        } catch {
+          resolve(null);
+        }
+      }
+    );
+  });
+}
+
 ipcMain.handle('bt-pair', async (_e, id) => {
   const safeId = String(id).replace(/'/g, '');
   const cmd = "$id = '" + safeId + "'; " + BT_PAIR_SCRIPT.replace('param($id)\n', '');
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const result = await runPsNoTimeout(cmd, 95000);
+      const result = await runPsLong(cmd, 95000);
       const status = result && result[0] ? result[0].Status : 'Failed';
       if (status === 'Paired' || status === 'AlreadyPaired') return status;
       if (status !== 'ConnectionRejected' && status !== 'AuthenticationFailure' && status !== 'Failed') {

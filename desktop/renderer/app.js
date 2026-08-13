@@ -278,9 +278,9 @@ async function handleDeviceTap(device) {
       connectPort(after.path);
       return;
     }
-    showStatus('Pareamento não concluído (' + status + '). Tente: 1) coloque o aparelho em modo de pareamento ' +
-      'e deixe a tela do celular aberta no pedido; 2) aceite o pareamento NO CELULAR; 3) se o Windows pedir PIN, ' +
-      'digite 0000. Ou use "Abrir pareamento do Windows".');
+    showStatus('Pareamento pelo app falhou (' + status + '). Abrindo o pareamento do Windows ' +
+      '(Configurações > Bluetooth)... aceite lá e volte aqui depois.');
+    await window.tipprint.openBtSettings();
   } catch (e) {
     showStatus('Falha ao parear: ' + e.message);
   } finally {
