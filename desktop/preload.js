@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld('tipprint', {
   appVersion: () => ipcRenderer.invoke('app-version'),
   listPorts: () => ipcRenderer.invoke('list-ports'),
   btStatus: () => ipcRenderer.invoke('bt-status'),
+  btDevices: () => ipcRenderer.invoke('bt-devices'),
+  btPair: (id) => ipcRenderer.invoke('bt-pair', id),
   openBtSettings: () => ipcRenderer.invoke('open-bt-settings'),
   connectSerial: (portPath, baud) => ipcRenderer.invoke('connect-serial', portPath, baud),
   connectNet: (host, port) => ipcRenderer.invoke('connect-net', host, port),

@@ -44,7 +44,11 @@
       </div>
       <div id="btStatusLineSection" class="bt-status"></div>
       <button id="enableBtSection" class="btn btn-outline hidden">Ativar Bluetooth</button>
-      <button id="refreshPorts" class="btn btn-outline">Buscar portas / acessórios</button>
+      <button id="discoverDevices" class="btn btn-primary">Buscar dispositivos</button>
+      <div id="btDevices" class="ports-list"></div>
+      <p id="btDevicesHint" class="caption hidden">Nenhum dispositivo encontrado. Verifique se a impressora está ligada e próxima (modo descoberto) e toque em buscar de novo.</p>
+      <div class="list-divider">PORTAS DE COMUNICAÇÃO (COM)</div>
+      <button id="refreshPorts" class="btn btn-outline">Atualizar portas</button>
       <div id="portsList" class="ports-list"></div>
       <p id="portsHint" class="caption hidden">Nenhuma porta encontrada. Pareie a impressora no Windows (Configurações → Bluetooth) e busque de novo.</p>
     </section>

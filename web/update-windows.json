@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.0.3",
+  "versionName": "1.0.5.0.0.4",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Bluetooth presente mas desligado: o app avisa e oferece 'Ativar Bluetooth' (abre as configs do Windows e reconfere sozinho)."
+  "notes": "Busca de dispositivos Bluetooth (ListView): lista impressora encontrada, pareia com PIN 0000 e conecta na porta COM automaticamente."
 }

@@ -24,7 +24,10 @@ function openWork(type) {
   $('btSection').classList.toggle('hidden', type !== 'bt');
   $('usbSection').classList.toggle('hidden', type !== 'usb');
   $('netSection').classList.toggle('hidden', type !== 'net');
-  if (type === 'bt') refreshPorts('bt');
+  if (type === 'bt') {
+    discoverDevices();
+    refreshPorts('bt');
+  }
   if (type === 'usb') refreshPorts('usb');
 }
 
@@ -128,12 +131,21 @@ function renderPorts(listId, ports) {
   });
 }
 
+function deviceAddress(id) {
+  const parts = String(id).split('-');
+  const addr = parts[parts.length - 1] || '';
+  return addr.replace(/:/g, '').toUpperCase();
+}
+
+let cachedPorts = [];
+
 async function refreshPorts(kind) {
   setControls(false);
   showStatus('Buscando portas...');
   await new Promise((r) => setTimeout(r, 800));
   try {
     const ports = await window.tipprint.listPorts();
+    cachedPorts = ports;
     renderPorts(kind === 'bt' ? 'portsList' : 'portsListUsb', ports);
     showStatus(ports.length
       ? 'Portas encontradas: ' + ports.map((p) => p.path).join(', ')
@@ -143,6 +155,107 @@ async function refreshPorts(kind) {
   } finally {
     setControls(true);
   }
+}
+
+function findPortForDevice(id) {
+  const addr = deviceAddress(id);
+  if (!addr) return null;
+  return cachedPorts.find((p) => ((p.pnpId || '') + '').toUpperCase().includes(addr)) || null;
+}
+
+function renderBtDevices(devices) {
+  const list = $('btDevices');
+  list.innerHTML = '';
+  $('btDevicesHint').classList.toggle('hidden', devices.length > 0);
+  devices.forEach((device) => {
+    const item = document.createElement('div');
+    item.className = 'device-item';
+    const port = findPortForDevice(device.Id);
+    const tag = document.createElement('span');
+    if (port) {
+      tag.className = 'device-tag connected';
+      tag.textContent = port.path;
+    } else if (device.Paired) {
+      tag.className = 'device-tag paired';
+      tag.textContent = 'PAREADO';
+    } else {
+      tag.className = 'device-tag new';
+      tag.textContent = 'NOVO';
+    }
+    item.innerHTML = '<div><div class="device-name"></div><div class="device-meta"></div></div>';
+    item.querySelector('.device-name').textContent = device.Name || 'Sem nome';
+    item.querySelector('.device-meta').textContent = deviceAddress(device.Id)
+      .toLowerCase().replace(/(.{2})(?=.)/g, '$1:');
+    item.appendChild(tag);
+    item.addEventListener('click', () => handleDeviceTap(device));
+    list.appendChild(item);
+  });
+}
+
+async function discoverDevices() {
+  setControls(false);
+  showStatus('Pesquisando dispositivos Bluetooth próximos...');
+  try {
+    const devices = await window.tipprint.btDevices();
+    if (!devices) {
+      showStatus('Falha na busca de dispositivos.');
+      return;
+    }
+    const list = devices.filter((d) => d.Name || d.Paired);
+    renderBtDevices(list);
+    showStatus(list.length
+      ? 'Dispositivos encontrados: ' + list.map((d) => d.Name).join(', ')
+      : 'Nenhum dispositivo encontrado.');
+  } finally {
+    setControls(true);
+  }
+}
+
+async function handleDeviceTap(device) {
+  const port = findPortForDevice(device.Id);
+  if (port) {
+    connectPort(port.path);
+    return;
+  }
+  if (device.Paired) {
+    showStatus('Dispositivo pareado, mas sem porta COM ainda. Clique em "Atualizar portas".');
+    return;
+  }
+  setControls(false);
+  showStatus('Pareando com ' + (device.Name || deviceAddress(device.Id)) +
+    '... se o Windows pedir PIN, digite 0000.');
+  try {
+    const status = await window.tipprint.btPair(device.Id);
+    if (status !== 'Paired' && status !== 'AlreadyPaired') {
+      showStatus('Pareamento não concluído (' + status + '). Se o Windows pedir PIN, digite 0000 e tente de novo.');
+      return;
+    }
+    showStatus('Pareado! Procurando a porta COM...');
+    const found = await waitForPort(device.Id);
+    if (found) {
+      connectPort(found.path);
+    } else {
+      showStatus('Pareado, mas a porta COM ainda não apareceu. Clique em "Atualizar portas".');
+    }
+  } catch (e) {
+    showStatus('Falha ao parear: ' + e.message);
+  } finally {
+    setControls(true);
+  }
+}
+
+async function waitForPort(id, attempts = 15) {
+  for (let i = 0; i < attempts; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      cachedPorts = await window.tipprint.listPorts();
+    } catch {
+      continue;
+    }
+    const port = findPortForDevice(id);
+    if (port) return port;
+  }
+  return null;
 }
 
 async function connectPort(portPath) {
@@ -199,6 +312,7 @@ $('chooserUsb').addEventListener('click', () => openWork('usb'));
 $('chooserNet').addEventListener('click', () => openWork('net'));
 $('backToTypes').addEventListener('click', openChooser);
 $('refreshPorts').addEventListener('click', () => refreshPorts('bt'));
+$('discoverDevices').addEventListener('click', discoverDevices);
 $('refreshPortsUsb').addEventListener('click', () => refreshPorts('usb'));
 $('connectNet').addEventListener('click', connectNetClicked);
 $('printTest').addEventListener('click', printTestClicked);
