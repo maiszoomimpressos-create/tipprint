@@ -24,6 +24,7 @@
     <string name="no_printer_selected">Nenhuma impressora conectada. Conecte primeiro.</string>
 
     <string name="bluetooth_unavailable">Bluetooth indisponível neste aparelho.</string>
+    <string name="bluetooth_auto_connect_skipped">Impressora não pareada ou Bluetooth desligado — sem conexão automática. Conecte manualmente.</string>
     <string name="bluetooth_no_devices">Nenhum dispositivo Bluetooth pareado. Pareie a impressora nas configurações do aparelho.</string>
     <string name="bluetooth_no_paired_search">Nenhum dispositivo Bluetooth pareado. Quer buscar impressoras próximas?</string>
     <string name="cancel_scan">Cancelar busca</string>
@@ -72,6 +73,8 @@
     <string name="settings_identity_text">CLEAR — interface operacional · RAW INK — identidade de marca · RAW TERMINAL — modo escuro. Design system compartilhado com Windows, iOS e Web.</string>
     <string name="settings_printing">Impressão</string>
     <string name="settings_printing_text">Bluetooth · USB · Rede (9100) · Receipt ESC/POS · PrintServer localhost:8080</string>
+    <string name="settings_auto_connect">Conectar automaticamente ao abrir (Bluetooth)</string>
+    <string name="settings_auto_connect_hint">Se a impressora também for usada no PC, deixe desligado: o Bluetooth aceita 1 conexão por vez.</string>
     <string name="settings_version">TipPrint v%1$s</string>
 
     <string name="settings_updates">Atualização do app</string>

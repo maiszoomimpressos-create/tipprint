@@ -102,6 +102,20 @@
             style="@style/TextAppearance.TipPrint.Mono"
             android:text="@string/settings_printing_text" />
 
+        <Switch
+            android:id="@+id/autoConnectSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:text="@string/settings_auto_connect" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            style="@style/TextAppearance.TipPrint.Caption"
+            android:text="@string/settings_auto_connect_hint" />
+
         <!-- Atualizações -->
         <TextView
             android:layout_width="wrap_content"

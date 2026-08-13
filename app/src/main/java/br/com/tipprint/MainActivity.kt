@@ -119,8 +119,12 @@ class MainActivity : AppCompatActivity() {
         openWork(workType)
         when (workType) {
             "bt" -> {
-                pendingAutoConnect = target
-                maybeAutoConnect()
+                val autoConnect = getSharedPreferences("tipprint", MODE_PRIVATE)
+                    .getBoolean("auto_connect", true)
+                if (autoConnect) {
+                    pendingAutoConnect = target
+                    maybeAutoConnect()
+                }
             }
             "net" -> {
                 ipInput.setText(target.substringBefore(":"))
@@ -153,6 +157,16 @@ class MainActivity : AppCompatActivity() {
         pendingAutoConnect = null
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
         val device = runCatching { adapter.getRemoteDevice(mac) }.getOrNull() ?: return
+        if (!adapter.isEnabled) {
+            showStatus(getString(R.string.bluetooth_auto_connect_skipped))
+            return
+        }
+        val stillPaired = runCatching { device.bondState }
+            .getOrDefault(BluetoothDevice.BOND_NONE) == BluetoothDevice.BOND_BONDED
+        if (!stillPaired) {
+            showStatus(getString(R.string.bluetooth_auto_connect_skipped))
+            return
+        }
         connectToDevice(device)
     }
 

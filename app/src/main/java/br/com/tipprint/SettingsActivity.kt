@@ -18,6 +18,9 @@ class SettingsActivity : AppCompatActivity() {
 
     private val scope = CoroutineScope(Dispatchers.Default)
 
+    private fun autoConnectEnabled(): Boolean =
+        getSharedPreferences("tipprint", MODE_PRIVATE).getBoolean("auto_connect", true)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
@@ -33,6 +36,15 @@ class SettingsActivity : AppCompatActivity() {
         val autoUpdate = findViewById<Switch>(R.id.autoUpdateSwitch)
         autoUpdate.isChecked = UpdateChecker.autoUpdateEnabled(this)
         autoUpdate.setOnCheckedChangeListener { _, checked -> UpdateChecker.setAutoUpdate(this, checked) }
+
+        val autoConnect = findViewById<Switch>(R.id.autoConnectSwitch)
+        autoConnect.isChecked = autoConnectEnabled()
+        autoConnect.setOnCheckedChangeListener { _, checked ->
+            getSharedPreferences("tipprint", MODE_PRIVATE)
+                .edit()
+                .putBoolean("auto_connect", checked)
+                .apply()
+        }
 
         val checkUpdates = findViewById<Button>(R.id.checkUpdatesButton)
         checkUpdates.setOnClickListener { checkUpdatesNow(checkUpdates) }
