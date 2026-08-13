@@ -59,6 +59,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var chooserUsb: Button
     private lateinit var chooserNet: Button
     private lateinit var settingsButtonChooser: Button
+    private lateinit var scanPanel: LinearLayout
+    private lateinit var scanList: ListView
+    private lateinit var scanHint: TextView
+    private lateinit var cancelScan: Button
+    private var scanAdapter: ArrayAdapter<String>? = null
 
     private var currentView = "chooser"
 
@@ -78,8 +83,6 @@ class MainActivity : AppCompatActivity() {
     private val discoveredDevices = mutableListOf<BluetoothDevice>()
 
     private var discoveryInProgress = false
-
-    private var foundDialog: AlertDialog? = null
 
     private val MAC_REGEX = Regex("^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 
@@ -136,6 +139,10 @@ class MainActivity : AppCompatActivity() {
         btSection = findViewById(R.id.btSection)
         usbSection = findViewById(R.id.usbSection)
         netSection = findViewById(R.id.netSection)
+        scanPanel = findViewById(R.id.scanPanel)
+        scanList = findViewById(R.id.scanList)
+        scanHint = findViewById(R.id.scanHint)
+        cancelScan = findViewById(R.id.cancelScan)
         currentView = "work"
 
         btSection.visibility = if (type == "bt") View.VISIBLE else View.GONE
@@ -151,6 +158,12 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         backToTypes.setOnClickListener { openChooser() }
+        scanList.setOnItemClickListener { _, _, position, _ ->
+            val device = discoveredDevices.getOrNull(position) ?: return@setOnItemClickListener
+            stopScan()
+            pairWithDevice(device)
+        }
+        cancelScan.setOnClickListener { stopScan() }
 
         if (type == "bt") fillBluetoothDevices()
     }
@@ -304,46 +317,36 @@ class MainActivity : AppCompatActivity() {
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
         stopScanningAnimation()
         discoveredDevices.clear()
-        foundDialog?.dismiss()
-        foundDialog = null
         discoveryInProgress = true
         setControlsEnabled(false)
-        showScanDialog()
+        showScanPanel()
         runCatching { adapter.startDiscovery() }
             .onFailure { stopScan(); showStatus(getString(R.string.bluetooth_scan_failed)) }
             .onSuccess { showScanningStatus() }
     }
 
-    private var scanAdapter: ArrayAdapter<String>? = null
-
-    private fun showScanDialog() {
-        val items = mutableListOf<String>()
-        val listView = ListView(this)
-        scanAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items) {}
-        listView.adapter = scanAdapter
-        listView.setOnItemClickListener { _, _, position, _ ->
-            val device = discoveredDevices.getOrNull(position) ?: return@setOnItemClickListener
-            foundDialog?.dismiss()
-            foundDialog = null
-            stopScan()
-            pairWithDevice(device)
-        }
-        foundDialog = AlertDialog.Builder(this)
-            .setTitle(R.string.bluetooth_searching_title)
-            .setView(listView)
-            .setNegativeButton(R.string.cancel) { _, _ -> stopScan() }
-            .setCancelable(false)
-            .show()
+    private fun showScanPanel() {
+        if (!::scanPanel.isInitialized) return
+        scanPanel.visibility = View.VISIBLE
+        cancelScan.visibility = View.VISIBLE
+        scanHint.visibility = View.GONE
+        scanAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, mutableListOf<String>())
+        scanList.adapter = scanAdapter
     }
 
     private fun refreshScanList() {
+        if (!::scanPanel.isInitialized || scanPanel.visibility != View.VISIBLE) return
         val adapter = scanAdapter ?: return
         adapter.clear()
         discoveredDevices.forEach { adapter.add(it.name ?: it.address) }
         adapter.notifyDataSetChanged()
-        foundDialog?.setTitle(
-            getString(if (discoveredDevices.isEmpty()) R.string.bluetooth_searching_title else R.string.bluetooth_found_title)
-        )
+    }
+
+    private fun finishScanPanel() {
+        cancelScan.visibility = View.GONE
+        if (discoveredDevices.isEmpty()) {
+            scanHint.visibility = View.VISIBLE
+        }
     }
 
     private fun stopScan() {
@@ -351,8 +354,10 @@ class MainActivity : AppCompatActivity() {
         discoveryInProgress = false
         stopScanningAnimation()
         setControlsEnabled(true)
-        foundDialog?.dismiss()
-        foundDialog = null
+        if (::scanPanel.isInitialized) {
+            scanPanel.visibility = View.GONE
+            scanAdapter = null
+        }
     }
 
     private var scanningDots = 0
@@ -390,11 +395,9 @@ class MainActivity : AppCompatActivity() {
                     stopScanningAnimation()
                     setControlsEnabled(true)
                     refreshScanList()
+                    finishScanPanel()
                     if (discoveredDevices.isEmpty()) {
-                        foundDialog?.setTitle(R.string.bluetooth_none_found_title)
                         showStatus(getString(R.string.bluetooth_none_found))
-                    } else {
-                        foundDialog?.setTitle(R.string.bluetooth_found_title)
                     }
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
@@ -482,8 +485,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         runCatching { bluetoothAdapter?.cancelDiscovery() }
         runCatching { unregisterReceiver(discoveryReceiver) }
-        foundDialog?.dismiss()
-        foundDialog = null
+        if (::scanPanel.isInitialized) scanPanel.visibility = View.GONE
     }
 
     private fun connectUsbClicked() {

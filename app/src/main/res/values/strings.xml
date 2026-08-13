@@ -26,6 +26,7 @@
     <string name="bluetooth_unavailable">Bluetooth indisponível neste aparelho.</string>
     <string name="bluetooth_no_devices">Nenhum dispositivo Bluetooth pareado. Pareie a impressora nas configurações do aparelho.</string>
     <string name="bluetooth_no_paired_search">Nenhum dispositivo Bluetooth pareado. Quer buscar impressoras próximas?</string>
+    <string name="cancel_scan">Cancelar busca</string>
     <string name="cancel">Cancelar</string>
     <string name="bluetooth_permission_denied">Permissão de Bluetooth negada. Conceda a permissão para continuar.</string>
     <string name="bluetooth_connected">Bluetooth conectado: %1$s</string>

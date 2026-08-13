@@ -11,8 +11,8 @@ android {
         applicationId = "br.com.tipprint"
         minSdk = 24
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.0.5.0.0.3"
+        versionCode = 11
+        versionName = "1.0.5.0.0.4"
     }
 
     buildTypes {
@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.kotlinx.coroutines.android)
 }
+
 
 
 

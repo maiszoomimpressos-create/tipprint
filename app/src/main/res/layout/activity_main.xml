@@ -109,6 +109,41 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_xs"
                 android:text="@string/discover_bluetooth" />
+
+            <!-- Painel de busca: lista ao vivo de dispositivos encontrados -->
+            <LinearLayout
+                android:id="@+id/scanPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="@dimen/spacing_md"
+                android:layout_marginTop="@dimen/spacing_md"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/scanHint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    style="@style/TextAppearance.TipPrint.Body"
+                    android:text="@string/bluetooth_none_found" />
+
+                <ListView
+                    android:id="@+id/scanList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="@null" />
+
+                <Button
+                    android:id="@+id/cancelScan"
+                    style="@style/Widget.TipPrint.Button.Outlined"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="@dimen/spacing_sm"
+                    android:text="@string/cancel_scan" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- ============ USB ============ -->
