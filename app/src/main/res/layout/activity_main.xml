@@ -54,6 +54,15 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Trocar tipo de conexão -->
+        <Button
+            android:id="@+id/backToTypes"
+            style="@style/Widget.TipPrint.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:text="@string/back_to_types" />
+
         <!-- Status em card (superfície com outline hairline) -->
         <TextView
             android:id="@+id/statusText"
@@ -66,85 +75,106 @@
             android:text="" />
 
         <!-- ============ BLUETOOTH ============ -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_xl"
-            android:layout_marginBottom="@dimen/spacing_xs"
-            style="@style/TextAppearance.TipPrint.Overline"
-            android:text="@string/title_bluetooth" />
-
-        <Spinner
-            android:id="@+id/bluetoothSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <Button
-            android:id="@+id/connectBluetooth"
-            style="@style/Widget.TipPrint.Button"
+        <LinearLayout
+            android:id="@+id/btSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_sm"
-            android:text="@string/connect_bluetooth" />
+            android:orientation="vertical">
 
-        <Button
-            android:id="@+id/discoverBluetooth"
-            style="@style/Widget.TipPrint.Button.Outlined"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_xs"
-            android:text="@string/discover_bluetooth" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xl"
+                android:layout_marginBottom="@dimen/spacing_xs"
+                style="@style/TextAppearance.TipPrint.Overline"
+                android:text="@string/title_bluetooth" />
+
+            <Spinner
+                android:id="@+id/bluetoothSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/connectBluetooth"
+                style="@style/Widget.TipPrint.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:text="@string/connect_bluetooth" />
+
+            <Button
+                android:id="@+id/discoverBluetooth"
+                style="@style/Widget.TipPrint.Button.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:text="@string/discover_bluetooth" />
+        </LinearLayout>
 
         <!-- ============ USB ============ -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_xl"
-            android:layout_marginBottom="@dimen/spacing_xs"
-            style="@style/TextAppearance.TipPrint.Overline"
-            android:text="@string/title_usb" />
-
-        <Button
-            android:id="@+id/connectUsb"
-            style="@style/Widget.TipPrint.Button"
+        <LinearLayout
+            android:id="@+id/usbSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/connect_usb" />
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xl"
+                android:layout_marginBottom="@dimen/spacing_xs"
+                style="@style/TextAppearance.TipPrint.Overline"
+                android:text="@string/title_usb" />
+
+            <Button
+                android:id="@+id/connectUsb"
+                style="@style/Widget.TipPrint.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/connect_usb" />
+        </LinearLayout>
 
         <!-- ============ REDE ============ -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_xl"
-            android:layout_marginBottom="@dimen/spacing_xs"
-            style="@style/TextAppearance.TipPrint.Overline"
-            android:text="@string/title_net" />
-
-        <EditText
-            android:id="@+id/ipInput"
-            style="@style/Widget.TipPrint.EditText"
+        <LinearLayout
+            android:id="@+id/netSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/label_ip"
-            android:inputType="text"
-            android:singleLine="true" />
+            android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/portInput"
-            style="@style/Widget.TipPrint.EditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/label_port"
-            android:inputType="number"
-            android:singleLine="true" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xl"
+                android:layout_marginBottom="@dimen/spacing_xs"
+                style="@style/TextAppearance.TipPrint.Overline"
+                android:text="@string/title_net" />
 
-        <Button
-            android:id="@+id/connectNet"
-            style="@style/Widget.TipPrint.Button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_sm"
-            android:text="@string/connect_net" />
+            <EditText
+                android:id="@+id/ipInput"
+                style="@style/Widget.TipPrint.EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/label_ip"
+                android:inputType="text"
+                android:singleLine="true" />
+
+            <EditText
+                android:id="@+id/portInput"
+                style="@style/Widget.TipPrint.EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/label_port"
+                android:inputType="number"
+                android:singleLine="true" />
+
+            <Button
+                android:id="@+id/connectNet"
+                style="@style/Widget.TipPrint.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:text="@string/connect_net" />
+        </LinearLayout>
 
         <!-- ============ IMPRIMIR ============ -->
         <Button

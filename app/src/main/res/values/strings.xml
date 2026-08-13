@@ -3,6 +3,9 @@
     <string name="app_name">TipPrint Impressão</string>
     <string name="app_tagline">CONECTE · CONTROLE · IMPRIMA</string>
     <string name="receiver_label">Impressão via TipPrint</string>
+    <string name="chooser_title">Escolha o tipo de conexão</string>
+    <string name="chooser_subtitle">Toque em um tipo para conectar sua impressora</string>
+    <string name="back_to_types">Trocar tipo de conexão</string>
 
     <string name="title_bluetooth">Bluetooth</string>
     <string name="title_usb">USB</string>
@@ -28,6 +31,8 @@
     <string name="bluetooth_connected">Bluetooth conectado: %1$s</string>
 
     <string name="bluetooth_scanning">Buscando impressora</string>
+    <string name="bluetooth_searching_title">Buscando impressoras…</string>
+    <string name="bluetooth_none_found_title">Nenhuma impressora encontrada</string>
     <string name="bluetooth_scan_failed">Não foi possível iniciar a busca Bluetooth.</string>
     <string name="bluetooth_none_found">Nenhuma impressora encontrada. Verifique se ela está ligada e próxima do aparelho.</string>
     <string name="bluetooth_found_title">Impressoras encontradas — toque para parear</string>
