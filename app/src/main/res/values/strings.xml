@@ -32,7 +32,7 @@
     <string name="bluetooth_none_found">Nenhuma impressora encontrada. Verifique se ela está ligada e próxima do aparelho.</string>
     <string name="bluetooth_found_title">Impressoras encontradas — toque para parear</string>
     <string name="bluetooth_pairing">Pareando com %1$s… Se o sistema pedir o PIN, digite 0000.</string>
-    <string name="bluetooth_pair_failed">Falha ao parear. Tente novamente.</string>
+    <string name="bluetooth_pair_failed">Não foi possível parear. Ligue a impressora, aproxime-a do celular e tente de novo. Se o PIN for diferente de 0000, pareie pelo Bluetooth do sistema.</string>
     <string name="bluetooth_bonded">Impressora pareada com sucesso!</string>
 
     <string name="usb_unavailable">USB host não suportado neste aparelho.</string>

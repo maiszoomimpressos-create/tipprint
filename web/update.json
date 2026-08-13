@@ -1,8 +1,8 @@
 ﻿{
   "appId": "br.com.tipprint",
-"versionCode": 5,
-  "versionName": "1.0.4",
+"versionCode": 6,
+  "versionName": "1.0.5",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Busca de impressora corrigida (dialogo unico, sem piscar) + pareamento automatico com PIN 0000."
+  "notes": "Conexao direta primeiro (a maioria das impressoras termicas conecta sem parear); pareamento com PIN 0000 so como alternativa."
 }
 

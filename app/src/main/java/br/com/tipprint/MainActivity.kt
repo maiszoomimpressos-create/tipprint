@@ -303,16 +303,32 @@ class MainActivity : AppCompatActivity() {
     private fun pairWithDevice(device: BluetoothDevice) {
         val adapter = bluetoothAdapter ?: return
         runCatching { adapter.cancelDiscovery() }
-        showStatus(getString(R.string.bluetooth_pairing, device.name ?: device.address))
-        val bondState = runCatching { device.bondState }.getOrDefault(BluetoothDevice.BOND_NONE)
-        when (bondState) {
-            BluetoothDevice.BOND_BONDED -> connectToDevice(device)
-            BluetoothDevice.BOND_BONDING -> pendingPairDevice = device
-            else -> {
-                pendingPairDevice = device
-                runCatching { device.createBond() }
-                    .onSuccess { showStatus(getString(R.string.bluetooth_pairing, device.name ?: device.address)) }
-                    .onFailure { showStatus(getString(R.string.bluetooth_pair_failed)) }
+        val bonded = runCatching { device.bondState }.getOrDefault(BluetoothDevice.BOND_NONE) == BluetoothDevice.BOND_BONDED
+        if (bonded) {
+            connectToDevice(device)
+            return
+        }
+        showStatus(getString(R.string.connecting_bluetooth, device.name, device.address))
+        scope.launch {
+            val ok = runCatching {
+                val printer = BluetoothPrinter(adapter, device)
+                printer.open()
+                val status = printer.checkStatus()
+                printer.close()
+                status
+            }.isSuccess
+            withContext(Dispatchers.Main) {
+                if (ok) {
+                    activePrinter = device.address
+                    savePrinter("bluetooth", device.address)
+                    showStatus(getString(R.string.bluetooth_connected, device.name))
+                } else {
+                    pendingPairDevice = device
+                    showStatus(getString(R.string.bluetooth_pairing, device.name ?: device.address))
+                    runCatching { device.createBond() }
+                        .onSuccess { showStatus(getString(R.string.bluetooth_pairing, device.name ?: device.address)) }
+                        .onFailure { showStatus(getString(R.string.bluetooth_pair_failed)) }
+                }
             }
         }
     }
