@@ -207,7 +207,7 @@ function renderBtDevices(devices) {
 
 async function discoverDevices() {
   setControls(false);
-  showStatus('Pesquisando dispositivos Bluetooth...');
+  showStatus('Pesquisando dispositivos Bluetooth por perto (~10s)...');
   try {
     const devices = await window.tipprint.btDevices();
     if (!devices) {
@@ -217,8 +217,8 @@ async function discoverDevices() {
     const list = devices.filter((d) => d.Paired || d.Name);
     renderBtDevices(list);
     showStatus(list.length
-      ? 'Sistemas: ' + list.map((d) => d.Name || macDisplay(deviceMac(d))).join(', ')
-      : 'Nenhum sistema encontrado.');
+      ? 'Dispositivos: ' + list.map((d) => d.Name || macDisplay(deviceMac(d))).join(', ')
+      : 'Nenhum dispositivo encontrado por perto.');
   } finally {
     setControls(true);
   }

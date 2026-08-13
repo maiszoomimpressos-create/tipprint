@@ -167,7 +167,46 @@ function runBtScanFile() {
   });
 }
 
-ipcMain.handle('bt-devices', async () => runBtScanFile());
+function runBtWatcher(seconds) {
+  return new Promise((resolve) => {
+    execFile(
+      path.join(__dirname, 'lib', 'scripts', 'bt-watcher.exe'),
+      [String(seconds)],
+      { timeout: 40000, windowsHide: true },
+      (err, stdout) => {
+        if (err) return resolve([]);
+        const out = [];
+        String(stdout).split(/\r?\n/).forEach((line) => {
+          const parts = line.split('\t');
+          if (parts.length < 3 || !parts[1]) return;
+          const macParts = parts[1].split('-');
+          const mac = (macParts[macParts.length - 1] || '').replace(/:/g, '').toUpperCase();
+          if (mac) out.push({ Name: parts[0], Id: parts[1], Mac: mac, Paired: parts[2] === '1' });
+        });
+        resolve(out);
+      }
+    );
+  });
+}
+
+ipcMain.handle('bt-devices', async () => {
+  const known = await runBtScanFile();
+  const scanned = await runBtWatcher(10);
+  const map = {};
+  (known || []).forEach((d) => {
+    const mac = String(d.Address || '').replace(/:/g, '').toUpperCase();
+    if (!mac) return;
+    map[mac] = { Name: d.Name || '', Address: d.Address, Paired: true };
+  });
+  scanned.forEach((d) => {
+    if (!map[d.Mac]) {
+      map[d.Mac] = { Name: d.Name || '', Address: d.Mac, Paired: d.Paired };
+    } else if (d.Name && !map[d.Mac].Name) {
+      map[d.Mac].Name = d.Name;
+    }
+  });
+  return Object.values(map);
+});
 
 const BT_PAIR_SCRIPT = `
 param($id)

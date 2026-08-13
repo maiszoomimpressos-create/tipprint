@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.0.6",
+  "versionName": "1.0.5.0.0.7",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Busca de dispositivos lista TODOS os sistemas pareados (KP-1025 e cia, com porta COM de cada um). Dispositivo novo por perto: botao abre a varredura do Windows e o app atualiza sozinho ao voltar."
+  "notes": "Busca de dispositivos AGORA FAZ VARREDURA ATIVA de ~10s dentro do app (compilador WinRT proprio): acha qualquer dispositivo por perto em modo pareamento, como no celular."
 }
