@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var statusText: TextView
     private lateinit var btList: ListView
+    private lateinit var btConnectedLabel: TextView
     private lateinit var ipInput: EditText
     private lateinit var portInput: EditText
     private lateinit var connectBluetooth: Button
@@ -124,6 +125,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         statusText = findViewById(R.id.statusText)
         btList = findViewById(R.id.btList)
+        btConnectedLabel = findViewById(R.id.btConnectedLabel)
         ipInput = findViewById(R.id.ipInput)
         portInput = findViewById(R.id.portInput)
         connectBluetooth = findViewById(R.id.connectBluetooth)
@@ -270,6 +272,18 @@ class MainActivity : AppCompatActivity() {
         btList.adapter = ArrayAdapter(this, R.layout.item_printer, labels)
     }
 
+    private fun updateBtConnectedLabel() {
+        if (!::btConnectedLabel.isInitialized) return
+        val target = activePrinter
+        if (target == null || !MAC_REGEX.matches(target)) {
+            btConnectedLabel.visibility = View.GONE
+            return
+        }
+        val name = bondedDevices.firstOrNull { it.address == target }?.name ?: target
+        btConnectedLabel.text = "● $name"
+        btConnectedLabel.visibility = View.VISIBLE
+    }
+
     private fun connectBluetoothClicked() {
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
         val devices = runCatching { adapter.bondedDevices }.getOrNull()?.sortedBy { it.name } ?: emptyList()
@@ -297,9 +311,11 @@ class MainActivity : AppCompatActivity() {
                 if (ok) {
                     activePrinter = device.address
                     savePrinter("bluetooth", device.address)
+                    updateBtConnectedLabel()
                     showStatus(getString(R.string.bluetooth_connected, device.name))
                 } else {
                     activePrinter = null
+                    updateBtConnectedLabel()
                     showStatus(getString(R.string.connection_failed, resultException?.message ?: "erro"))
                 }
             }
@@ -460,6 +476,7 @@ class MainActivity : AppCompatActivity() {
                     setControlsEnabled(true)
                     activePrinter = device.address
                     savePrinter("bluetooth", device.address)
+                    updateBtConnectedLabel()
                     showStatus(getString(R.string.bluetooth_connected, device.name))
                 } else {
                     pendingPairDevice = device
@@ -538,9 +555,11 @@ class MainActivity : AppCompatActivity() {
                 if (result.isSuccess) {
                     activePrinter = "usb:${device.deviceId}"
                     savePrinter("usb", device.deviceId.toString())
+                    updateBtConnectedLabel()
                     showStatus(getString(R.string.usb_connected, device.productName ?: device.deviceName))
                 } else {
                     activePrinter = null
+                    updateBtConnectedLabel()
                     showStatus(getString(R.string.connection_failed, result.exceptionOrNull()?.message ?: "erro"))
                 }
             }
@@ -568,9 +587,11 @@ class MainActivity : AppCompatActivity() {
                 if (result.isSuccess) {
                     activePrinter = target
                     savePrinter("net", target)
+                    updateBtConnectedLabel()
                     showStatus(getString(R.string.net_connected, target))
                 } else {
                     activePrinter = null
+                    updateBtConnectedLabel()
                     showStatus(getString(R.string.connection_failed, result.exceptionOrNull()?.message ?: "erro"))
                 }
             }

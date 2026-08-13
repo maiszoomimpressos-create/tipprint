@@ -81,23 +81,44 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:layout_marginTop="@dimen/spacing_xl"
-                android:layout_marginBottom="@dimen/spacing_xs"
-                style="@style/TextAppearance.TipPrint.Overline"
-                android:text="@string/title_bluetooth" />
+                android:layout_marginBottom="@dimen/spacing_xs">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    style="@style/TextAppearance.TipPrint.Overline"
+                    android:text="@string/title_bluetooth" />
+
+                <TextView
+                    android:id="@+id/btConnectedLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    style="@style/TextAppearance.TipPrint.MonoStrong"
+                    android:textColor="@color/tipprint_success"
+                    android:ellipsize="end"
+                    android:maxLines="1" />
+            </LinearLayout>
 
             <!-- Lista de impressoras (pareadas por padrão; mostra a busca no mesmo lugar) -->
             <ListView
                 android:id="@+id/btList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:maxHeight="200dp"
                 android:divider="@null"
                 android:dividerHeight="@dimen/spacing_xs"
                 android:padding="@dimen/spacing_xs"
-                android:background="@drawable/bg_card" />
+                android:background="@drawable/bg_card"
+                android:scrollbars="vertical"
+                android:overScrollMode="ifContentScrolls" />
 
             <TextView
                 android:id="@+id/scanHint"
