@@ -1,8 +1,10 @@
 package br.com.tipprint
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -22,11 +24,33 @@ object UpdateChecker {
 
     const val PREFS = "tipprint_updates"
     const val KEY_SERVER = "update_server_url"
+    const val KEY_AUTO_UPDATE = "auto_update"
     const val DEFAULT_SERVER = "https://tipprint.vercel.app"
 
     fun serverUrl(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_SERVER, DEFAULT_SERVER) ?: DEFAULT_SERVER
+
+    fun autoUpdateEnabled(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getBoolean(KEY_AUTO_UPDATE, true)
+
+    fun setAutoUpdate(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_AUTO_UPDATE, enabled)
+            .apply()
+    }
+
+    fun installApk(context: Context, apk: File): Boolean = runCatching {
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", apk)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(intent)
+        true
+    }.getOrDefault(false)
 
     fun installedVersionCode(context: Context): Int = runCatching {
         val info = context.packageManager.getPackageInfo(context.packageName, 0)

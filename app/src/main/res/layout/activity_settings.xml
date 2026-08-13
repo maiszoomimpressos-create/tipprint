@@ -145,6 +145,20 @@
             android:layout_marginTop="@dimen/spacing_md"
             android:text="@string/save_update_server" />
 
+        <Switch
+            android:id="@+id/autoUpdateSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:text="@string/settings_auto_update" />
+
+        <Button
+            android:id="@+id/checkUpdatesButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:text="@string/settings_check_updates" />
+
         <!-- Versão -->
         <TextView
             android:id="@+id/settingsVersion"

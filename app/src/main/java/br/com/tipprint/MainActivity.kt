@@ -23,7 +23,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import androidx.core.content.getSystemService
 import br.com.tipprint.printer.BluetoothPrinter
 import br.com.tipprint.printer.NetPrinter
@@ -102,12 +101,16 @@ class MainActivity : AppCompatActivity() {
             val info = UpdateChecker.check(this@MainActivity)
             if (info == null) return@launch
             withContext(Dispatchers.Main) {
-                AlertDialog.Builder(this@MainActivity)
-                    .setTitle(R.string.update_available_title)
-                    .setMessage(getString(R.string.update_available_message, info.versionName, info.notes))
-                    .setPositiveButton(R.string.update_button) { _, _ -> downloadAndInstall(info.apkUrl) }
-                    .setNegativeButton(R.string.update_later, null)
-                    .show()
+                if (UpdateChecker.autoUpdateEnabled(this@MainActivity)) {
+                    downloadAndInstall(info.apkUrl)
+                } else {
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle(R.string.update_available_title)
+                        .setMessage(getString(R.string.update_available_message, info.versionName, info.notes))
+                        .setPositiveButton(R.string.update_button) { _, _ -> downloadAndInstall(info.apkUrl) }
+                        .setNegativeButton(R.string.update_later, null)
+                        .show()
+                }
             }
         }
     }
@@ -117,23 +120,12 @@ class MainActivity : AppCompatActivity() {
         scope.launch {
             val apk = UpdateChecker.downloadApk(this@MainActivity, url)
             withContext(Dispatchers.Main) {
-                if (apk == null) {
-                    showStatus(getString(R.string.update_download_failed))
-                    return@withContext
+                when {
+                    apk == null -> showStatus(getString(R.string.update_download_failed))
+                    !UpdateChecker.installApk(this@MainActivity, apk) ->
+                        showStatus(getString(R.string.update_open_installer_failed))
+                    else -> showStatus(getString(R.string.update_waiting_install))
                 }
-                val uri = runCatching {
-                    FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", apk)
-                }.getOrElse {
-                    showStatus(getString(R.string.update_download_failed))
-                    return@withContext
-                }
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, "application/vnd.android.package-archive")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                runCatching { startActivity(intent) }
-                    .onSuccess { showStatus(getString(R.string.update_waiting_install)) }
-                    .onFailure { showStatus(getString(R.string.update_open_installer_failed)) }
             }
         }
     }

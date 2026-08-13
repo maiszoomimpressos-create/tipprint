@@ -68,7 +68,10 @@
     <string name="settings_version">TipPrint v%1$s</string>
 
     <string name="settings_updates">Atualização do app</string>
-    <string name="settings_updates_text">Ao abrir, o app verifica o servidor de atualização e avisa quando houver versão nova.</string>
+    <string name="settings_updates_text">Ao abrir, o app verifica o servidor de atualização. Com a atualização automática ligada, ele baixa e instala sozinho (o sistema pede a confirmação final).</string>
+    <string name="settings_auto_update">Atualizar automaticamente ao abrir</string>
+    <string name="settings_check_updates">Verificar atualizações agora</string>
+    <string name="settings_up_to_date">Você já está na versão mais recente.</string>
     <string name="label_update_server">Servidor de atualização (URL)</string>
     <string name="save_update_server">Salvar servidor</string>
     <string name="update_server_saved">Servidor de atualização salvo.</string>
