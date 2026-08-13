@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.0.4",
+  "versionName": "1.0.5.0.0.5",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Busca de dispositivos Bluetooth (ListView): lista impressora encontrada, pareia com PIN 0000 e conecta na porta COM automaticamente."
+  "notes": "Conexao Bluetooth com retry automatico (link demora a subir) e mensagem clara de Access denied: impressora pode estar conectada em outro aparelho."
 }

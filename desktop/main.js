@@ -43,9 +43,20 @@ function writeActive(buffer) {
 
 async function connectSerial(portPath, baud) {
   await disconnect();
-  const port = new SerialPort({ path: portPath, baudRate: baud, autoOpen: false });
-  await new Promise((resolve, reject) => port.open((err) => (err ? reject(err) : resolve())));
-  active = { kind: 'serial', port };
+  let lastErr;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const port = new SerialPort({ path: portPath, baudRate: baud, autoOpen: false });
+    try {
+      await new Promise((resolve, reject) => port.open((err) => (err ? reject(err) : resolve())));
+      active = { kind: 'serial', port };
+      return;
+    } catch (e) {
+      lastErr = e;
+      if (port.isOpen) port.close(() => {});
+      if (attempt < 4) await new Promise((r) => setTimeout(r, 1500));
+    }
+  }
+  throw lastErr;
 }
 
 async function connectNet(host, port) {

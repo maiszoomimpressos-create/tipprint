@@ -270,7 +270,14 @@ async function connectPort(portPath) {
       $('btConnectedLabel').classList.remove('hidden');
     }
   } catch (e) {
-    showStatus('Falha ao conectar: ' + e.message);
+    const msg = String(e.message || '');
+    if (/access denied/i.test(msg)) {
+      showStatus('Access denied em ' + portPath + ': a impressora pode estar ligada em outro aparelho ' +
+        '(desconecte do celular — Bluetooth aguenta 1 conexão por vez), desligada ou fora do alcance. ' +
+        'Confira e toque em conectar de novo.');
+    } else {
+      showStatus('Falha ao conectar: ' + msg);
+    }
   } finally {
     setControls(true);
   }
