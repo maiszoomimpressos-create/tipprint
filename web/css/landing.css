@@ -109,6 +109,7 @@ em { font-style: normal; color: var(--tipprint-brand-thermal, #E84A1B); }
 }
 [data-theme="raw-terminal"] .plat-badge { color: var(--tipprint-success, #2FB96C); }
 .plat h3 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.btn-download { margin-top: 16px; }
 
 /* ---------- Passos ---------- */
 .steps { list-style: none; display: grid; gap: 14px; }
