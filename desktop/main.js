@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard } = require('electron');
 const path = require('path');
 const os = require('os');
 const { execFile, spawn } = require('child_process');
@@ -145,6 +145,11 @@ ipcMain.handle('list-ports', async () => {
     productId: p.productId || null,
     vendorId: p.vendorId || null
   }));
+});
+
+ipcMain.handle('copy-text', (_e, text) => {
+  clipboard.writeText(String(text));
+  return { ok: true };
 });
 
 ipcMain.handle('get-log', async () => {
