@@ -27,7 +27,7 @@
     <string name="bluetooth_permission_denied">Permissão de Bluetooth negada. Conceda a permissão para continuar.</string>
     <string name="bluetooth_connected">Bluetooth conectado: %1$s</string>
 
-    <string name="bluetooth_scanning">Buscando impressoras Bluetooth próximas…</string>
+    <string name="bluetooth_scanning">Buscando impressora</string>
     <string name="bluetooth_scan_failed">Não foi possível iniciar a busca Bluetooth.</string>
     <string name="bluetooth_none_found">Nenhuma impressora encontrada. Verifique se ela está ligada e próxima do aparelho.</string>
     <string name="bluetooth_found_title">Impressoras encontradas — toque para parear</string>

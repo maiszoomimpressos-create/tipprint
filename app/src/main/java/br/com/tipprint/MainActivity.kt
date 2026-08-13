@@ -63,6 +63,10 @@ class MainActivity : AppCompatActivity() {
 
     private val discoveredDevices = mutableListOf<BluetoothDevice>()
 
+    private var discoveryInProgress = false
+
+    private var foundDialog: AlertDialog? = null
+
     private val bluetoothPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             if (allGranted(it)) fillBluetoothDevices() else showStatus(getString(R.string.bluetooth_permission_denied))
@@ -212,10 +216,33 @@ class MainActivity : AppCompatActivity() {
 
     private fun discoverBluetoothClicked() {
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
+        stopScanningAnimation()
         discoveredDevices.clear()
+        foundDialog?.dismiss()
+        foundDialog = null
+        discoveryInProgress = true
         runCatching { adapter.startDiscovery() }
-            .onFailure { showStatus(getString(R.string.bluetooth_scan_failed)) }
-            .onSuccess { showStatus(getString(R.string.bluetooth_scanning)) }
+            .onFailure { discoveryInProgress = false; showStatus(getString(R.string.bluetooth_scan_failed)) }
+            .onSuccess { showScanningStatus() }
+    }
+
+    private var scanningDots = 0
+    private val scanningAnimation = object : Runnable {
+        override fun run() {
+            scanningDots = (scanningDots + 1) % 4
+            statusText.text = getString(R.string.bluetooth_scanning) + ".".repeat(scanningDots)
+            mainHandler.postDelayed(this, 400)
+        }
+    }
+
+    private fun showScanningStatus() {
+        scanningDots = 0
+        statusText.text = getString(R.string.bluetooth_scanning)
+        mainHandler.postDelayed(scanningAnimation, 400)
+    }
+
+    private fun stopScanningAnimation() {
+        mainHandler.removeCallbacks(scanningAnimation)
     }
 
     private val discoveryReceiver = object : BroadcastReceiver() {
@@ -223,20 +250,24 @@ class MainActivity : AppCompatActivity() {
             when (intent.action) {
                 BluetoothDevice.ACTION_FOUND -> {
                     val device = intent.bluetoothDeviceExtra()
-                    if (device != null && !discoveredDevices.any { it.address == device.address }) {
+                    if (device != null && discoveryInProgress && !discoveredDevices.any { it.address == device.address }) {
                         discoveredDevices += device
                     }
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                    runCatching { bluetoothAdapter?.cancelDiscovery() }
+                    if (!discoveryInProgress) return
+                    discoveryInProgress = false
+                    stopScanningAnimation()
                     if (discoveredDevices.isEmpty()) {
                         showStatus(getString(R.string.bluetooth_none_found))
                         return
                     }
                     val names = discoveredDevices.map { it.name ?: it.address }
-                    AlertDialog.Builder(this@MainActivity)
+                    foundDialog?.dismiss()
+                    foundDialog = AlertDialog.Builder(this@MainActivity)
                         .setTitle(R.string.bluetooth_found_title)
                         .setItems(names.toTypedArray()) { _, which -> pairWithDevice(discoveredDevices[which]) }
+                        .setNegativeButton(R.string.cancel, null)
                         .show()
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
@@ -294,6 +325,8 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         runCatching { bluetoothAdapter?.cancelDiscovery() }
         runCatching { unregisterReceiver(discoveryReceiver) }
+        foundDialog?.dismiss()
+        foundDialog = null
     }
 
     private fun connectUsbClicked() {
