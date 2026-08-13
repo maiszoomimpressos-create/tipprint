@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.1.1",
+  "versionName": "1.0.5.0.1.2",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Botao \"Copiar log (para suporte)\" na aba Bluetooth: grava tudo que o app faz (busca, portas, pareamento, conexao) e copia pra area de transferencia — cole aqui no chat que o suporte diagnostica na hora."
+  "notes": "Corrige o botao 'Copiar log (para suporte)': o clipboard agora passa pelo processo principal (IPC) - no Electron 33 o preload e sandboxed e nao tem acesso ao modulo clipboard, entao o botao nunca copiava nada."
 }

@@ -1,15 +1,7 @@
 ﻿{
   "appId": "br.com.tipprint",
-"versionCode": 17,
-  "versionName": "1.0.5.0.0.10",
+  "versionCode": 18,
+  "versionName": "1.0.5.0.0.11",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Correcao: a reconexao automatica agora e realmente disparada ao abrir o app (antes abria a tela mas nao tentava conectar)."
+  "notes": "Auto-conexao so dispara com Bluetooth ligado e impressora ainda pareada; novo toggle 'Conectar automaticamente ao abrir (Bluetooth)' nas configuracoes - evita a impressora ficar presa no celular e bloquear o app Windows no PC."
 }
-
-
-
-
-
-
-
-
