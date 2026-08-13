@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.0.5",
+  "versionName": "1.0.5.0.0.6",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Conexao Bluetooth com retry automatico (link demora a subir) e mensagem clara de Access denied: impressora pode estar conectada em outro aparelho."
+  "notes": "Busca de dispositivos lista TODOS os sistemas pareados (KP-1025 e cia, com porta COM de cada um). Dispositivo novo por perto: botao abre a varredura do Windows e o app atualiza sozinho ao voltar."
 }

@@ -99,7 +99,11 @@ async function askEnableBt() {
 
 $('enableBt').addEventListener('click', askEnableBt);
 $('enableBtSection').addEventListener('click', askEnableBt);
-window.addEventListener('focus', () => refreshBtStatus());
+$('discoverNewDev').addEventListener('click', discoverNewDev);
+window.addEventListener('focus', () => {
+  refreshBtStatus();
+  if (currentType === 'bt') discoverDevices();
+});
 
 function tagFor(port) {  const hay = ((port.friendlyName || '') + ' ' + (port.pnpId || '') + ' ' + (port.manufacturer || '')).toLowerCase();
   if (hay.includes('bluetooth') || hay.includes('bthenum') || hay.includes('tooth') || hay.includes('spp')) {
@@ -131,10 +135,20 @@ function renderPorts(listId, ports) {
   });
 }
 
-function deviceAddress(id) {
-  const parts = String(id).split('-');
-  const addr = parts[parts.length - 1] || '';
-  return addr.replace(/:/g, '').toUpperCase();
+function deviceMac(device) {
+  if (device && device.Address) {
+    return String(device.Address).replace(/:/g, '').toUpperCase();
+  }
+  if (device && device.Id) {
+    const parts = String(device.Id).split('-');
+    return (parts[parts.length - 1] || '').replace(/:/g, '').toUpperCase();
+  }
+  return '';
+}
+
+function macDisplay(mac) {
+  if (!mac) return '';
+  return mac.toLowerCase().replace(/(.{2})(?=.)/g, '$1:');
 }
 
 let cachedPorts = [];
@@ -157,10 +171,10 @@ async function refreshPorts(kind) {
   }
 }
 
-function findPortForDevice(id) {
-  const addr = deviceAddress(id);
-  if (!addr) return null;
-  return cachedPorts.find((p) => ((p.pnpId || '') + '').toUpperCase().includes(addr)) || null;
+function findPortForDevice(device) {
+  const mac = deviceMac(device);
+  if (!mac) return null;
+  return cachedPorts.find((p) => ((p.pnpId || '') + '').toUpperCase().includes(mac)) || null;
 }
 
 function renderBtDevices(devices) {
@@ -170,7 +184,7 @@ function renderBtDevices(devices) {
   devices.forEach((device) => {
     const item = document.createElement('div');
     item.className = 'device-item';
-    const port = findPortForDevice(device.Id);
+    const port = findPortForDevice(device);
     const tag = document.createElement('span');
     if (port) {
       tag.className = 'device-tag connected';
@@ -183,9 +197,8 @@ function renderBtDevices(devices) {
       tag.textContent = 'NOVO';
     }
     item.innerHTML = '<div><div class="device-name"></div><div class="device-meta"></div></div>';
-    item.querySelector('.device-name').textContent = device.Name || 'Sem nome';
-    item.querySelector('.device-meta').textContent = deviceAddress(device.Id)
-      .toLowerCase().replace(/(.{2})(?=.)/g, '$1:');
+    item.querySelector('.device-name').textContent = device.Name || 'Dispositivo sem nome';
+    item.querySelector('.device-meta').textContent = macDisplay(deviceMac(device));
     item.appendChild(tag);
     item.addEventListener('click', () => handleDeviceTap(device));
     list.appendChild(item);
@@ -194,21 +207,30 @@ function renderBtDevices(devices) {
 
 async function discoverDevices() {
   setControls(false);
-  showStatus('Pesquisando dispositivos Bluetooth próximos...');
+  showStatus('Pesquisando dispositivos Bluetooth...');
   try {
     const devices = await window.tipprint.btDevices();
     if (!devices) {
       showStatus('Falha na busca de dispositivos.');
       return;
     }
-    const list = devices.filter((d) => d.Name || d.Paired);
+    const list = devices.filter((d) => d.Paired || d.Name);
     renderBtDevices(list);
     showStatus(list.length
-      ? 'Dispositivos encontrados: ' + list.map((d) => d.Name).join(', ')
-      : 'Nenhum dispositivo encontrado.');
+      ? 'Sistemas: ' + list.map((d) => d.Name || macDisplay(deviceMac(d))).join(', ')
+      : 'Nenhum sistema encontrado.');
   } finally {
     setControls(true);
   }
+}
+
+async function discoverNewDev() {
+  showStatus('Abrindo a varredura de dispositivos do Windows... pareie o sistema lá e, quando voltar, atualizo a lista sozinho.');
+  await window.tipprint.openBtSettings();
+  btPollTimer = setInterval(() => {
+    if (currentType === 'bt') discoverDevices();
+  }, 4000);
+  setTimeout(stopBtPolling, 120000);
 }
 
 async function handleDeviceTap(device) {
@@ -222,7 +244,7 @@ async function handleDeviceTap(device) {
     return;
   }
   setControls(false);
-  showStatus('Pareando com ' + (device.Name || deviceAddress(device.Id)) +
+  showStatus('Pareando com ' + (device.Name || macDisplay(deviceMac(device))) +
     '... se o Windows pedir PIN, digite 0000.');
   try {
     const status = await window.tipprint.btPair(device.Id);
@@ -231,7 +253,7 @@ async function handleDeviceTap(device) {
       return;
     }
     showStatus('Pareado! Procurando a porta COM...');
-    const found = await waitForPort(device.Id);
+    const found = await waitForPort(device);
     if (found) {
       connectPort(found.path);
     } else {
@@ -244,7 +266,7 @@ async function handleDeviceTap(device) {
   }
 }
 
-async function waitForPort(id, attempts = 15) {
+async function waitForPort(device, attempts = 15) {
   for (let i = 0; i < attempts; i++) {
     await new Promise((r) => setTimeout(r, 2000));
     try {
@@ -252,7 +274,7 @@ async function waitForPort(id, attempts = 15) {
     } catch {
       continue;
     }
-    const port = findPortForDevice(id);
+    const port = findPortForDevice(device);
     if (port) return port;
   }
   return null;

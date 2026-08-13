@@ -147,20 +147,27 @@ ipcMain.handle('update-install', async (_e, installerPath) => {
   return { ok: true };
 });
 
-const BT_DEVICES_SCRIPT = `
-Add-Type -AssemblyName System.Runtime.WindowsRuntime
-[void][Windows.Devices.Enumeration.DeviceInformation, Windows.Devices.Enumeration, ContentType=WindowsRuntime]
-[void][Windows.Devices.Bluetooth.BluetoothDevice, Windows.Devices.Bluetooth, ContentType=WindowsRuntime]
-$asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation\`1' })[0]
-function Await($op, $resultType) {
-  $task = $asTaskGeneric.MakeGenericMethod($resultType).Invoke($null, @($op))
-  $task.Wait()
-  $task.Result
+function runBtScanFile() {
+  return new Promise((resolve) => {
+    execFile(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+        path.join(__dirname, 'lib', 'scripts', 'bt-scan.ps1')],
+      { timeout: 30000, windowsHide: true },
+      (err, stdout) => {
+        if (err) return resolve([]);
+        try {
+          const parsed = JSON.parse(stdout.trim());
+          resolve(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          resolve([]);
+        }
+      }
+    );
+  });
 }
-$sel = [Windows.Devices.Bluetooth.BluetoothDevice]::GetDeviceSelector()
-$devices = Await ([Windows.Devices.Enumeration.DeviceInformation]::FindAllAsync($sel)) ([Windows.Devices.Enumeration.DeviceInformationCollection])
-$devices | ForEach-Object { [PSCustomObject]@{ Name = $_.Name; Id = $_.Id; Paired = $_.Pairing.IsPaired } } | ConvertTo-Json -Compress
-`;
+
+ipcMain.handle('bt-devices', async () => runBtScanFile());
 
 const BT_PAIR_SCRIPT = `
 param($id)
@@ -195,8 +202,6 @@ function runPs(script) {
     );
   });
 }
-
-ipcMain.handle('bt-devices', async () => runPs(BT_DEVICES_SCRIPT));
 
 ipcMain.handle('bt-pair', async (_e, id) => {
   const safeId = String(id).replace(/'/g, '');
