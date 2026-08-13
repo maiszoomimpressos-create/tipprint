@@ -17,13 +17,30 @@ class BluetoothPrinter(
     override val name: String = device.name ?: device.address
 
     override fun open() {
-        socket = try {
-            device.createRfcommSocketToServiceRecord(SPP_UUID)
-        } catch (e: IOException) {
-            throw IOException("Não foi possível criar a conexão Bluetooth com $name", e)
-        }
         adapter.cancelDiscovery()
-        socket?.connect()
+        var lastError: IOException? = null
+        for (candidate in candidateSockets(device)) {
+            try {
+                candidate.connect()
+                socket = candidate
+                return
+            } catch (e: IOException) {
+                lastError = e
+                runCatching { candidate.close() }
+            }
+        }
+        throw IOException("Não foi possível conectar com $name", lastError)
+    }
+
+    private fun candidateSockets(device: BluetoothDevice): List<BluetoothSocket> {
+        val sockets = mutableListOf<BluetoothSocket>()
+        runCatching { sockets += device.createRfcommSocketToServiceRecord(SPP_UUID) }
+        runCatching {
+            val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+            @Suppress("UNCHECKED_CAST")
+            sockets += method.invoke(device, 1) as BluetoothSocket
+        }
+        return sockets
     }
 
     override fun write(data: ByteArray) {

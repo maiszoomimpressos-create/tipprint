@@ -47,7 +47,7 @@
     <string name="connecting_bluetooth">Conectando ao Bluetooth %1$s (%2$s)…</string>
     <string name="connecting_usb">Conectando ao USB %1$s…</string>
     <string name="connecting_net">Conectando à rede %1$s…</string>
-    <string name="connection_failed">Falha na conexão: %1$s</string>
+    <string name="connection_failed">Falha ao conectar com a impressora: %1$s. Confira: impressora ligada, perto do celular e sem outro aparelho conectado a ela.</string>
 
     <string name="printing">Imprimindo…</string>
     <string name="print_success">Impressão enviada com sucesso!</string>

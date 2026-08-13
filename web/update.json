@@ -1,9 +1,10 @@
 ﻿{
   "appId": "br.com.tipprint",
-"versionCode": 7,
-  "versionName": "1.0.5.0.0.0",
+"versionCode": 8,
+  "versionName": "1.0.5.0.0.1",
   "apkPath": "/downloads/app-debug.apk",
   "notes": "Conexao direta primeiro (a maioria das impressoras termicas conecta sem parear); pareamento com PIN 0000 so como alternativa."
 }
+
 
 

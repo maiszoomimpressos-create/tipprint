@@ -32,6 +32,7 @@ import br.com.tipprint.printer.UsbPrinterManager
 import br.com.tipprint.printer.printBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -194,6 +195,23 @@ class MainActivity : AppCompatActivity() {
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
         showStatus(getString(R.string.connecting_bluetooth, device.name, device.address))
         scope.launch {
+            val ok = tryOpenPrinter(adapter, device)
+            withContext(Dispatchers.Main) {
+                if (ok) {
+                    activePrinter = device.address
+                    savePrinter("bluetooth", device.address)
+                    showStatus(getString(R.string.bluetooth_connected, device.name))
+                } else {
+                    activePrinter = null
+                    showStatus(getString(R.string.connection_failed, resultException?.message ?: "erro"))
+                }
+            }
+        }
+    }
+
+    private suspend fun tryOpenPrinter(adapter: BluetoothAdapter, device: BluetoothDevice): Boolean {
+        var attempt = 1
+        while (attempt <= 3) {
             val result = runCatching {
                 val printer = BluetoothPrinter(adapter, device)
                 printer.open()
@@ -201,18 +219,15 @@ class MainActivity : AppCompatActivity() {
                 printer.close()
                 ok
             }
-            withContext(Dispatchers.Main) {
-                if (result.isSuccess) {
-                    activePrinter = device.address
-                    savePrinter("bluetooth", device.address)
-                    showStatus(getString(R.string.bluetooth_connected, device.name))
-                } else {
-                    activePrinter = null
-                    showStatus(getString(R.string.connection_failed, result.exceptionOrNull()?.message ?: "erro"))
-                }
-            }
+            if (result.isSuccess) return true
+            resultException = result.exceptionOrNull()
+            attempt++
+            if (attempt <= 3) delay(1000)
         }
+        return false
     }
+
+    private var resultException: Throwable? = null
 
     private fun discoverBluetoothClicked() {
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
@@ -310,13 +325,7 @@ class MainActivity : AppCompatActivity() {
         }
         showStatus(getString(R.string.connecting_bluetooth, device.name, device.address))
         scope.launch {
-            val ok = runCatching {
-                val printer = BluetoothPrinter(adapter, device)
-                printer.open()
-                val status = printer.checkStatus()
-                printer.close()
-                status
-            }.isSuccess
+            val ok = tryOpenPrinter(adapter, device)
             withContext(Dispatchers.Main) {
                 if (ok) {
                     activePrinter = device.address
