@@ -146,3 +146,8 @@ body {
   padding: 13px 16px; margin-bottom: 10px; outline: none;
 }
 .input:focus { border-color: var(--primary); }
+
+.app-footer {
+  margin-top: 24px; text-align: center;
+  font-family: var(--mono); font-size: 11px; color: var(--muted); opacity: .7;
+}

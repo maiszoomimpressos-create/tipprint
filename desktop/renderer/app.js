@@ -178,3 +178,8 @@ $('connectNet').addEventListener('click', connectNetClicked);
 $('printTest').addEventListener('click', printTestClicked);
 
 refreshBtStatus();
+
+window.tipprint.appVersion().then((v) => {
+  const el = $('appVersion');
+  if (el) el.textContent = v;
+}).catch(() => {});

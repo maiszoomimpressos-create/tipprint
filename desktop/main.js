@@ -5,6 +5,8 @@ const { SerialPort } = require('serialport');
 const net = require('net');
 const { buildTestReceipt } = require('./lib/escpos');
 
+const DISPLAY_VERSION = require('./package.json').displayVersion || '1.0.5.0.0.0';
+
 let win = null;
 let active = null; // { kind: 'serial' | 'net', port?: SerialPort, socket?: net.Socket }
 
@@ -14,7 +16,7 @@ function createWindow() {
     height: 860,
     minWidth: 380,
     minHeight: 600,
-    title: 'TipPrint',
+    title: 'TipPrint · ' + DISPLAY_VERSION,
     backgroundColor: '#11161D',
     autoHideMenuBar: true,
     webPreferences: {
@@ -109,6 +111,8 @@ ipcMain.handle('list-ports', async () => {
     vendorId: p.vendorId || null
   }));
 });
+
+ipcMain.handle('app-version', async () => DISPLAY_VERSION);
 
 ipcMain.handle('bt-status', async () => getBtRadios());
 

@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('tipprint', {
+  appVersion: () => ipcRenderer.invoke('app-version'),
   listPorts: () => ipcRenderer.invoke('list-ports'),
   btStatus: () => ipcRenderer.invoke('bt-status'),
   connectSerial: (portPath, baud) => ipcRenderer.invoke('connect-serial', portPath, baud),
