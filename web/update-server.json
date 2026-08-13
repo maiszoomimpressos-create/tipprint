@@ -1,0 +1,6 @@
+{
+  "appId": "br.com.tipprint.printserver",
+  "versionName": "1.0.5.2.0.0",
+  "downloadPath": "/downloads/PrintServer.exe",
+  "notes": "Primeira versao com auto-atualizacao: instancia unica, sem ingresso duplicado (dedupe por code/requestId), nunca trava (threads blindadas + auto-restart em erro fatal), /status mostra falhas de impressao, portas HTTP/TCP tentam religar sozinhas."
+}

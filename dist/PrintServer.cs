@@ -12,6 +12,11 @@ using System.Web.Script.Serialization;
 
 class PrintServer
 {
+    // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
+    // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
+    const string AppVersion = "1.0.5.2.0.0";
+    static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
+
     static int HttpPort = 8080;
     static int TcpPort = 9100;
     static string LogFile = null;
@@ -52,6 +57,7 @@ class PrintServer
         if (args.Length > 0) HttpPort = int.Parse(args[0]);
         if (args.Length > 1) TcpPort = int.Parse(args[1]);
         if (args.Length > 2) LogFile = args[2];
+        if (args.Length > 3 && !string.IsNullOrEmpty(args[3])) UpdateCheckUrl = args[3];
 
         if (!AcquireSingleInstance())
         {
@@ -61,7 +67,18 @@ class PrintServer
 
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 
-        Log("Iniciando TipPrint PrintServer...");
+        try { ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12; } catch { }
+
+        // Limpa resquicio de uma auto-atualizacao anterior (arquivo antigo renomeado antes da troca).
+        try
+        {
+            string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            string oldPath = Path.Combine(Path.GetDirectoryName(exePath), "PrintServer.old.exe");
+            if (File.Exists(oldPath)) File.Delete(oldPath);
+        }
+        catch { }
+
+        Log("Iniciando TipPrint PrintServer... (v" + AppVersion + ")");
 
         var http = new Thread(HttpLoop);
         http.IsBackground = true;
@@ -78,6 +95,10 @@ class PrintServer
         var sender = new Thread(SenderLoop);
         sender.IsBackground = true;
         sender.Start();
+
+        var updater = new Thread(UpdateCheckLoop);
+        updater.IsBackground = true;
+        updater.Start();
 
         string saved = LoadConfig();
         if (!string.IsNullOrEmpty(saved))
@@ -146,6 +167,124 @@ class PrintServer
             Process.Start(new ProcessStartInfo(exe, sb.ToString().Trim()) { UseShellExecute = false });
         }
         catch { }
+    }
+
+    // Confere periodicamente se ha uma versao nova publicada e, se houver, baixa e substitui a si mesmo.
+    // Mesmo padrao usado pelo TipPrint Android/Desktop (update.json / update-windows.json).
+    static void UpdateCheckLoop()
+    {
+        Thread.Sleep(5000); // deixa o servidor terminar de subir antes de checar
+        while (true)
+        {
+            try
+            {
+                CheckAndApplyUpdate();
+            }
+            catch (Exception ex)
+            {
+                Log("Erro na checagem de atualizacao (ignorado, tenta de novo mais tarde): " + ex.Message);
+            }
+            Thread.Sleep(6 * 60 * 60 * 1000); // a cada 6h
+        }
+    }
+
+    // Nunca aplica mais de uma auto-atualizacao dentro dessa janela. Protege contra loop infinito de
+    // reinicio caso a versao publicada em update-server.json nao bata com o numero gravado no .exe
+    // (ex.: esquecimento ao publicar) - sem isso, cada instancia no campo ficaria reiniciando sem parar.
+    static readonly TimeSpan MinTimeBetweenSelfUpdates = TimeSpan.FromMinutes(15);
+
+    static void CheckAndApplyUpdate()
+    {
+        string json;
+        using (var wc = new WebClient())
+        {
+            wc.Headers["User-Agent"] = "TipPrint-PrintServer/" + AppVersion;
+            json = wc.DownloadString(UpdateCheckUrl);
+        }
+        var info = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
+        string remoteVersion = info != null && info.ContainsKey("versionName") ? Convert.ToString(info["versionName"]) : null;
+        if (string.IsNullOrEmpty(remoteVersion) || !IsNewerVersion(remoteVersion, AppVersion)) return;
+
+        string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        string dir = Path.GetDirectoryName(exePath);
+        string markerPath = Path.Combine(dir, "PrintServer.lastupdate");
+
+        DateTime? lastUpdate = ReadLastUpdateMarker(markerPath);
+        if (lastUpdate.HasValue && (DateTime.UtcNow - lastUpdate.Value) < MinTimeBetweenSelfUpdates)
+        {
+            Log(string.Format(
+                "Versao {0} anunciada, mas IGNORADA por seguranca: ja houve auto-atualizacao ha menos de {1} min " +
+                "(evita loop de reinicio caso a versao publicada nao bata com o binario). Confira update-server.json.",
+                remoteVersion, (int)MinTimeBetweenSelfUpdates.TotalMinutes));
+            return;
+        }
+
+        string downloadPath = info.ContainsKey("downloadPath") ? Convert.ToString(info["downloadPath"]) : "/downloads/PrintServer.exe";
+        string url = downloadPath.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? downloadPath
+            : new Uri(new Uri(UpdateCheckUrl), downloadPath).ToString();
+
+        Log(string.Format("Nova versao disponivel: {0} (atual: {1}). Baixando de {2}...", remoteVersion, AppVersion, url));
+
+        string newPath = Path.Combine(dir, "PrintServer.new.exe");
+        string oldPath = Path.Combine(dir, "PrintServer.old.exe");
+
+        using (var wc = new WebClient())
+        {
+            wc.DownloadFile(url, newPath);
+        }
+        if (new FileInfo(newPath).Length < 10000) // sanity check: nao aplica se o download veio vazio/corrompido
+            throw new Exception("Arquivo baixado parece invalido (muito pequeno) - atualizacao abortada.");
+
+        try { if (File.Exists(oldPath)) File.Delete(oldPath); } catch { }
+        File.Move(exePath, oldPath);
+        File.Move(newPath, exePath);
+        try { File.WriteAllText(markerPath, DateTime.UtcNow.Ticks.ToString()); } catch { }
+
+        Log(string.Format("Atualizacao aplicada ({0} -> {1}). Reiniciando...", AppVersion, remoteVersion));
+        var sb = new StringBuilder();
+        if (StartupArgs != null)
+            foreach (string a in StartupArgs) sb.Append("\"" + (a ?? "").Replace("\"", "\\\"") + "\" ");
+        Process.Start(new ProcessStartInfo(exePath, sb.ToString().Trim()) { UseShellExecute = false });
+        Environment.Exit(0);
+    }
+
+    static DateTime? ReadLastUpdateMarker(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return null;
+            long ticks;
+            if (long.TryParse(File.ReadAllText(path).Trim(), out ticks)) return new DateTime(ticks, DateTimeKind.Utc);
+        }
+        catch { }
+        return null;
+    }
+
+    static bool IsNewerVersion(string candidate, string current)
+    {
+        int[] a = ParseVersion(candidate);
+        int[] b = ParseVersion(current);
+        int len = Math.Max(a.Length, b.Length);
+        for (int i = 0; i < len; i++)
+        {
+            int x = i < a.Length ? a[i] : 0;
+            int y = i < b.Length ? b[i] : 0;
+            if (x != y) return x > y;
+        }
+        return false;
+    }
+
+    static int[] ParseVersion(string v)
+    {
+        string[] parts = (v ?? "").Split('.');
+        int[] result = new int[parts.Length];
+        for (int i = 0; i < parts.Length; i++)
+        {
+            int n;
+            result[i] = int.TryParse(parts[i], out n) ? n : 0;
+        }
+        return result;
     }
 
     // Evita reimprimir o mesmo pedido quando o site refaz a chamada por timeout/instabilidade de rede.
@@ -664,20 +803,35 @@ class PrintServer
         return new PrintProfile("seguro", 1024, 250, 600, true);
     }
 
+    // Tenta abrir uma porta (HTTP/TCP) indefinidamente com backoff, em vez de desistir para sempre na
+    // primeira falha - importante porque logo apos um auto-restart a porta as vezes ainda esta sendo
+    // liberada pelo processo anterior por um instante.
+    static void StartListenerWithRetry(Action start, string label)
+    {
+        int attempt = 0;
+        while (true)
+        {
+            try
+            {
+                start();
+                return;
+            }
+            catch (Exception ex)
+            {
+                attempt++;
+                int delaySec = Math.Min(30, attempt * 2);
+                Log(string.Format("Nao foi possivel iniciar {0} (tentativa {1}): {2}. Tentando de novo em {3}s...", label, attempt, ex.Message, delaySec));
+                Thread.Sleep(delaySec * 1000);
+            }
+        }
+    }
+
     static void HttpLoop()
     {
         var listener = new HttpListener();
         listener.Prefixes.Add(string.Format("http://localhost:{0}/", HttpPort));
         listener.Prefixes.Add(string.Format("http://127.0.0.1:{0}/", HttpPort));
-        try
-        {
-            listener.Start();
-        }
-        catch (Exception ex)
-        {
-            Log("Nao foi possivel iniciar o servidor HTTP: " + ex.Message);
-            return;
-        }
+        StartListenerWithRetry(delegate { listener.Start(); }, "servidor HTTP na porta " + HttpPort);
         Log("Servidor HTTP no ar.");
         while (true)
         {
@@ -731,6 +885,7 @@ class PrintServer
                 Json(ctx, new
                 {
                     ok = true,
+                    version = AppVersion,
                     connected = (ActivePort != null && ActivePort.IsOpen) || (Active != null && Active.Type == "windows"),
                     printer = Active != null ? Active.Name : null,
                     port = Active != null ? Active.Id : null,
@@ -1154,8 +1309,7 @@ class PrintServer
     static void TcpLoop()
     {
         var listener = new TcpListener(IPAddress.Any, TcpPort);
-        try { listener.Start(); }
-        catch (Exception ex) { Log("TCP 9100 nao iniciou: " + ex.Message); return; }
+        StartListenerWithRetry(delegate { listener.Start(); }, "ponte TCP na porta " + TcpPort);
         Log(string.Format("Ponte TCP {0} no ar (para apps antigos).", TcpPort));
         while (true)
         {
