@@ -79,6 +79,8 @@ class MainActivity : AppCompatActivity() {
 
     private var pendingPairDevice: BluetoothDevice? = null
 
+    private var pendingAutoConnect: String? = null
+
     private val discoveredDevices = mutableListOf<BluetoothDevice>()
 
     private var discoveryInProgress = false
@@ -105,6 +107,46 @@ class MainActivity : AppCompatActivity() {
 
         requestBluetoothPermission()
         checkForUpdate()
+        restoreSession()
+    }
+
+    private fun restoreSession() {
+        val prefs = getSharedPreferences("tipprint", MODE_PRIVATE)
+        val type = prefs.getString("printer_type", null)
+        val target = prefs.getString("printer_target", null)
+        if (type == null || target == null) return
+        openWork(type)
+        when (type) {
+            "bt" -> pendingAutoConnect = target
+            "net" -> {
+                ipInput.setText(target.substringBefore(":"))
+                portInput.setText(target.substringAfter(":"))
+                connectNet(target.substringBefore(":"), target.substringAfter(":").toIntOrNull() ?: 9100)
+            }
+            "usb" -> autoReconnectUsb(target)
+        }
+    }
+
+    private fun autoReconnectUsb(deviceId: String) {
+        val manager = usbManager ?: return showStatus(getString(R.string.usb_unavailable))
+        val device = manager.deviceList.values.firstOrNull { it.deviceId.toString() == deviceId }
+        if (device == null) {
+            showStatus(getString(R.string.usb_reconnect_failed))
+            return
+        }
+        if (manager.hasPermission(device)) {
+            connectUsbDeviceAfterPermission(device)
+        } else {
+            connectUsbDevice(manager, device)
+        }
+    }
+
+    private fun maybeAutoConnect() {
+        val mac = pendingAutoConnect ?: return
+        pendingAutoConnect = null
+        val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
+        val device = runCatching { adapter.getRemoteDevice(mac) }.getOrNull() ?: return
+        connectToDevice(device)
     }
 
     private fun wireChooser() {
@@ -252,6 +294,7 @@ class MainActivity : AppCompatActivity() {
         }.onSuccess { devices ->
             bondedDevices.clear()
             bondedDevices += devices.sortedBy { it.name }
+            maybeAutoConnect()
             if (scanModeActive) return@onSuccess
             fillBluetoothList(bondedDevices)
             if (devices.isEmpty()) showStatus(getString(R.string.bluetooth_no_devices))
@@ -594,6 +637,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val port = portInput.text.toString().toIntOrNull() ?: 9100
+        connectNet(host, port)
+    }
+
+    private fun connectNet(host: String, port: Int) {
         val target = "$host:$port"
         showStatus(getString(R.string.connecting_net, target))
         scope.launch {

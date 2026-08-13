@@ -1,9 +1,9 @@
 ﻿{
   "appId": "br.com.tipprint",
-"versionCode": 14,
-  "versionName": "1.0.5.0.0.7",
+"versionCode": 15,
+  "versionName": "1.0.5.0.0.8",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Lista de dispositivos: mostra ate 4 itens e rola com barra de rolagem ao lado."
+  "notes": "Reconexao automatica: ao abrir o app, volta direto para o ultimo tipo/impressora usados e tenta reconectar."
 }
 
 

@@ -46,6 +46,7 @@
     <string name="usb_requesting_permission">Solicitando permissão de acesso ao dispositivo USB…</string>
     <string name="usb_permission_denied">Permissão USB negada.</string>
     <string name="usb_connected">USB conectado: %1$s</string>
+    <string name="usb_reconnect_failed">Impressora USB não encontrada. Conecte o cabo antes de abrir o app.</string>
 
     <string name="net_enter_ip">Digite o endereço IP da impressora.</string>
     <string name="net_connected">Rede conectada: %1$s</string>
