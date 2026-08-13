@@ -200,9 +200,10 @@ ipcMain.handle('bt-devices', async () => {
   });
   scanned.forEach((d) => {
     if (!map[d.Mac]) {
-      map[d.Mac] = { Name: d.Name || '', Address: d.Mac, Paired: d.Paired };
-    } else if (d.Name && !map[d.Mac].Name) {
-      map[d.Mac].Name = d.Name;
+      map[d.Mac] = { Name: d.Name || '', Address: d.Mac, Id: d.Id, Paired: d.Paired };
+    } else {
+      if (!map[d.Mac].Id) map[d.Mac].Id = d.Id;
+      if (d.Name && !map[d.Mac].Name) map[d.Mac].Name = d.Name;
     }
   });
   return Object.values(map);

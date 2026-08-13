@@ -233,8 +233,17 @@ async function discoverNewDev() {
   setTimeout(stopBtPolling, 120000);
 }
 
+async function ensurePortForDevice(device) {
+  try {
+    cachedPorts = await window.tipprint.listPorts();
+  } catch {
+    // mantem cache atual
+  }
+  return findPortForDevice(device);
+}
+
 async function handleDeviceTap(device) {
-  const port = findPortForDevice(device.Id);
+  const port = await ensurePortForDevice(device);
   if (port) {
     connectPort(port.path);
     return;
@@ -243,22 +252,32 @@ async function handleDeviceTap(device) {
     showStatus('Dispositivo pareado, mas sem porta COM ainda. Clique em "Atualizar portas".');
     return;
   }
+  if (!device.Id) {
+    showStatus('Este dispositivo não abriu porta COM. Use "Abrir pareamento do Windows" e depois toque aqui de novo.');
+    return;
+  }
   setControls(false);
   showStatus('Pareando com ' + (device.Name || macDisplay(deviceMac(device))) +
     '... se o Windows pedir PIN, digite 0000.');
   try {
     const status = await window.tipprint.btPair(device.Id);
-    if (status !== 'Paired' && status !== 'AlreadyPaired') {
-      showStatus('Pareamento não concluído (' + status + '). Se o Windows pedir PIN, digite 0000 e tente de novo.');
+    if (status === 'Paired' || status === 'AlreadyPaired') {
+      showStatus('Pareado! Procurando a porta COM...');
+      const found = await waitForPort(device);
+      if (found) {
+        connectPort(found.path);
+      } else {
+        showStatus('Pareado, mas a porta COM ainda não apareceu. Clique em "Atualizar portas".');
+      }
       return;
     }
-    showStatus('Pareado! Procurando a porta COM...');
-    const found = await waitForPort(device);
-    if (found) {
-      connectPort(found.path);
-    } else {
-      showStatus('Pareado, mas a porta COM ainda não apareceu. Clique em "Atualizar portas".');
+    const after = await ensurePortForDevice(device);
+    if (after) {
+      connectPort(after.path);
+      return;
     }
+    showStatus('Pareamento não concluído (' + status + '). Se o Windows pedir PIN, digite 0000. ' +
+      'Se o dispositivo já era pareado, a porta deve aparecer em "Atualizar portas".');
   } catch (e) {
     showStatus('Falha ao parear: ' + e.message);
   } finally {
