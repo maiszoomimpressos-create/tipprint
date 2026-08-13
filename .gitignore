@@ -20,3 +20,5 @@ node_modules/
 # Sistema
 Thumbs.db
 .DS_Store
+.vercel
+.env*

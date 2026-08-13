@@ -22,7 +22,7 @@ object UpdateChecker {
 
     const val PREFS = "tipprint_updates"
     const val KEY_SERVER = "update_server_url"
-    const val DEFAULT_SERVER = "http://10.0.2.2:3005"
+    const val DEFAULT_SERVER = "https://tipprint.vercel.app"
 
     fun serverUrl(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
