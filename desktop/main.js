@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const { execFile } = require('child_process');
 const { SerialPort } = require('serialport');
 const net = require('net');
 const { buildTestReceipt } = require('./lib/escpos');
@@ -68,6 +69,35 @@ function disconnect() {
   });
 }
 
+const BT_RADIO_SCRIPT = `
+$radios = @(Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'Adapter|Wireless' })
+$srv = Get-Service bthserv -ErrorAction SilentlyContinue
+$on = ($srv.Status -eq 'Running')
+$radios | ForEach-Object {
+  $state = if ($_.Status -ne 'OK') { 'Disabled' } elseif ($on) { 'On' } else { 'Off' }
+  [PSCustomObject]@{ Name = $_.FriendlyName; State = $state }
+} | ConvertTo-Json -Compress
+`;
+
+function getBtRadios() {
+  return new Promise((resolve) => {
+    execFile(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-Command', BT_RADIO_SCRIPT],
+      { timeout: 20000, windowsHide: true },
+      (err, stdout) => {
+        if (err) return resolve([]);
+        try {
+          const parsed = JSON.parse(stdout.trim());
+          resolve(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          resolve([]);
+        }
+      }
+    );
+  });
+}
+
 ipcMain.handle('list-ports', async () => {
   const ports = await SerialPort.list();
   return ports.map((p) => ({
@@ -79,6 +109,8 @@ ipcMain.handle('list-ports', async () => {
     vendorId: p.vendorId || null
   }));
 });
+
+ipcMain.handle('bt-status', async () => getBtRadios());
 
 ipcMain.handle('connect-serial', async (_e, portPath, baud) => {
   await connectSerial(portPath, baud);

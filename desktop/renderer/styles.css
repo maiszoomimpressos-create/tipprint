@@ -51,6 +51,23 @@ body {
 
 .screen-sub { color: var(--muted); margin-bottom: 26px; }
 
+/* ---------- Bluetooth status ---------- */
+.bt-status {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  border: 1px solid var(--outline); border-radius: var(--radius);
+  background: var(--surface); padding: 12px 14px; margin-bottom: 16px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bt-status::before {
+  content: ''; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  background: var(--muted);
+}
+.bt-status.ok::before { background: var(--success); }
+.bt-status.warn::before { background: #F5A623; }
+.bt-status.err::before { background: #E84A1B; }
+.bt-status .bt-name { color: var(--muted); font-weight: 400; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+
 /* ---------- Buttons ---------- */
 .btn {
   display: block; width: 100%; border: 1px solid var(--outline);

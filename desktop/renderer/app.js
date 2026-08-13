@@ -36,8 +36,43 @@ function openChooser() {
   showStatus('');
 }
 
-function tagFor(port) {
-  const hay = ((port.friendlyName || '') + ' ' + (port.pnpId || '') + ' ' + (port.manufacturer || '')).toLowerCase();
+function renderBtStatus(elId, radios) {
+  const el = $(elId);
+  if (!el) return;
+  const active = radios.filter((r) => r.State === 'On');
+  if (active.length > 0) {
+    el.className = 'bt-status ok';
+    el.innerHTML =
+      'Bluetooth ativo · <span class="bt-name">' + active[0].Name + '</span>';
+    return;
+  }
+  if (radios.length > 0) {
+    el.className = 'bt-status warn';
+    const names = radios.map((r) => r.Name).join(' / ');
+    el.innerHTML = 'Bluetooth desligado ou desativado · <span class="bt-name">' + names +
+      ' — ligue em Configurações → Bluetooth e dispositivos.</span>';
+    return;
+  }
+  el.className = 'bt-status err';
+  el.innerHTML = 'Nenhum adaptador Bluetooth detectado · <span class="bt-name">' +
+    'Se for PC de mesa, conecte um adaptador (ex.: TP-Link) para parear a impressora.</span>';
+}
+
+async function refreshBtStatus() {
+  try {
+    const radios = await window.tipprint.btStatus();
+    renderBtStatus('btStatusLine', radios);
+    renderBtStatus('btStatusLineSection', radios);
+  } catch (e) {
+    const el = $('btStatusLine');
+    if (el) {
+      el.className = 'bt-status err';
+      el.textContent = 'Falha ao verificar Bluetooth: ' + e.message;
+    }
+  }
+}
+
+function tagFor(port) {  const hay = ((port.friendlyName || '') + ' ' + (port.pnpId || '') + ' ' + (port.manufacturer || '')).toLowerCase();
   if (hay.includes('bluetooth') || hay.includes('bthenum') || hay.includes('tooth') || hay.includes('spp')) {
     return 'BT';
   }
@@ -70,6 +105,7 @@ function renderPorts(listId, ports) {
 async function refreshPorts(kind) {
   setControls(false);
   showStatus('Buscando portas...');
+  await new Promise((r) => setTimeout(r, 800));
   try {
     const ports = await window.tipprint.listPorts();
     renderPorts(kind === 'bt' ? 'portsList' : 'portsListUsb', ports);
@@ -140,3 +176,5 @@ $('refreshPorts').addEventListener('click', () => refreshPorts('bt'));
 $('refreshPortsUsb').addEventListener('click', () => refreshPorts('usb'));
 $('connectNet').addEventListener('click', connectNetClicked);
 $('printTest').addEventListener('click', printTestClicked);
+
+refreshBtStatus();
