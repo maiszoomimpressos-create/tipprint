@@ -1,9 +1,9 @@
 ﻿{
   "appId": "br.com.tipprint",
-"versionCode": 16,
-  "versionName": "1.0.5.0.0.9",
+"versionCode": 17,
+  "versionName": "1.0.5.0.0.10",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Correcao da reconexao automatica: tipo salvo era 'bluetooth' e a restauracao procurava 'bt'. Agora volta para a tela Bluetooth e reconecta."
+  "notes": "Correcao: a reconexao automatica agora e realmente disparada ao abrir o app (antes abria a tela mas nao tentava conectar)."
 }
 
 

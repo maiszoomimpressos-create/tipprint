@@ -118,7 +118,10 @@ class MainActivity : AppCompatActivity() {
         val workType = if (type == "bluetooth") "bt" else type
         openWork(workType)
         when (workType) {
-            "bt" -> pendingAutoConnect = target
+            "bt" -> {
+                pendingAutoConnect = target
+                maybeAutoConnect()
+            }
             "net" -> {
                 ipInput.setText(target.substringBefore(":"))
                 portInput.setText(target.substringAfter(":"))
@@ -144,6 +147,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun maybeAutoConnect() {
         val mac = pendingAutoConnect ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
+        ) return
         pendingAutoConnect = null
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
         val device = runCatching { adapter.getRemoteDevice(mac) }.getOrNull() ?: return
