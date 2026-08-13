@@ -9,6 +9,18 @@ const { checkForUpdate, downloadInstaller, installerTempPath } = require('./lib/
 
 const DISPLAY_VERSION = require('./package.json').displayVersion || '1.0.5.0.0.0';
 
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+}
+
 const LOG_PATH = path.join(os.tmpdir(), 'tipprint.log');
 
 function log(...args) {
@@ -152,6 +164,32 @@ ipcMain.handle('copy-text', (_e, text) => {
   return { ok: true };
 });
 
+function runBtRepair(mac) {
+  return new Promise((resolve) => {
+    execFile(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+        path.join(__dirname, 'lib', 'scripts', 'bt-repair.ps1'), '-mac', String(mac)],
+      { timeout: 120000, windowsHide: true },
+      (err, stdout) => {
+        if (err) return resolve({ ok: false, error: String(err.message || err), raw: String(stdout) });
+        try {
+          resolve(JSON.parse(stdout.trim()));
+        } catch {
+          resolve({ ok: false, error: 'saida invalida do reparo', raw: String(stdout) });
+        }
+      }
+    );
+  });
+}
+
+ipcMain.handle('bt-repair', async (_e, mac) => {
+  log('bt-repair iniciando mac=' + mac);
+  const r = await runBtRepair(mac);
+  log('bt-repair resultado=' + JSON.stringify(r));
+  return r;
+});
+
 ipcMain.handle('get-log', async () => {
   try {
     return require('fs').readFileSync(LOG_PATH, 'utf8').slice(-120000);
@@ -233,14 +271,20 @@ ipcMain.handle('bt-devices', async () => {
   (known || []).forEach((d) => {
     const mac = String(d.Address || '').replace(/:/g, '').toUpperCase();
     if (!mac) return;
-    map[mac] = { Name: d.Name || '', Address: d.Address, Paired: true };
+    map[mac] = { Name: d.Name || '', Address: d.Address, Paired: true, Kind: 'classic' };
   });
   scanned.forEach((d) => {
+    const isBle = String(d.Id || '').startsWith('BluetoothLE');
     if (!map[d.Mac]) {
-      map[d.Mac] = { Name: d.Name || '', Address: d.Mac, Id: d.Id, Paired: d.Paired };
+      map[d.Mac] = { Name: d.Name || '', Address: d.Mac, Id: d.Id, Paired: d.Paired, Kind: isBle ? 'ble' : 'classic' };
     } else {
-      if (!map[d.Mac].Id) map[d.Mac].Id = d.Id;
-      if (d.Name && !map[d.Mac].Name) map[d.Mac].Name = d.Name;
+      if (isBle) {
+        if (d.Name && !map[d.Mac].Name) map[d.Mac].Name = d.Name;
+      } else {
+        map[d.Mac].Kind = 'classic';
+        if (d.Id) map[d.Mac].Id = d.Id;
+        if (d.Name && !map[d.Mac].Name) map[d.Mac].Name = d.Name;
+      }
     }
   });
   const merged = Object.values(map);

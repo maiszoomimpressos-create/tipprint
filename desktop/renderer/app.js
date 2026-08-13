@@ -11,7 +11,7 @@ function showStatus(msg) {
 }
 
 function setControls(enabled) {
-  ['backToTypes', 'refreshPorts', 'refreshPortsUsb', 'connectNet', 'printTest'].forEach((id) => {
+  ['backToTypes', 'refreshPorts', 'refreshPortsUsb', 'connectNet', 'printTest', 'repairBtBtn'].forEach((id) => {
     const el = $(id);
     if (el) el.disabled = !enabled;
   });
@@ -100,6 +100,7 @@ async function askEnableBt() {
 $('enableBt').addEventListener('click', askEnableBt);
 $('enableBtSection').addEventListener('click', askEnableBt);
 $('discoverNewDev').addEventListener('click', discoverNewDev);
+$('repairBtBtn').addEventListener('click', repairBtClicked);
 $('copyLogBtn').addEventListener('click', async () => {
   try {
     const logText = await window.tipprint.getLog();
@@ -202,6 +203,9 @@ function renderBtDevices(devices) {
     if (port) {
       tag.className = 'device-tag connected';
       tag.textContent = port.path;
+    } else if (device.Kind === 'ble') {
+      tag.className = 'device-tag new';
+      tag.textContent = 'BLE';
     } else if (device.Paired) {
       tag.className = 'device-tag paired';
       tag.textContent = 'PAREADO';
@@ -256,6 +260,10 @@ async function ensurePortForDevice(device) {
 }
 
 async function handleDeviceTap(device) {
+  if (device.Kind === 'ble') {
+    showStatus('Dispositivo visto só pelo lado BLE — BLE não cria porta COM. Toque em "Reparar pareamento (refresh)" ou use "Abrir pareamento do Windows" para o modo clássico.');
+    return;
+  }
   const port = await ensurePortForDevice(device);
   if (port) {
     connectPort(port.path);
@@ -296,6 +304,47 @@ async function handleDeviceTap(device) {
     await window.tipprint.openBtSettings();
   } catch (e) {
     showStatus('Falha ao parear: ' + e.message);
+  } finally {
+    setControls(true);
+  }
+}
+
+function printerMacFromPorts() {
+  for (const p of cachedPorts) {
+    const m = (p.pnpId || '').match(/&([0-9A-F]{12})_C\d+$/i);
+    if (m && !(p.pnpId || '').includes('LOCALMFG')) return m[1];
+  }
+  return '';
+}
+
+async function repairBtClicked() {
+  setControls(false);
+  const mac = printerMacFromPorts();
+  if (!mac) {
+    showStatus('Nenhuma impressora com porta COM quebrada encontrada. Separe-a no Windows e busque dispositivos de novo.');
+    setControls(true);
+    return;
+  }
+  showStatus('Reparando pareamento da impressora (' + mac + '): desparear, reparar e recriar a porta COM...');
+  try {
+    const r = await window.tipprint.btRepair(mac);
+    let msg;
+    if (r.ok && r.port) {
+      msg = 'Pareamento reparado! Porta nova: ' + r.port + '.';
+    } else if (r.paired) {
+      msg = 'Pareada, mas sem porta COM ainda. Se a impressora não piscar em modo de pareamento, desligue-a por uns minutos.';
+    } else if (r.error) {
+      msg = 'Falha no reparo (' + r.error + ').';
+    } else {
+      msg = 'Não foi possível parear (' + (r.status || '?') + '). Confira se a impressora está ligada e próxima do adaptador.';
+    }
+    await refreshPorts('bt');
+    discoverDevices();
+    const logText = await window.tipprint.getLog();
+    if (logText) await window.tipprint.copyText(logText);
+    showStatus(msg + ' Log copiado para o suporte (Ctrl+V).');
+  } catch (e) {
+    showStatus('Falha no reparo: ' + e.message);
   } finally {
     setControls(true);
   }
