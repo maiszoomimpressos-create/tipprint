@@ -20,7 +20,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ListView
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import android.view.View
@@ -42,7 +41,7 @@ import kotlinx.coroutines.withContext
 class MainActivity : AppCompatActivity() {
 
     private lateinit var statusText: TextView
-    private lateinit var bluetoothSpinner: Spinner
+    private lateinit var btList: ListView
     private lateinit var ipInput: EditText
     private lateinit var portInput: EditText
     private lateinit var connectBluetooth: Button
@@ -59,11 +58,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var chooserUsb: Button
     private lateinit var chooserNet: Button
     private lateinit var settingsButtonChooser: Button
-    private lateinit var scanPanel: LinearLayout
-    private lateinit var scanList: ListView
     private lateinit var scanHint: TextView
     private lateinit var cancelScan: Button
-    private var scanAdapter: ArrayAdapter<String>? = null
+    private var scanModeActive = false
 
     private var currentView = "chooser"
 
@@ -126,7 +123,7 @@ class MainActivity : AppCompatActivity() {
     private fun openWork(type: String) {
         setContentView(R.layout.activity_main)
         statusText = findViewById(R.id.statusText)
-        bluetoothSpinner = findViewById(R.id.bluetoothSpinner)
+        btList = findViewById(R.id.btList)
         ipInput = findViewById(R.id.ipInput)
         portInput = findViewById(R.id.portInput)
         connectBluetooth = findViewById(R.id.connectBluetooth)
@@ -139,8 +136,6 @@ class MainActivity : AppCompatActivity() {
         btSection = findViewById(R.id.btSection)
         usbSection = findViewById(R.id.usbSection)
         netSection = findViewById(R.id.netSection)
-        scanPanel = findViewById(R.id.scanPanel)
-        scanList = findViewById(R.id.scanList)
         scanHint = findViewById(R.id.scanHint)
         cancelScan = findViewById(R.id.cancelScan)
         currentView = "work"
@@ -158,10 +153,15 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         backToTypes.setOnClickListener { openChooser() }
-        scanList.setOnItemClickListener { _, _, position, _ ->
-            val device = discoveredDevices.getOrNull(position) ?: return@setOnItemClickListener
-            stopScan()
-            pairWithDevice(device)
+        btList.setOnItemClickListener { _, _, position, _ ->
+            val list = if (scanModeActive) discoveredDevices else bondedDevices
+            val device = list.getOrNull(position) ?: return@setOnItemClickListener
+            if (scanModeActive) {
+                stopScan()
+                pairWithDevice(device)
+            } else {
+                connectToDevice(device)
+            }
         }
         cancelScan.setOnClickListener { stopScan() }
 
@@ -234,28 +234,40 @@ class MainActivity : AppCompatActivity() {
         fillBluetoothDevices()
     }
 
+    private val bondedDevices = mutableListOf<BluetoothDevice>()
+
     private fun fillBluetoothDevices() {
         val adapter = bluetoothAdapter
         if (adapter == null) {
-            fillBluetoothSpinner(emptyList())
+            fillBluetoothList(emptyList())
             showStatus(getString(R.string.bluetooth_unavailable))
             return
         }
         runCatching {
             adapter.bondedDevices
         }.onSuccess { devices ->
-            fillBluetoothSpinner(devices.sortedBy { it.name })
+            bondedDevices.clear()
+            bondedDevices += devices.sortedBy { it.name }
+            if (scanModeActive) return@onSuccess
+            fillBluetoothList(bondedDevices)
             if (devices.isEmpty()) showStatus(getString(R.string.bluetooth_no_devices))
         }.onFailure {
-            fillBluetoothSpinner(emptyList())
+            bondedDevices.clear()
+            fillBluetoothList(emptyList())
             showStatus(getString(R.string.bluetooth_permission_denied))
         }
     }
 
-    private fun fillBluetoothSpinner(devices: List<BluetoothDevice>) {
-        if (!::bluetoothSpinner.isInitialized) return
+    private fun fillBluetoothList(devices: List<BluetoothDevice>) {
+        if (!::btList.isInitialized) return
         val labels = devices.map { "${it.name} - ${it.address}" }
-        bluetoothSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, labels)
+        btList.adapter = ArrayAdapter(this, R.layout.item_printer, labels)
+    }
+
+    private fun fillFoundList() {
+        if (!::btList.isInitialized) return
+        val labels = discoveredDevices.map { it.name ?: it.address }
+        btList.adapter = ArrayAdapter(this, R.layout.item_printer, labels)
     }
 
     private fun connectBluetoothClicked() {
@@ -269,8 +281,9 @@ class MainActivity : AppCompatActivity() {
                 .show()
             return
         }
-        val position = bluetoothSpinner.selectedItemPosition.coerceIn(0, devices.lastIndex)
-        connectToDevice(devices[position])
+        val saved = getSharedPreferences("tipprint", MODE_PRIVATE).getString("printer_target", null)
+        val device = devices.firstOrNull { it.address == saved } ?: devices.first()
+        connectToDevice(device)
     }
 
     private fun connectToDevice(device: BluetoothDevice) {
@@ -318,34 +331,22 @@ class MainActivity : AppCompatActivity() {
         stopScanningAnimation()
         discoveredDevices.clear()
         discoveryInProgress = true
+        scanModeActive = true
         setControlsEnabled(false)
-        showScanPanel()
+        scanHint.visibility = View.GONE
+        cancelScan.visibility = View.VISIBLE
+        fillFoundList()
         runCatching { adapter.startDiscovery() }
             .onFailure { stopScan(); showStatus(getString(R.string.bluetooth_scan_failed)) }
             .onSuccess { showScanningStatus() }
     }
 
-    private fun showScanPanel() {
-        if (!::scanPanel.isInitialized) return
-        scanPanel.visibility = View.VISIBLE
-        cancelScan.visibility = View.VISIBLE
-        scanHint.visibility = View.GONE
-        scanAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, mutableListOf<String>())
-        scanList.adapter = scanAdapter
-    }
-
-    private fun refreshScanList() {
-        if (!::scanPanel.isInitialized || scanPanel.visibility != View.VISIBLE) return
-        val adapter = scanAdapter ?: return
-        adapter.clear()
-        discoveredDevices.forEach { adapter.add(it.name ?: it.address) }
-        adapter.notifyDataSetChanged()
-    }
-
-    private fun finishScanPanel() {
+    private fun finishScan() {
         cancelScan.visibility = View.GONE
         if (discoveredDevices.isEmpty()) {
             scanHint.visibility = View.VISIBLE
+            scanModeActive = false
+            fillBluetoothDevices()
         }
     }
 
@@ -354,9 +355,11 @@ class MainActivity : AppCompatActivity() {
         discoveryInProgress = false
         stopScanningAnimation()
         setControlsEnabled(true)
-        if (::scanPanel.isInitialized) {
-            scanPanel.visibility = View.GONE
-            scanAdapter = null
+        if (scanModeActive) {
+            scanModeActive = false
+            scanHint.visibility = View.GONE
+            cancelScan.visibility = View.GONE
+            fillBluetoothDevices()
         }
     }
 
@@ -386,7 +389,7 @@ class MainActivity : AppCompatActivity() {
                     val device = intent.bluetoothDeviceExtra()
                     if (device != null && discoveryInProgress && !discoveredDevices.any { it.address == device.address }) {
                         discoveredDevices += device
-                        refreshScanList()
+                        fillFoundList()
                     }
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
@@ -394,8 +397,8 @@ class MainActivity : AppCompatActivity() {
                     discoveryInProgress = false
                     stopScanningAnimation()
                     setControlsEnabled(true)
-                    refreshScanList()
-                    finishScanPanel()
+                    fillFoundList()
+                    finishScan()
                     if (discoveredDevices.isEmpty()) {
                         showStatus(getString(R.string.bluetooth_none_found))
                     }
@@ -485,7 +488,10 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         runCatching { bluetoothAdapter?.cancelDiscovery() }
         runCatching { unregisterReceiver(discoveryReceiver) }
-        if (::scanPanel.isInitialized) scanPanel.visibility = View.GONE
+        if (::scanHint.isInitialized && scanModeActive) {
+            scanHint.visibility = View.GONE
+            cancelScan.visibility = View.GONE
+        }
     }
 
     private fun connectUsbClicked() {
