@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.0.2",
+  "versionName": "1.0.5.0.0.3",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Atualizacao automatica: verifica nova versao ao abrir e baixa/instala com um clique."
+  "notes": "Bluetooth presente mas desligado: o app avisa e oferece 'Ativar Bluetooth' (abre as configs do Windows e reconfere sozinho)."
 }

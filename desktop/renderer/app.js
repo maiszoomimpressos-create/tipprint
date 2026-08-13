@@ -63,6 +63,11 @@ async function refreshBtStatus() {
     const radios = await window.tipprint.btStatus();
     renderBtStatus('btStatusLine', radios);
     renderBtStatus('btStatusLineSection', radios);
+    const active = radios.some((r) => r.State === 'On');
+    const present = radios.length > 0;
+    $('enableBt').classList.toggle('hidden', active || !present);
+    $('enableBtSection').classList.toggle('hidden', active || !present);
+    if (active) stopBtPolling();
   } catch (e) {
     const el = $('btStatusLine');
     if (el) {
@@ -71,6 +76,27 @@ async function refreshBtStatus() {
     }
   }
 }
+
+let btPollTimer = null;
+
+function stopBtPolling() {
+  if (btPollTimer) {
+    clearInterval(btPollTimer);
+    btPollTimer = null;
+  }
+}
+
+async function askEnableBt() {
+  stopBtPolling();
+  showStatus('Abra as configurações do Windows e ligue o Bluetooth. Vou reconferir sozinho.');
+  await window.tipprint.openBtSettings();
+  btPollTimer = setInterval(refreshBtStatus, 2000);
+  setTimeout(stopBtPolling, 60000);
+}
+
+$('enableBt').addEventListener('click', askEnableBt);
+$('enableBtSection').addEventListener('click', askEnableBt);
+window.addEventListener('focus', () => refreshBtStatus());
 
 function tagFor(port) {  const hay = ((port.friendlyName || '') + ' ' + (port.pnpId || '') + ' ' + (port.manufacturer || '')).toLowerCase();
   if (hay.includes('bluetooth') || hay.includes('bthenum') || hay.includes('tooth') || hay.includes('spp')) {

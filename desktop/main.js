@@ -138,6 +138,14 @@ ipcMain.handle('update-install', async (_e, installerPath) => {
 
 ipcMain.handle('bt-status', async () => getBtRadios());
 
+ipcMain.handle('open-bt-settings', async () => {
+  spawn('cmd.exe', ['/c', 'start', '', 'ms-settings:bluetooth'], {
+    detached: true,
+    stdio: 'ignore'
+  }).unref();
+  return { ok: true };
+});
+
 ipcMain.handle('connect-serial', async (_e, portPath, baud) => {
   await connectSerial(portPath, baud);
   return { ok: true };
