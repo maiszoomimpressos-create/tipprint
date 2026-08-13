@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+<title>TipPrint</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="header">
+    <div class="logo"></div>
+    <div class="header-titles">
+      <div class="brand">TipPrint</div>
+      <div class="tagline">CONECTE · CONTROLE · IMPRIMA</div>
+    </div>
+  </header>
+
+  <!-- ============ CHOOSER ============ -->
+  <main id="chooser" class="screen">
+    <h1 class="screen-title">Escolha o tipo de conexão</h1>
+    <p class="screen-sub">Toque em um tipo para conectar sua impressora</p>
+    <div class="chooser-btns">
+      <button id="chooserBluetooth" class="btn btn-primary">Bluetooth</button>
+      <button id="chooserUsb" class="btn btn-primary">USB</button>
+      <button id="chooserNet" class="btn btn-primary">Rede (Wi-Fi / Ethernet)</button>
+    </div>
+  </main>
+
+  <!-- ============ WORK ============ -->
+  <main id="work" class="screen hidden">
+    <button id="backToTypes" class="btn btn-outline">Trocar tipo de conexão</button>
+
+    <div id="statusText" class="status"></div>
+
+    <section id="btSection" class="section hidden">
+      <div class="section-head">
+        <span class="overline">BLUETOOTH</span>
+        <span id="btConnectedLabel" class="connected hidden"></span>
+      </div>
+      <button id="refreshPorts" class="btn btn-outline">Buscar portas / acessórios</button>
+      <div id="portsList" class="ports-list"></div>
+      <p id="portsHint" class="caption hidden">Nenhuma porta encontrada. Pareie a impressora no Windows (Configurações → Bluetooth) e busque de novo.</p>
+    </section>
+
+    <section id="usbSection" class="section hidden">
+      <div class="section-head">
+        <span class="overline">USB</span>
+      </div>
+      <button id="refreshPortsUsb" class="btn btn-outline">Buscar dispositivos USB</button>
+      <div id="portsListUsb" class="ports-list"></div>
+      <p id="portsHintUsb" class="caption hidden">Nenhuma porta encontrada. Conecte a impressora via cabo USB e busque de novo.</p>
+    </section>
+
+    <section id="netSection" class="section hidden">
+      <div class="section-head">
+        <span class="overline">REDE (WI-FI / ETHERNET)</span>
+      </div>
+      <input id="ipInput" class="input" placeholder="IP da impressora" autocomplete="off">
+      <input id="portInput" class="input" placeholder="Porta (padrão 9100)" inputmode="numeric" autocomplete="off">
+      <button id="connectNet" class="btn btn-primary">Conectar Rede</button>
+    </section>
+
+    <button id="printTest" class="btn btn-thermal btn-print">Imprimir cupom de teste</button>
+  </main>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

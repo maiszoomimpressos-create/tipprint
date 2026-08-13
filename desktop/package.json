@@ -1,0 +1,42 @@
+{
+  "name": "tipprint-desktop",
+  "productName": "TipPrint",
+  "version": "1.0.5",
+  "description": "TipPrint Windows - impressao termica via Bluetooth, USB e rede",
+  "main": "main.js",
+  "author": "RAW BTS",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "serialport": "^12.0.0"
+  },
+  "build": {
+    "appId": "br.com.tipprint.desktop",
+    "productName": "TipPrint",
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**",
+      "renderer/**"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "renderer/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "artifactName": "app-windows.exe"
+  }
+}

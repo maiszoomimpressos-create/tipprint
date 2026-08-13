@@ -1,0 +1,131 @@
+:root {
+  --bg: #11161D;
+  --surface: #1A212B;
+  --outline: #2A3644;
+  --ink: #E9EDF2;
+  --muted: #8FA0B3;
+  --primary: #60A5FA;
+  --success: #2FB96C;
+  --thermal: #E84A1B;
+  --radius: 14px;
+  --font: 'Segoe UI', system-ui, sans-serif;
+  --mono: 'Cascadia Code', Consolas, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  user-select: none;
+}
+
+.app { max-width: 430px; margin: 0 auto; padding: 20px; }
+
+.hidden { display: none !important; }
+
+/* ---------- Header ---------- */
+.header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+
+.logo {
+  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--thermal), #B33A12);
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+.header-titles { line-height: 1.15; }
+
+.brand { font-size: 22px; font-weight: 800; letter-spacing: .02em; }
+
+.tagline {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .14em; color: var(--muted);
+}
+
+/* ---------- Screens ---------- */
+.screen-title { font-size: 26px; font-weight: 800; margin: 34px 0 8px; }
+
+.screen-sub { color: var(--muted); margin-bottom: 26px; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: block; width: 100%; border: 1px solid var(--outline);
+  border-radius: var(--radius); background: var(--surface); color: var(--ink);
+  font-family: var(--font); font-size: 15px; font-weight: 700;
+  padding: 14px 18px; cursor: pointer; text-align: center;
+  transition: filter .15s, transform .05s;
+}
+.btn:hover { filter: brightness(1.12); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.chooser-btns { display: grid; gap: 12px; margin-top: 10px; }
+
+.btn-outline { background: transparent; }
+
+.btn-primary { border-color: var(--primary); color: var(--primary); }
+
+.btn-thermal {
+  background: linear-gradient(135deg, var(--thermal), #B33A12);
+  border-color: transparent; color: #fff;
+}
+.btn-print { margin-top: 26px; padding: 16px 18px; font-size: 16px; }
+
+/* ---------- Status ---------- */
+.status {
+  margin-top: 16px; border: 1px solid var(--outline); border-radius: var(--radius);
+  background: var(--surface); padding: 14px 16px; min-height: 48px;
+  font-family: var(--mono); font-size: 13px; color: var(--muted); white-space: pre-wrap;
+}
+
+/* ---------- Sections ---------- */
+.section { margin-top: 20px; }
+
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 18px 0 10px;
+}
+
+.overline {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; color: var(--muted); text-transform: uppercase;
+}
+
+.connected { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--success); }
+
+.section .btn { margin-bottom: 10px; }
+
+/* ---------- Ports list ---------- */
+.ports-list { display: grid; gap: 8px; max-height: 236px; overflow-y: auto; }
+
+.port-item {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--outline); border-radius: 10px;
+  background: var(--surface); padding: 12px 14px; cursor: pointer;
+}
+.port-item:hover { filter: brightness(1.12); }
+
+.port-item .port-path { font-family: var(--mono); font-weight: 700; font-size: 14px; }
+
+.port-item .port-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.port-item .port-tag {
+  margin-left: auto; flex-shrink: 0; font-family: var(--mono); font-size: 10px;
+  font-weight: 700; letter-spacing: .1em; color: var(--success);
+  border: 1px solid currentColor; border-radius: 6px; padding: 3px 8px;
+}
+
+.caption { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+/* ---------- Inputs ---------- */
+.input {
+  width: 100%; border: 1px solid var(--outline); border-radius: var(--radius);
+  background: var(--surface); color: var(--ink);
+  font-family: var(--mono); font-size: 15px;
+  padding: 13px 16px; margin-bottom: 10px; outline: none;
+}
+.input:focus { border-color: var(--primary); }
