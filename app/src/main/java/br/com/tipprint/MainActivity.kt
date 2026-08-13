@@ -60,6 +60,8 @@ class MainActivity : AppCompatActivity() {
 
     private var activePrinter: String? = null
 
+    private var pendingPairDevice: BluetoothDevice? = null
+
     private val discoveredDevices = mutableListOf<BluetoothDevice>()
 
     private val bluetoothPermissionLauncher =
@@ -178,14 +180,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun connectBluetoothClicked() {
-        val position = bluetoothSpinner.selectedItemPosition
         val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
         val devices = runCatching { adapter.bondedDevices }.getOrNull()?.sortedBy { it.name } ?: emptyList()
         if (devices.isEmpty()) {
-            showStatus(getString(R.string.bluetooth_no_devices))
+            AlertDialog.Builder(this)
+                .setTitle(R.string.bluetooth_no_paired_search)
+                .setPositiveButton(R.string.discover_bluetooth) { _, _ -> discoverBluetoothClicked() }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
             return
         }
-        val device = devices[position]
+        val position = bluetoothSpinner.selectedItemPosition.coerceIn(0, devices.lastIndex)
+        connectToDevice(devices[position])
+    }
+
+    private fun connectToDevice(device: BluetoothDevice) {
+        val adapter = bluetoothAdapter ?: return showStatus(getString(R.string.bluetooth_unavailable))
         showStatus(getString(R.string.connecting_bluetooth, device.name, device.address))
         scope.launch {
             val result = runCatching {
@@ -241,6 +251,12 @@ class MainActivity : AppCompatActivity() {
                     if (intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1) == BluetoothDevice.BOND_BONDED) {
                         fillBluetoothDevices()
                         showStatus(getString(R.string.bluetooth_bonded))
+                        val device = intent.bluetoothDeviceExtra()
+                        val pending = pendingPairDevice
+                        if (device != null && pending != null && pending.address == device.address) {
+                            pendingPairDevice = null
+                            connectToDevice(device)
+                        }
                     }
                 }
             }
@@ -259,8 +275,17 @@ class MainActivity : AppCompatActivity() {
         val adapter = bluetoothAdapter ?: return
         runCatching { adapter.cancelDiscovery() }
         showStatus(getString(R.string.bluetooth_pairing, device.name ?: device.address))
-        runCatching { device.createBond() }
-            .onFailure { showStatus(getString(R.string.bluetooth_pair_failed)) }
+        val bondState = runCatching { device.bondState }.getOrDefault(BluetoothDevice.BOND_NONE)
+        when (bondState) {
+            BluetoothDevice.BOND_BONDED -> connectToDevice(device)
+            BluetoothDevice.BOND_BONDING -> pendingPairDevice = device
+            else -> {
+                pendingPairDevice = device
+                runCatching { device.createBond() }
+                    .onSuccess { showStatus(getString(R.string.bluetooth_pairing, device.name ?: device.address)) }
+                    .onFailure { showStatus(getString(R.string.bluetooth_pair_failed)) }
+            }
+        }
     }
 
     override fun onStart() {

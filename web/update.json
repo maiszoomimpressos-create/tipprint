@@ -1,7 +1,7 @@
 ﻿{
   "appId": "br.com.tipprint",
-  "versionCode": 2,
-  "versionName": "1.0.1",
+  "versionCode": 3,
+  "versionName": "1.0.2",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Canal de atualização hospedado na nuvem (tipprint.vercel.app)."
+  "notes": "Conectar Bluetooth agora busca impressoras quando não há pareadas e conecta automaticamente após o pareamento."
 }
