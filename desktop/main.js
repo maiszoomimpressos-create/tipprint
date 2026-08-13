@@ -245,8 +245,21 @@ function runPs(script) {
 
 ipcMain.handle('bt-pair', async (_e, id) => {
   const safeId = String(id).replace(/'/g, '');
-  const result = await runPs("$id = '" + safeId + "'; " + BT_PAIR_SCRIPT.replace('param($id)\n', ''));
-  return result && result[0] ? result[0].Status : 'Failed';
+  const cmd = "$id = '" + safeId + "'; " + BT_PAIR_SCRIPT.replace('param($id)\n', '');
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const result = await runPsNoTimeout(cmd, 95000);
+      const status = result && result[0] ? result[0].Status : 'Failed';
+      if (status === 'Paired' || status === 'AlreadyPaired') return status;
+      if (status !== 'ConnectionRejected' && status !== 'AuthenticationFailure' && status !== 'Failed') {
+        return status;
+      }
+    } catch {
+      // tenta de novo
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  return 'Failed';
 });
 
 ipcMain.handle('bt-status', async () => getBtRadios());

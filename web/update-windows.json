@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.0.8",
+  "versionName": "1.0.5.0.0.9",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Corrigido: tocar num dispositivo que ja tem porta COM conecta direto (sem tentar parear de novo); pareamento falhou agora reconecta na porta existente e preserva o Id do dispositivo."
+  "notes": "Pareamento mais resistente: tenta 2x com ate 95s e avisa pra aceitar o pareamento NO CELULAR (PIN aparece na tela dele). Lista agora mostra TODOS os dispositivos achados, ate os sem nome (achava qualquer um)."
 }

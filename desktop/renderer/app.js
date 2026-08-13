@@ -214,7 +214,7 @@ async function discoverDevices() {
       showStatus('Falha na busca de dispositivos.');
       return;
     }
-    const list = devices.filter((d) => d.Paired || d.Name);
+    const list = devices;
     renderBtDevices(list);
     showStatus(list.length
       ? 'Dispositivos: ' + list.map((d) => d.Name || macDisplay(deviceMac(d))).join(', ')
@@ -258,7 +258,8 @@ async function handleDeviceTap(device) {
   }
   setControls(false);
   showStatus('Pareando com ' + (device.Name || macDisplay(deviceMac(device))) +
-    '... se o Windows pedir PIN, digite 0000.');
+    '... CONFIRA O CELULAR: se ele pedir pareamento, aceite nele (o PIN aparece na tela do celular). ' +
+    'Se o Windows pedir PIN, digite 0000.');
   try {
     const status = await window.tipprint.btPair(device.Id);
     if (status === 'Paired' || status === 'AlreadyPaired') {
@@ -267,7 +268,8 @@ async function handleDeviceTap(device) {
       if (found) {
         connectPort(found.path);
       } else {
-        showStatus('Pareado, mas a porta COM ainda não apareceu. Clique em "Atualizar portas".');
+        showStatus('Pareado! Mas nenhuma porta COM apareceu: celulares geralmente não expõem porta serial — ' +
+          'só impressoras/equipamentos. Clique em "Atualizar portas".');
       }
       return;
     }
@@ -276,8 +278,9 @@ async function handleDeviceTap(device) {
       connectPort(after.path);
       return;
     }
-    showStatus('Pareamento não concluído (' + status + '). Se o Windows pedir PIN, digite 0000. ' +
-      'Se o dispositivo já era pareado, a porta deve aparecer em "Atualizar portas".');
+    showStatus('Pareamento não concluído (' + status + '). Tente: 1) coloque o aparelho em modo de pareamento ' +
+      'e deixe a tela do celular aberta no pedido; 2) aceite o pareamento NO CELULAR; 3) se o Windows pedir PIN, ' +
+      'digite 0000. Ou use "Abrir pareamento do Windows".');
   } catch (e) {
     showStatus('Falha ao parear: ' + e.message);
   } finally {
