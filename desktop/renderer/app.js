@@ -261,7 +261,25 @@ async function ensurePortForDevice(device) {
 
 async function handleDeviceTap(device) {
   if (device.Kind === 'ble') {
-    showStatus('Dispositivo visto só pelo lado BLE — BLE não cria porta COM. Toque em "Reparar pareamento (refresh)" ou use "Abrir pareamento do Windows" para o modo clássico.');
+    // "Reparar pareamento" so funciona pra impressora que ja tem porta COM quebrada - um
+    // dispositivo visto so via BLE nunca teve porta COM, entao esse botao nao ajudaria aqui.
+    // O que resolve e um pareamento classico novo, feito pela propria tela do Windows.
+    showStatus('Este dispositivo só foi visto via BLE (ainda não pareou no modo clássico) — BLE não cria porta COM. ' +
+      'Abrindo o pareamento do Windows: pareie lá (PIN 0000 se pedir) que eu conecto sozinho assim que a porta COM aparecer.');
+    await window.tipprint.openBtSettings();
+    setControls(false);
+    try {
+      const found = await waitForPort(device, 30); // espera ate ~60s pela porta COM aparecer
+      if (found) {
+        connectPort(found.path);
+      } else {
+        showStatus('Ainda não vi a porta COM dessa impressora. Confira se ela ficou pareada em Configurações > ' +
+          'Bluetooth e dispositivos, e toque nela na lista de novo (se ela sumir da lista, clique em "Buscar dispositivos").');
+        discoverDevices();
+      }
+    } finally {
+      setControls(true);
+    }
     return;
   }
   const port = await ensurePortForDevice(device);

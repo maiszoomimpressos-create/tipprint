@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.1.3",
+  "versionName": "1.0.5.0.1.4",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Botao 'Reparar pareamento (refresh)': despareia e re-pareia a impressora automaticamente para recriar a porta COM quebrada (Access denied) e ja copia o log; bloqueia pareamento pelo lado BLE (que nunca vira porta COM); trava de instancia unica (sem varias janelas iguais abertas)."
+  "notes": "Ao tocar num dispositivo visto so por BLE, o app agora abre o pareamento do Windows automaticamente e conecta sozinho assim que a porta COM aparecer (antes so avisava e nao fazia nada - 'Reparar pareamento' nao ajuda nesse caso, so serve pra impressora que ja teve porta COM)."
 }
