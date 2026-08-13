@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.1.0",
+  "versionName": "1.0.5.0.1.1",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "CORRECAO IMPORTANTE: o pareamento estava quebrado (erro interno ao tentar parear qualquer dispositivo). Corrigido - tenta 2x com ate 95s e, se nao conseguir, abre sozinho o pareamento do Windows pra voce aceitar la."
+  "notes": "Botao \"Copiar log (para suporte)\" na aba Bluetooth: grava tudo que o app faz (busca, portas, pareamento, conexao) e copia pra area de transferencia — cole aqui no chat que o suporte diagnostica na hora."
 }

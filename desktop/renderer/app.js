@@ -100,6 +100,19 @@ async function askEnableBt() {
 $('enableBt').addEventListener('click', askEnableBt);
 $('enableBtSection').addEventListener('click', askEnableBt);
 $('discoverNewDev').addEventListener('click', discoverNewDev);
+$('copyLogBtn').addEventListener('click', async () => {
+  try {
+    const logText = await window.tipprint.getLog();
+    if (!logText) {
+      showStatus('Log vazio — faça uma busca e uma tentativa de conexão primeiro.');
+      return;
+    }
+    window.tipprint.copyText(logText);
+    showStatus('Log copiado! Cole aqui no chat de suporte (Ctrl+V).');
+  } catch (e) {
+    showStatus('Falha ao copiar log: ' + e.message);
+  }
+});
 window.addEventListener('focus', () => {
   refreshBtStatus();
   if (currentType === 'bt') discoverDevices();

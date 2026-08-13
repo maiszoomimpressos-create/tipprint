@@ -9,8 +9,29 @@ const { checkForUpdate, downloadInstaller, installerTempPath } = require('./lib/
 
 const DISPLAY_VERSION = require('./package.json').displayVersion || '1.0.5.0.0.0';
 
+const LOG_PATH = path.join(os.tmpdir(), 'tipprint.log');
+
+function log(...args) {
+  try {
+    const line = '[' + new Date().toISOString() + '] ' + args.join(' ') + '\n';
+    require('fs').appendFileSync(LOG_PATH, line);
+  } catch {
+    // nunca deixar o log derrubar o app
+  }
+}
+
 let win = null;
 let active = null; // { kind: 'serial' | 'net', port?: SerialPort, socket?: net.Socket }
+
+app.whenReady().then(() => {
+  log('APP iniciado, versao ' + DISPLAY_VERSION + ', plataforma ' + process.platform);
+  const fs = require('fs');
+  try {
+    if (fs.existsSync(LOG_PATH) && fs.statSync(LOG_PATH).size > 300 * 1024) {
+      fs.unlinkSync(LOG_PATH);
+    }
+  } catch {}
+});
 
 function createWindow() {
   win = new BrowserWindow({
@@ -115,6 +136,7 @@ function getBtRadios() {
 
 ipcMain.handle('list-ports', async () => {
   const ports = await SerialPort.list();
+  log('list-ports -> ' + JSON.stringify(ports.map((p) => ({ path: p.path, pnpId: p.pnpId || null }))));
   return ports.map((p) => ({
     path: p.path,
     manufacturer: p.manufacturer || null,
@@ -123,6 +145,14 @@ ipcMain.handle('list-ports', async () => {
     productId: p.productId || null,
     vendorId: p.vendorId || null
   }));
+});
+
+ipcMain.handle('get-log', async () => {
+  try {
+    return require('fs').readFileSync(LOG_PATH, 'utf8').slice(-120000);
+  } catch {
+    return '';
+  }
 });
 
 ipcMain.handle('app-version', async () => DISPLAY_VERSION);
@@ -192,6 +222,8 @@ function runBtWatcher(seconds) {
 ipcMain.handle('bt-devices', async () => {
   const known = await runBtScanFile();
   const scanned = await runBtWatcher(10);
+  log('bt-devices known(raw)=' + JSON.stringify(known));
+  log('bt-devices scanned(raw)=' + JSON.stringify(scanned));
   const map = {};
   (known || []).forEach((d) => {
     const mac = String(d.Address || '').replace(/:/g, '').toUpperCase();
@@ -206,7 +238,9 @@ ipcMain.handle('bt-devices', async () => {
       if (d.Name && !map[d.Mac].Name) map[d.Mac].Name = d.Name;
     }
   });
-  return Object.values(map);
+  const merged = Object.values(map);
+  log('bt-devices merged -> ' + JSON.stringify(merged));
+  return merged;
 });
 
 const BT_PAIR_SCRIPT = `
@@ -264,17 +298,19 @@ function runPsLong(script, timeoutMs) {
 
 ipcMain.handle('bt-pair', async (_e, id) => {
   const safeId = String(id).replace(/'/g, '');
+  log('bt-pair chamado id=' + safeId);
   const cmd = "$id = '" + safeId + "'; " + BT_PAIR_SCRIPT.replace('param($id)\n', '');
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const result = await runPsLong(cmd, 95000);
       const status = result && result[0] ? result[0].Status : 'Failed';
+      log('bt-pair tentativa ' + attempt + ' -> ' + status);
       if (status === 'Paired' || status === 'AlreadyPaired') return status;
       if (status !== 'ConnectionRejected' && status !== 'AuthenticationFailure' && status !== 'Failed') {
         return status;
       }
-    } catch {
-      // tenta de novo
+    } catch (e) {
+      log('bt-pair tentativa ' + attempt + ' EXCECAO: ' + (e && e.message));
     }
     await new Promise((r) => setTimeout(r, 3000));
   }
@@ -292,8 +328,15 @@ ipcMain.handle('open-bt-settings', async () => {
 });
 
 ipcMain.handle('connect-serial', async (_e, portPath, baud) => {
-  await connectSerial(portPath, baud);
-  return { ok: true };
+  log('connect-serial iniciando port=' + portPath + ' baud=' + baud);
+  try {
+    await connectSerial(portPath, baud);
+    log('connect-serial SUCESSO em ' + portPath);
+    return { ok: true };
+  } catch (e) {
+    log('connect-serial FALHOU em ' + portPath + ' -> ' + (e && e.message));
+    throw e;
+  }
 });
 
 ipcMain.handle('connect-net', async (_e, host, port) => {

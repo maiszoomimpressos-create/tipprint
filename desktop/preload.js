@@ -1,8 +1,10 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, clipboard } = require('electron');
 
 contextBridge.exposeInMainWorld('tipprint', {
   appVersion: () => ipcRenderer.invoke('app-version'),
   listPorts: () => ipcRenderer.invoke('list-ports'),
+  getLog: () => ipcRenderer.invoke('get-log'),
+  copyText: (text) => clipboard.writeText(text),
   btStatus: () => ipcRenderer.invoke('bt-status'),
   btDevices: () => ipcRenderer.invoke('bt-devices'),
   btPair: (id) => ipcRenderer.invoke('bt-pair', id),
