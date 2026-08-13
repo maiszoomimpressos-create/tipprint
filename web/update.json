@@ -1,8 +1,8 @@
 ﻿{
   "appId": "br.com.tipprint",
-  "versionCode": 4,
-  "versionName": "1.0.3",
+"versionCode": 5,
+  "versionName": "1.0.4",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Atualização automática ao abrir o app (configurável em Configurações) + botão Verificar atualizações."
+  "notes": "Busca de impressora corrigida (dialogo unico, sem piscar) + pareamento automatico com PIN 0000."
 }
 

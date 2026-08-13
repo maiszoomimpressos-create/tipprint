@@ -282,6 +282,12 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                BluetoothDevice.ACTION_PAIRING_REQUEST -> {
+                    val device = intent.bluetoothDeviceExtra() ?: return
+                    val pending = pendingPairDevice
+                    if (pending == null || device.address != pending.address) return
+                    runCatching { device.setPin("0000".toByteArray()) }
+                }
             }
         }
     }
@@ -317,6 +323,8 @@ class MainActivity : AppCompatActivity() {
             addAction(BluetoothDevice.ACTION_FOUND)
             addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
             addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+            addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+            setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY)
         }
         registerReceiver(discoveryReceiver, filter)
     }
