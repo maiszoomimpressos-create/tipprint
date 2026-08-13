@@ -68,8 +68,23 @@
     <button id="printTest" class="btn btn-thermal btn-print">Imprimir cupom de teste</button>
   </main>
 
-  <footer class="app-footer">TipPrint <span id="appVersion"></span> · RAW BTS</footer>
+  <footer class="app-footer">
+    TipPrint <span id="appVersion"></span> · RAW BTS ·
+    <a id="checkUpdateLink" class="footer-link">verificar atualizações</a>
+  </footer>
 
+</div>
+
+<div id="updateModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">Atualização disponível</div>
+    <div id="updateMessage" class="modal-msg"></div>
+    <div id="updateProgress" class="modal-msg progress hidden">Baixando atualização… aguarde.</div>
+    <div class="modal-btns">
+      <button id="updateNow" class="btn btn-thermal">Baixar e instalar</button>
+      <button id="updateLater" class="btn btn-outline">Depois</button>
+    </div>
+  </div>
 </div>
 
 <script src="app.js"></script>

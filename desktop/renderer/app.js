@@ -183,3 +183,51 @@ window.tipprint.appVersion().then((v) => {
   const el = $('appVersion');
   if (el) el.textContent = v;
 }).catch(() => {});
+
+let pendingUpdate = null;
+
+function showUpdateModal(info) {
+  pendingUpdate = info;
+  $('updateMessage').textContent =
+    'Nova versão ' + info.versionName + ' disponível.' +
+    (info.notes ? '\n\n' + info.notes : '');
+  $('updateProgress').classList.add('hidden');
+  $('updateNow').disabled = false;
+  $('updateModal').classList.remove('hidden');
+}
+
+function hideUpdateModal() {
+  $('updateModal').classList.add('hidden');
+  pendingUpdate = null;
+}
+
+async function checkUpdate(manual) {
+  try {
+    const info = await window.tipprint.updateCheck();
+    if (!info) {
+      if (manual) showStatus('Você já está na versão mais recente.');
+      return;
+    }
+    showUpdateModal(info);
+  } catch (e) {
+    if (manual) showStatus('Falha ao verificar atualização: ' + e.message);
+  }
+}
+
+$('checkUpdateLink').addEventListener('click', () => checkUpdate(true));
+$('updateLater').addEventListener('click', hideUpdateModal);
+$('updateNow').addEventListener('click', async () => {
+  $('updateNow').disabled = true;
+  $('updateProgress').classList.remove('hidden');
+  $('updateMessage').classList.add('hidden');
+  const r = await window.tipprint.updateDownload();
+  if (!r.ok) {
+    hideUpdateModal();
+    showStatus('Falha ao baixar a atualização: ' + (r.error || 'erro'));
+    return;
+  }
+  showStatus('Atualização baixada. Instalando…');
+  await window.tipprint.updateInstall(r.path);
+});
+
+checkUpdate(false);

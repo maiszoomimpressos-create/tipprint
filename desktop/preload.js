@@ -8,5 +8,8 @@ contextBridge.exposeInMainWorld('tipprint', {
   connectNet: (host, port) => ipcRenderer.invoke('connect-net', host, port),
   disconnect: () => ipcRenderer.invoke('disconnect'),
   printRaw: (base64) => ipcRenderer.invoke('print-raw', base64),
-  printTest: (printerLabel) => ipcRenderer.invoke('print-test', printerLabel)
+  printTest: (printerLabel) => ipcRenderer.invoke('print-test', printerLabel),
+  updateCheck: () => ipcRenderer.invoke('update-check'),
+  updateDownload: () => ipcRenderer.invoke('update-download'),
+  updateInstall: (installerPath) => ipcRenderer.invoke('update-install', installerPath)
 });

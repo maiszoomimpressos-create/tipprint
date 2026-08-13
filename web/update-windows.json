@@ -1,0 +1,6 @@
+{
+  "appId": "br.com.tipprint.desktop",
+  "versionName": "1.0.5.0.0.2",
+  "downloadPath": "/downloads/app-windows.exe",
+  "notes": "Atualizacao automatica: verifica nova versao ao abrir e baixa/instala com um clique."
+}

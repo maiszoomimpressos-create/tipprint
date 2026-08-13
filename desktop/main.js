@@ -1,9 +1,11 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { execFile } = require('child_process');
+const os = require('os');
+const { execFile, spawn } = require('child_process');
 const { SerialPort } = require('serialport');
 const net = require('net');
 const { buildTestReceipt } = require('./lib/escpos');
+const { checkForUpdate, downloadInstaller, installerTempPath } = require('./lib/updater');
 
 const DISPLAY_VERSION = require('./package.json').displayVersion || '1.0.5.0.0.0';
 
@@ -113,6 +115,26 @@ ipcMain.handle('list-ports', async () => {
 });
 
 ipcMain.handle('app-version', async () => DISPLAY_VERSION);
+
+ipcMain.handle('update-check', async () => checkForUpdate(DISPLAY_VERSION));
+
+ipcMain.handle('update-download', async () => {
+  const info = await checkForUpdate(DISPLAY_VERSION);
+  if (!info) return { ok: false, error: 'sem atualizacao' };
+  try {
+    const dest = installerTempPath();
+    await downloadInstaller(info.url, dest);
+    return { ok: true, path: dest };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('update-install', async (_e, installerPath) => {
+  spawn(installerPath, [], { detached: true, stdio: 'ignore' }).unref();
+  setTimeout(() => app.quit(), 500);
+  return { ok: true };
+});
 
 ipcMain.handle('bt-status', async () => getBtRadios());
 

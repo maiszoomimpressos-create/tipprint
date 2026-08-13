@@ -151,3 +151,33 @@ body {
   margin-top: 24px; text-align: center;
   font-family: var(--mono); font-size: 11px; color: var(--muted); opacity: .7;
 }
+
+.footer-link {
+  color: var(--primary); text-decoration: none; cursor: pointer;
+}
+.footer-link:hover { text-decoration: underline; }
+
+/* ---------- Modal de atualização ---------- */
+.modal {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(4, 7, 11, .72);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+
+.modal-card {
+  width: 100%; max-width: 360px;
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: 16px; padding: 22px;
+}
+
+.modal-title {
+  font-family: var(--mono); font-size: 15px; font-weight: 700;
+  letter-spacing: .06em; margin-bottom: 10px; color: var(--primary);
+}
+
+.modal-msg { font-size: 14px; color: var(--muted); line-height: 1.5; margin-bottom: 18px; }
+
+.modal-msg.progress { color: var(--ink); font-family: var(--mono); font-size: 13px; }
+
+.modal-btns { display: grid; gap: 10px; }
