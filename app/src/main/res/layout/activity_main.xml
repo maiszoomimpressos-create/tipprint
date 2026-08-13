@@ -112,12 +112,14 @@
                 android:id="@+id/btList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:maxHeight="200dp"
                 android:divider="@null"
                 android:dividerHeight="@dimen/spacing_xs"
                 android:padding="@dimen/spacing_xs"
                 android:background="@drawable/bg_card"
                 android:scrollbars="vertical"
+                android:fadeScrollbars="false"
+                android:scrollbarSize="6dp"
+                android:scrollbarStyle="outsideInset"
                 android:overScrollMode="ifContentScrolls" />
 
             <TextView

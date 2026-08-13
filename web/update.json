@@ -1,9 +1,9 @@
 ﻿{
   "appId": "br.com.tipprint",
-"versionCode": 13,
-  "versionName": "1.0.5.0.0.6",
+"versionCode": 14,
+  "versionName": "1.0.5.0.0.7",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Conexao direta primeiro (a maioria das impressoras termicas conecta sem parear); pareamento com PIN 0000 so como alternativa."
+  "notes": "Lista de dispositivos: mostra ate 4 itens e rola com barra de rolagem ao lado."
 }
 
 

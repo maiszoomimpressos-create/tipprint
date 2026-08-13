@@ -22,6 +22,7 @@ import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
+import android.view.LayoutInflater
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -166,6 +167,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         cancelScan.setOnClickListener { stopScan() }
+        applyBtListMaxItems(4)
 
         if (type == "bt") fillBluetoothDevices()
     }
@@ -264,12 +266,31 @@ class MainActivity : AppCompatActivity() {
         if (!::btList.isInitialized) return
         val labels = devices.map { "${it.name} - ${it.address}" }
         btList.adapter = ArrayAdapter(this, R.layout.item_printer, labels)
+        applyBtListMaxItems(4)
     }
 
     private fun fillFoundList() {
         if (!::btList.isInitialized) return
         val labels = discoveredDevices.map { it.name ?: it.address }
         btList.adapter = ArrayAdapter(this, R.layout.item_printer, labels)
+        applyBtListMaxItems(4)
+    }
+
+    private fun applyBtListMaxItems(maxItems: Int) {
+        btList.post {
+            if (!::btList.isInitialized) return@post
+            val sample = LayoutInflater.from(this).inflate(R.layout.item_printer, btList, false)
+            val w = View.MeasureSpec.makeMeasureSpec(btList.width, View.MeasureSpec.EXACTLY)
+            val h = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            sample.measure(w, h)
+            val itemHeight = sample.measuredHeight
+            val count = btList.adapter?.count ?: 0
+            if (count <= 0) return@post
+            val visible = minOf(count, maxItems)
+            btList.layoutParams.height =
+                itemHeight * visible + btList.dividerHeight * (visible - 1)
+            btList.requestLayout()
+        }
     }
 
     private fun updateBtConnectedLabel() {
