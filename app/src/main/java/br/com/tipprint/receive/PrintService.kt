@@ -27,11 +27,21 @@ class PrintService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val printSpec = intent?.getStringExtra(TipPrintIntentReceiver.PRINT_SPEC_KEY)
-        if (printSpec != null) {
+        // Bytes ESC/POS já prontos em base64 — usado pelo link tipprint://print
+        // (PrintLinkActivity), que recebe o mesmo formato que o site tipo7.com já
+        // gera pra impressão via app de terceiros (RawBT): o site monta o cupom
+        // inteiro (texto + QR) e só manda os bytes crus, sem passar pelo
+        // parser de spec JSON abaixo (que não sabe gerar QR ainda).
+        val rawBytesB64 = intent?.getStringExtra(RAW_BYTES_KEY)
+        if (printSpec != null || rawBytesB64 != null) {
             startForeground(1, buildNotification())
             Thread {
                 try {
-                    printFromSpec(printSpec)
+                    if (rawBytesB64 != null) {
+                        printBytes(resolveConnection(), Base64.decode(rawBytesB64, Base64.DEFAULT))
+                    } else if (printSpec != null) {
+                        printFromSpec(printSpec)
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Falha ao processar tarefa de impressão", e)
                 } finally {
@@ -116,5 +126,6 @@ class PrintService : Service() {
         private const val PREFS = "tipprint"
         private const val PREFS_TYPE = "printer_type"
         private const val PREFS_TARGET = "printer_target"
+        const val RAW_BYTES_KEY = "br.com.tipprint.extra.RAW_BYTES_B64"
     }
 }

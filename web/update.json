@@ -1,7 +1,7 @@
-﻿{
+{
   "appId": "br.com.tipprint",
-  "versionCode": 18,
-  "versionName": "1.0.5.0.0.11",
+  "versionCode": 19,
+  "versionName": "1.0.5.0.0.12",
   "apkPath": "/downloads/app-debug.apk",
-  "notes": "Auto-conexao so dispara com Bluetooth ligado e impressora ainda pareada; novo toggle 'Conectar automaticamente ao abrir (Bluetooth)' nas configuracoes - evita a impressora ficar presa no celular e bloquear o app Windows no PC."
+  "notes": "Novo link tipprint://print (mesmo padrao do RawBT, so que pro nosso proprio app): sites podem imprimir direto no celular sem diagolo do Android e sem depender de app de terceiros. Usado pelo tipo7.com no lugar do RawBT a partir de agora."
 }

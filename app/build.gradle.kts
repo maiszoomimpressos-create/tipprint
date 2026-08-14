@@ -11,8 +11,8 @@ android {
         applicationId = "br.com.tipprint"
         minSdk = 24
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.0.5.0.0.11"
+        versionCode = 19
+        versionName = "1.0.5.0.0.12"
     }
 
     buildTypes {
