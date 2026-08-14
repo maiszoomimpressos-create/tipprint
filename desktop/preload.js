@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('tipprint', {
   copyText: (text) => ipcRenderer.invoke('copy-text', text),
   btStatus: () => ipcRenderer.invoke('bt-status'),
   btDevices: () => ipcRenderer.invoke('bt-devices'),
+  btKnownDevices: () => ipcRenderer.invoke('bt-known-devices'),
+  btAdapterCheck: () => ipcRenderer.invoke('bt-adapter-check'),
   btPair: (id) => ipcRenderer.invoke('bt-pair', id),
   btRepair: (mac) => ipcRenderer.invoke('bt-repair', mac),
   openBtSettings: () => ipcRenderer.invoke('open-bt-settings'),
@@ -17,5 +19,12 @@ contextBridge.exposeInMainWorld('tipprint', {
   printTest: (printerLabel) => ipcRenderer.invoke('print-test', printerLabel),
   updateCheck: () => ipcRenderer.invoke('update-check'),
   updateDownload: () => ipcRenderer.invoke('update-download'),
-  updateInstall: (installerPath) => ipcRenderer.invoke('update-install', installerPath)
+  updateInstall: (installerPath) => ipcRenderer.invoke('update-install', installerPath),
+  authSignup: (email, password) => ipcRenderer.invoke('auth-signup', email, password),
+  authLogin: (email, password) => ipcRenderer.invoke('auth-login', email, password),
+  authLogout: () => ipcRenderer.invoke('auth-logout'),
+  authStatus: () => ipcRenderer.invoke('auth-status'),
+  systemsList: () => ipcRenderer.invoke('systems-list'),
+  systemsCreate: (name) => ipcRenderer.invoke('systems-create', name),
+  systemsRevoke: (id) => ipcRenderer.invoke('systems-revoke', id)
 });

@@ -31,13 +31,33 @@ body {
 /* ---------- Header ---------- */
 .header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
 
-.logo {
-  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--thermal), #B33A12);
-  border: 1px solid rgba(255,255,255,.14);
-}
+/* Marca TipPrint (mesmo desenho do icone Android: fundo tinta + "B" de papel +
+   ponto termico) - agora um SVG em vez de gradiente liso */
+.logo { width: 44px; height: 44px; flex-shrink: 0; }
 
 .header-titles { line-height: 1.15; }
+
+/* Conta do cliente (login pra gerenciar as chaves de API dos sistemas dele) */
+.account-btn {
+  margin-left: auto; flex-shrink: 0;
+  border: 1px solid var(--outline); border-radius: 999px; background: var(--surface);
+  color: var(--ink); font-family: var(--font); font-size: 12px; font-weight: 700;
+  padding: 8px 14px; cursor: pointer;
+}
+.account-btn:hover { filter: brightness(1.12); }
+.account-btn.logged-in { border-color: var(--success); color: var(--success); }
+
+/* Checklist de senha (cadastro) - marca ao vivo o que ja foi preenchido */
+.password-checklist { list-style: none; margin: -4px 0 12px; display: grid; gap: 4px; }
+.password-checklist li {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  padding-left: 20px; position: relative;
+}
+.password-checklist li::before {
+  content: '○'; position: absolute; left: 0; color: var(--muted);
+}
+.password-checklist li.met { color: var(--success); }
+.password-checklist li.met::before { content: '●'; color: var(--success); }
 
 .brand { font-size: 22px; font-weight: 800; letter-spacing: .02em; }
 
@@ -67,6 +87,13 @@ body {
 .bt-status.warn::before { background: #F5A623; }
 .bt-status.err::before { background: #E84A1B; }
 .bt-status .bt-name { color: var(--muted); font-weight: 400; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Sistema conectado (placeholder p/ tipo7.com etc, futuro) ---------- */
+.system-conn {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: var(--thermal); border: 1px solid var(--thermal); border-radius: var(--radius);
+  background: rgba(232,74,27,.08); padding: 12px 14px; margin-bottom: 16px;
+}
 
 /* ---------- Faixa fixa: impressora conectada ou não ---------- */
 .conn-banner {
@@ -147,6 +174,11 @@ body {
 
 .section .btn { margin-bottom: 10px; }
 
+/* "Mais opcoes" agora fica fora das secoes (e' global aos 3 tipos de conexao),
+   entao precisa da propria margem em vez de herdar de ".section .btn" */
+#moreOptionsToggle { margin-top: 20px; margin-bottom: 10px; }
+#moreOptions .btn { margin-bottom: 10px; }
+
 /* ---------- Ports list ---------- */
 .ports-list { display: grid; gap: 8px; max-height: 236px; overflow-y: auto; }
 
@@ -192,6 +224,8 @@ body {
 .device-item .device-tag.connected { color: var(--success); }
 .device-item .device-tag.paired { color: var(--primary); }
 .device-item .device-tag.new { color: var(--thermal); }
+.device-item.active { border-color: var(--success); background: rgba(47,185,108,.1); }
+.device-item.active .device-name::after { content: ' — conectada'; color: var(--success); font-weight: 400; }
 
 /* ---------- Inputs ---------- */
 .input {
@@ -232,6 +266,11 @@ body {
 }
 
 .modal-msg { font-size: 14px; color: var(--muted); line-height: 1.5; margin-bottom: 18px; }
+
+/* Modal de diagnostico (achados do "Reparar pareamento") - severidade no titulo */
+.modal-title.blocking { color: var(--thermal); }
+.modal-title.warn { color: #F5A623; }
+#diagModalMsg { color: var(--ink); white-space: pre-line; }
 
 .modal-msg.progress { color: var(--ink); font-family: var(--mono); font-size: 13px; }
 

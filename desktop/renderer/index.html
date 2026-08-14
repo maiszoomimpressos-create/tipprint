@@ -11,11 +11,20 @@
 <div class="app">
 
   <header class="header">
-    <div class="logo"></div>
+    <svg class="logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path fill="#171310" fill-rule="evenodd" d="M4,1.5 L20,1.5 A2.5,2.5 0 0 1 22.5,4 L22.5,20 A2.5,2.5 0 0 1 20,22.5 L4,22.5 A2.5,2.5 0 0 1 1.5,20 L1.5,4 A2.5,2.5 0 0 1 4,1.5 Z
+        M13.8,1.5 A1.8,1.8 0 1 1 10.2,1.5 A1.8,1.8 0 1 1 13.8,1.5 Z
+        M13.8,22.5 A1.8,1.8 0 1 1 10.2,22.5 A1.8,1.8 0 1 1 13.8,22.5 Z" />
+      <path fill="#F7F5F0" d="M6.2,5.2 L12.2,5.2 L12.2,20.6 L6.2,20.6 A1.2,1.2 0 0 1 5,19.4 L5,6.4 A1.2,1.2 0 0 1 6.2,5.2 Z" />
+      <path fill="#F7F5F0" d="M12.2,12 L12.2,5.2 A3.4,3.4 0 1 1 12.2,12 Z" />
+      <path fill="#F7F5F0" d="M12.4,20.6 L12.4,14.2 A3.2,3.2 0 1 1 12.4,20.6 Z" />
+      <path fill="#E84A1B" d="M21.1,16.6 A1.1,1.1 0 1 1 18.9,16.6 A1.1,1.1 0 1 1 21.1,16.6 Z" />
+    </svg>
     <div class="header-titles">
       <div class="brand">TipPrint</div>
       <div class="tagline">CONECTE · CONTROLE · IMPRIMA</div>
     </div>
+    <button id="accountBtn" class="account-btn">Entrar</button>
   </header>
 
   <!-- ============ CHOOSER ============ -->
@@ -33,7 +42,9 @@
 
   <!-- ============ WORK ============ -->
   <main id="work" class="screen hidden">
-    <button id="backToTypes" class="btn btn-outline">Trocar tipo de conexão</button>
+    <!-- Reservado pro nome do sistema/site conectado (ex: tipo7.com), quando essa ligacao
+         existir de verdade. Por enquanto e' so texto generico/placeholder. -->
+    <div id="systemConn" class="system-conn">Sistema conectado: nenhum ainda</div>
 
     <div id="connBanner" class="bt-status conn-banner"></div>
 
@@ -46,17 +57,18 @@
       </div>
       <div id="btStatusLineSection" class="bt-status"></div>
       <button id="enableBtSection" class="btn btn-outline hidden">Ativar Bluetooth</button>
-      <button id="discoverDevices" class="btn btn-primary">Buscar dispositivos</button>
+
+      <div class="list-divider">SUAS IMPRESSORAS</div>
       <div id="btDevices" class="ports-list"></div>
-      <p id="btDevicesHint" class="caption hidden">Nenhum dispositivo encontrado. Deixe os dispositivos ligados e em modo pareamento (como no celular) e busque de novo.</p>
-      <button id="discoverNewDev" class="btn btn-outline">Abrir pareamento do Windows (se pedir PIN)</button>
-      <button id="repairBtBtn" class="btn btn-thermal">Reparar pareamento (refresh)</button>
-      <button id="copyLogBtn" class="btn btn-outline">Copiar log (para suporte)</button>
-      <p class="caption">A busca leva ~10s e encontra qualquer dispositivo por perto em modo pareamento — o adaptador TP-Link é a ponte (mesmo conceito do Bluetooth do celular).</p>
-      <div class="list-divider">PORTAS DE COMUNICAÇÃO (COM)</div>
-      <button id="refreshPorts" class="btn btn-outline">Atualizar portas</button>
-      <div id="portsList" class="ports-list"></div>
-      <p id="portsHint" class="caption hidden">Nenhuma porta encontrada. Pareie a impressora no Windows (Configurações → Bluetooth) e busque de novo.</p>
+      <p id="btDevicesHint" class="caption hidden">Nenhuma impressora pareada ainda. Toque em "Procurar nova impressora" abaixo.</p>
+
+      <button id="discoverDevices" class="btn btn-outline">Procurar nova impressora</button>
+      <div id="newDevicesWrap" class="hidden">
+        <div class="list-divider">ENCONTRADAS POR PERTO</div>
+        <div id="newDevices" class="ports-list"></div>
+        <p id="newDevicesHint" class="caption hidden">Nenhum dispositivo novo encontrado. Deixe a impressora ligada e em modo pareamento e busque de novo.</p>
+        <p class="caption">Não achou? <a id="discoverNewDev" class="footer-link">Abrir pareamento do Windows</a> (PIN 0000 se pedir).</p>
+      </div>
     </section>
 
     <section id="usbSection" class="section hidden">
@@ -77,6 +89,14 @@
       <button id="connectNet" class="btn btn-primary">Conectar Rede</button>
     </section>
 
+    <button id="moreOptionsToggle" class="btn btn-outline">Mais opções ▾</button>
+    <div id="moreOptions" class="hidden">
+      <button id="backToTypes" class="btn btn-outline">Trocar tipo de conexão</button>
+      <button id="repairBtBtn" class="btn btn-thermal hidden">Reparar pareamento (refresh)</button>
+      <button id="copyLogBtn" class="btn btn-outline hidden">Copiar log (para suporte)</button>
+      <p id="repairCaption" class="caption hidden">Use "Reparar pareamento" só se uma impressora que já teve porta COM parou de conectar.</p>
+    </div>
+
     <button id="printTest" class="btn btn-thermal btn-print">Imprimir cupom de teste</button>
   </main>
 
@@ -95,6 +115,57 @@
     <div class="modal-btns">
       <button id="updateNow" class="btn btn-thermal">Baixar e instalar</button>
       <button id="updateLater" class="btn btn-outline">Depois</button>
+    </div>
+  </div>
+</div>
+
+<div id="authModal" class="modal hidden">
+  <div class="modal-card">
+    <div id="authModalTitle" class="modal-title">Entrar no TipPrint</div>
+    <div id="authModalMsg" class="modal-msg hidden"></div>
+    <input id="authEmail" class="input" placeholder="E-mail" type="email" autocomplete="username">
+    <input id="authPassword" class="input" placeholder="Senha" type="password" autocomplete="current-password">
+    <ul id="authPasswordChecklist" class="password-checklist hidden">
+      <li data-rule="len">Pelo menos 8 caracteres</li>
+      <li data-rule="upper">Uma letra maiúscula</li>
+      <li data-rule="lower">Uma letra minúscula</li>
+      <li data-rule="number">Um número</li>
+      <li data-rule="special">Um caractere especial (ex: ! @ # $ %)</li>
+    </ul>
+    <div class="modal-btns">
+      <button id="authSubmit" class="btn btn-thermal">Entrar</button>
+      <button id="authToggleMode" class="btn btn-outline">Ainda não tenho conta — criar</button>
+      <button id="authCancel" class="btn btn-outline">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="accountModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">Sua conta</div>
+    <div id="accountEmail" class="modal-msg"></div>
+
+    <div class="list-divider">SEUS SISTEMAS (CHAVES DE API)</div>
+    <div id="systemsList" class="ports-list"></div>
+    <p id="systemsHint" class="caption hidden">Nenhum sistema cadastrado ainda. Crie um pra usar a API do TipPrint no seu site.</p>
+
+    <input id="newSystemName" class="input" placeholder="Nome do novo sistema (ex: meusite.com)" autocomplete="off">
+    <button id="systemsCreateBtn" class="btn btn-outline">Criar novo sistema</button>
+
+    <div class="modal-btns">
+      <button id="accountLogout" class="btn btn-thermal">Sair</button>
+      <button id="accountClose" class="btn btn-outline">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div id="diagModal" class="modal hidden">
+  <div class="modal-card">
+    <div id="diagModalTitle" class="modal-title"></div>
+    <div id="diagModalMsg" class="modal-msg"></div>
+    <div class="modal-btns">
+      <button id="diagModalOk" class="btn btn-thermal">Entendi</button>
+      <button id="diagModalCopyLog" class="btn btn-outline">Copiar log (suporte)</button>
     </div>
   </div>
 </div>
