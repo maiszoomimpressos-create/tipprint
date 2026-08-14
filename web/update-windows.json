@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.1.4",
+  "versionName": "1.0.5.0.1.5",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Ao tocar num dispositivo visto so por BLE, o app agora abre o pareamento do Windows automaticamente e conecta sozinho assim que a porta COM aparecer (antes so avisava e nao fazia nada - 'Reparar pareamento' nao ajuda nesse caso, so serve pra impressora que ja teve porta COM)."
+  "notes": "Login do cliente (conta TipPrint) e gestao das chaves de API dos seus sistemas direto no app. O app fala com o TipPrint Desktop Agent (PrintServer) via localhost:8080 pra conectar/imprimir, em vez de abrir a porta COM direto."
 }
