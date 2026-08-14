@@ -1,0 +1,22 @@
+{
+  "name": "tipprint-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TipPrint Backend - autorizacao por sistema (chave por produto: Tipo7, futuros sistemas), base pro que a decisao arquitetural do projeto ja previa.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "migrate": "node migrate.js",
+    "migrate:profiles-fields": "node migrate-profiles-fields.js",
+    "migrate:companies": "node migrate-companies.js",
+    "migrate:products": "node migrate-products.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}
