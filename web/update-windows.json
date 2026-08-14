@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.1.6",
+  "versionName": "1.0.5.0.1.7",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Corrige 'Reparar pareamento' e outros botoes de Bluetooth, que falhavam com 'arquivo nao existe' no app instalado (script rodava de dentro do pacote .asar, agora vai pra fora dele de verdade). Depende do PrintServer 1.0.5.2.0.3 pra funcionar direito quando o Agent precisa subir sozinho."
+  "notes": "Ao falhar em conectar a impressora, o app agora tenta de novo sozinho (3x) antes de desistir, e a mensagem final explica a causa provavel com o proximo passo (desligar/religar a impressora, reparar pareamento, etc) em vez de so mostrar o erro tecnico. Depende do PrintServer 1.0.5.2.0.4 (reconecta sozinho quando o numero da porta COM muda)."
 }

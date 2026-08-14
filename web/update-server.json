@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.printserver",
-  "versionName": "1.0.5.2.0.3",
+  "versionName": "1.0.5.2.0.4",
   "downloadPath": "/downloads/PrintServer.exe",
-  "notes": "Corrige bug critico: o Agent morria na hora quando iniciado sem console (ex: pelo Desktop app sozinho, quando o Agent nao estava rodando) - agora fica de pe em qualquer forma de inicializacao. Tambem valida a chave de sistema do TipPrint Backend (Tipo7) quando configurada."
+  "notes": "Reconecta sozinho quando o numero da porta COM da impressora Bluetooth muda (comum apos reconectar/reiniciar) - antes exigia reconfigurar na mao, agora acha a mesma impressora pelo MAC salvo em qualquer porta nova."
 }

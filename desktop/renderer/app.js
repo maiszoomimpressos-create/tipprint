@@ -551,29 +551,69 @@ async function waitForPort(device, attempts, myGen) {
   return null;
 }
 
+// Falhas de conexao BT costumam ser transitorias (rádio ocupado um instante, porta ainda
+// "esfriando" depois de outra tentativa) - o programa mesmo tenta de novo sozinho antes de
+// pedir qualquer coisa pro usuario (achado na pratica em 2026-08-14: 1ª tentativa falhou com
+// "acesso negado", a 2ª segundos depois conectou, sem nada ter mudado fisicamente).
 async function connectPort(portPath) {
+  const maxAttempts = 3;
   setControls(false);
-  showStatus('Conectando a ' + portPath + '...');
-  try {
-    await window.tipprint.connectSerial(portPath);
-    activePort = portPath;
-    showStatus('Conectado: ' + portPath);
-    if (currentType === 'bt') {
-      $('btConnectedLabel').textContent = '● ' + portPath;
-      $('btConnectedLabel').classList.remove('hidden');
+  let lastErr = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    showStatus(attempt === 1
+      ? ('Conectando a ' + portPath + '...')
+      : ('Não respondeu, tentando de novo automaticamente (' + attempt + '/' + maxAttempts + ')...'));
+    try {
+      await window.tipprint.connectSerial(portPath);
+      activePort = portPath;
+      showStatus('Conectado: ' + portPath);
+      if (currentType === 'bt') {
+        $('btConnectedLabel').textContent = '● ' + portPath;
+        $('btConnectedLabel').classList.remove('hidden');
+      }
+      renderConnBanner();
+      setControls(true);
+      return;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 2500));
     }
-    renderConnBanner();
-  } catch (e) {
-    const msg = String(e.message || '');
-    if (/access denied/i.test(msg)) {
-      showStatus('Access denied em ' + portPath + ': a impressora pode estar ligada em outro aparelho ' +
-        '(desconecte do celular — Bluetooth aguenta 1 conexão por vez), desligada ou fora do alcance. ' +
-        'Confira e toque em conectar de novo.');
-    } else {
-      showStatus('Falha ao conectar: ' + msg);
-    }
-  } finally {
-    setControls(true);
+  }
+  await showConnectFailure(portPath, String((lastErr && lastErr.message) || ''));
+  setControls(true);
+}
+
+// So chega aqui depois que o programa ja tentou sozinho (connectPort) e nao conseguiu -
+// nesse ponto e' mesmo um problema que precisa de acao fisica, entao a mensagem já diz qual.
+// Roda o diagnostico do adaptador Bluetooth em segundo plano e anexa se achar algo concreto
+// (driver travado etc) em vez de deixar so' o "tente de novo" generico.
+async function showConnectFailure(portPath, msg) {
+  let friendly;
+  if (/access denied|acesso.*negad/i.test(msg)) {
+    friendly = 'Acesso negado em ' + portPath + ': a impressora pode estar ligada em outro aparelho ' +
+      '(desconecte do celular — Bluetooth aguenta 1 conexão por vez) ou a porta ainda está sendo liberada. ' +
+      'Desligue e ligue a impressora e toque em conectar de novo.';
+  } else if (/n[aã]o encontrada|not found/i.test(msg)) {
+    friendly = 'Impressora não encontrada em ' + portPath + '. Desligue e ligue a impressora física, ' +
+      'aproxime do computador, e toque em conectar de novo. Se continuar, use "Reparar pareamento".';
+  } else if (/tempo limite|timeout|sem[aá]foro|n[aã]o respondeu ao conectar/i.test(msg)) {
+    friendly = 'A impressora não respondeu a tempo. Desligue e ligue a impressora física, aproxime do ' +
+      'computador, e tente conectar de novo.';
+  } else if (/agent n[aã]o respondeu|desktop agent/i.test(msg)) {
+    friendly = 'O TipPrint Desktop Agent não respondeu a tempo. Tente conectar de novo em alguns segundos.';
+  } else {
+    friendly = 'Falha ao conectar: ' + msg;
+  }
+  showStatus(friendly);
+  if (currentType === 'bt') {
+    try {
+      const check = await window.tipprint.btAdapterCheck();
+      if (check && check.Problems && check.Problems.length > 0) {
+        const p = check.Problems[0];
+        showStatus(friendly + ' Além disso, o adaptador Bluetooth "' + p.Device +
+          '" está com problema de driver (' + p.Problem + ') — pode ser a causa raiz.');
+      }
+    } catch { /* diagnostico e' so' um extra - nao trava o fluxo se falhar */ }
   }
 }
 

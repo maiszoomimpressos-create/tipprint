@@ -19,7 +19,7 @@ class PrintServer
 {
     // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
     // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
-    public const string AppVersion = "1.0.5.2.0.3";
+    public const string AppVersion = "1.0.5.2.0.4";
     static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
 
     static int HttpPort = 8080;
@@ -447,21 +447,22 @@ class PrintServer
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
-            // Preserva origens/chave de sistema/backendUrl (linhas 3-5) que ja estivessem
+            // Preserva origens/chave de sistema/backendUrl/MAC BT (linhas 3-6) que ja estivessem
             // salvas - sobrescrever tudo aqui apagaria a licenca configurada a cada reconexao.
             string[] existing = File.Exists(ConfigPath) ? File.ReadAllLines(ConfigPath) : new string[0];
             string origins = existing.Length > 2 ? existing[2] : "";
             string apiKey = existing.Length > 3 ? existing[3] : "";
             string backendUrl = existing.Length > 4 ? existing[4] : "";
+            string btMac = existing.Length > 5 ? existing[5] : "";
             File.WriteAllText(ConfigPath, id + Environment.NewLine + charset + Environment.NewLine
-                + origins + Environment.NewLine + apiKey + Environment.NewLine + backendUrl);
+                + origins + Environment.NewLine + apiKey + Environment.NewLine + backendUrl + Environment.NewLine + btMac);
             Log(string.Format("Configuracao salva: impressora={0}, charset={1}", id, charset));
         }
         catch { }
     }
 
     // Grava a chave de sistema (TipPrint Backend) e a URL do backend, preservando impressora/
-    // charset/origens ja configurados.
+    // charset/origens/MAC BT ja configurados.
     static void SaveSystemConfig(string apiKey, string backendUrl)
     {
         try
@@ -471,19 +472,80 @@ class PrintServer
             string id = existing.Length > 0 ? existing[0] : "";
             string charset = existing.Length > 1 ? existing[1] : "ascii";
             string origins = existing.Length > 2 ? existing[2] : "";
+            string btMac = existing.Length > 5 ? existing[5] : "";
             File.WriteAllText(ConfigPath, id + Environment.NewLine + charset + Environment.NewLine
-                + origins + Environment.NewLine + (apiKey ?? "") + Environment.NewLine + (backendUrl ?? ""));
+                + origins + Environment.NewLine + (apiKey ?? "") + Environment.NewLine + (backendUrl ?? "")
+                + Environment.NewLine + btMac);
             Log("Chave de sistema/backend atualizada.");
         }
         catch { }
     }
 
+    // MAC da impressora Bluetooth ativa - salvo pra sobreviver a troca de numero de porta
+    // COM (o Windows recria a porta com outro numero depois de reconectar/reiniciar, mas o
+    // MAC do dispositivo continua o mesmo - achado em producao em 2026-08-14).
+    static void SaveBtMac(string mac)
+    {
+        if (string.IsNullOrEmpty(mac)) return;
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
+            string[] existing = File.Exists(ConfigPath) ? File.ReadAllLines(ConfigPath) : new string[0];
+            string id = existing.Length > 0 ? existing[0] : "";
+            string charset = existing.Length > 1 ? existing[1] : "ascii";
+            string origins = existing.Length > 2 ? existing[2] : "";
+            string apiKey = existing.Length > 3 ? existing[3] : "";
+            string backendUrl = existing.Length > 4 ? existing[4] : "";
+            File.WriteAllText(ConfigPath, id + Environment.NewLine + charset + Environment.NewLine
+                + origins + Environment.NewLine + apiKey + Environment.NewLine + backendUrl
+                + Environment.NewLine + mac);
+        }
+        catch { }
+    }
+
+    static string LoadBtMac()
+    {
+        try
+        {
+            if (File.Exists(ConfigPath))
+            {
+                string[] lines = File.ReadAllLines(ConfigPath);
+                if (lines.Length >= 6 && !string.IsNullOrEmpty((lines[5] ?? "").Trim())) return lines[5].Trim().ToUpperInvariant();
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    // Procura a MESMA impressora fisica (mesmo MAC) em qualquer porta COM que ela esteja
+    // agora, mesmo que o numero mudou desde a ultima vez. Retorna null se nao achar.
+    static PrinterInfo FindByMac(string mac, List<PrinterInfo> found)
+    {
+        if (string.IsNullOrEmpty(mac)) return null;
+        foreach (var p in found)
+        {
+            if (p.Type == "bluetooth" && string.Equals(p.Detail, mac, StringComparison.OrdinalIgnoreCase)) return p;
+        }
+        return null;
+    }
+
     static void AutoConnect(string id)
     {
+        var found = FindPrinters();
         PrinterInfo target = null;
-        foreach (var p in FindPrinters())
+        foreach (var p in found)
         {
             if (string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase)) target = p;
+        }
+        if (target == null)
+        {
+            // Porta salva sumiu - comum com Bluetooth: o Windows recria a porta COM com outro
+            // numero depois de reconectar. Tenta achar a MESMA impressora pelo MAC salvo antes
+            // de desistir, em vez de exigir que alguem reconfigure na mao.
+            string savedMac = LoadBtMac();
+            target = FindByMac(savedMac, found);
+            if (target != null)
+                Log("Impressora salva (" + id + ") sumiu, mas achei ela na porta " + target.Id + " pelo MAC salvo (" + savedMac + ") - reconectando la.");
         }
         if (target == null)
         {
@@ -741,7 +803,9 @@ class PrintServer
             return true;
         }
         Log(string.Format("Conectando a {0} ({1})...", pi.Name, pi.Id));
-        return TryOpen();
+        bool ok = TryOpen();
+        if (ok && pi.Type == "bluetooth" && !string.IsNullOrEmpty(pi.Detail)) SaveBtMac(pi.Detail);
+        return ok;
     }
 
     static void CloseActiveLocked()
@@ -783,6 +847,27 @@ class PrintServer
         }
     }
 
+    // Chamado pelo watchdog quando a porta salva ja falhou algumas vezes seguidas. Troca
+    // Active.Id pra qualquer porta nova onde a mesma impressora (mesmo MAC) apareca agora -
+    // a proxima tentativa do watchdog usa essa porta nova automaticamente.
+    static void TryReacquireByMac()
+    {
+        string mac;
+        string currentId;
+        lock (Lock)
+        {
+            if (Active == null || Active.Type != "bluetooth") return;
+            mac = !string.IsNullOrEmpty(Active.Detail) ? Active.Detail : LoadBtMac();
+            currentId = Active.Id;
+        }
+        if (string.IsNullOrEmpty(mac)) return;
+        var target = FindByMac(mac, FindPrinters());
+        if (target == null || string.Equals(target.Id, currentId, StringComparison.OrdinalIgnoreCase)) return;
+        Log("Porta da impressora mudou (" + currentId + " -> " + target.Id + ", mesmo MAC " + mac + ") - tentando reconectar na porta nova.");
+        lock (Lock) { Active = target; ReconnectTries = 0; }
+        SaveConfig(target.Id, LoadCharset());
+    }
+
     static void WatchdogLoop()
     {
         while (true)
@@ -807,6 +892,11 @@ class PrintServer
                 {
                     if (!TryOpen())
                     {
+                        // Depois de algumas falhas seguidas na MESMA porta, suspeita que o
+                        // numero da porta COM mudou (Windows reatribuiu depois de reconectar o
+                        // Bluetooth) e tenta achar a impressora de novo pelo MAC, em vez de
+                        // insistir pra sempre numa porta que pode nem existir mais.
+                        if (ReconnectTries > 0 && ReconnectTries % 3 == 0) TryReacquireByMac();
                         int delay = Math.Min(30, 2 * ReconnectTries);
                         Thread.Sleep(delay * 1000);
                     }
