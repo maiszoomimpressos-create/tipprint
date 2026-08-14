@@ -231,9 +231,13 @@ function fillForm(c) {
 }
 
 async function renderCompanies() {
+  // Precisa selecionar TODAS as colunas que fillForm() usa - faltava contact_phone e o
+  // endereco aqui, entao ao clicar "EDITAR" esses campos apareciam vazios mesmo com dado
+  // salvo de verdade no banco, e salvar de novo sobrescrevia com string vazia (perda real
+  // de dado). Achado pelo usuario: telefone salvo sumia do formulario ao editar.
   const { data, error } = await supabase
     .from('companies')
-    .select('id, legal_name, trade_name, cnpj, contact_email, status, created_at')
+    .select('id, legal_name, trade_name, cnpj, contact_email, contact_phone, address_street, address_number, address_neighborhood, address_city, address_zip, status, created_at')
     .order('created_at', { ascending: false });
   const list = $('companiesList');
   list.innerHTML = '';
