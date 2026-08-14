@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="raw-ink">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produtos · TipPrint</title>
+<meta name="description" content="Catálogo de produtos TipPrint — veja e adquira chaves de API pra suas companhias.">
+<link rel="icon" type="image/svg+xml" href="assets/logo-tipprint.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/conta.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="assets/logo-tipprint.svg" width="44" height="44" alt="">
+      <span class="brand-name">Tip<em>Print</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+    </nav>
+    <div class="account-slot" id="accountSlot">
+      <a class="btn btn-outline" href="conta.html">Entrar / Criar conta</a>
+    </div>
+    <a class="btn btn-outline hidden" href="admin.html" id="adminBtn">Administrador</a>
+    <button class="btn btn-primary" data-theme-toggle>RAW TERMINAL</button>
+  </div>
+</header>
+
+<div class="dash-layout wrap">
+  <aside class="dash-sidebar">
+    <nav class="dash-nav">
+      <a class="dash-nav-item" href="dashboard.html">Dashboard</a>
+      <a class="dash-nav-item" href="perfil.html">Perfil<span class="nav-badge hidden" id="perfilNavBadge" title="Cadastro incompleto"></span></a>
+      <a class="dash-nav-item" href="companhias.html">Companhias</a>
+      <a class="dash-nav-item active" href="produtos.html">Produtos</a>
+      <a class="dash-nav-item" href="#">Configurações</a>
+    </nav>
+  </aside>
+
+  <main class="dash-content">
+    <h1 class="dash-title">Produtos</h1>
+    <p class="conta-sub" style="margin-top:6px;">Catálogo TipPrint. Adquira um produto pra uma das suas companhias e gere a chave de API na hora.</p>
+
+    <div id="produtosMsg" class="conta-msg hidden"></div>
+    <p class="conta-msg err hidden" id="noCompanyHint">
+      Você ainda não tem nenhuma companhia cadastrada — <a href="companhias.html">cadastre uma companhia</a> antes de adquirir um produto.
+    </p>
+
+    <p class="empty-hint hidden" id="catalogEmpty">Nenhum produto disponível no catálogo ainda.</p>
+    <div id="catalogList" class="grid" style="margin-bottom:36px;"></div>
+
+    <h2 style="font-size:16px;font-weight:800;margin:24px 0 12px;">Meus produtos adquiridos</h2>
+    <p class="empty-hint hidden" id="acquiredEmpty">Você ainda não adquiriu nenhum produto.</p>
+    <div id="acquiredList"></div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const btn = document.querySelector("[data-theme-toggle]");
+  if (!btn || !root) return;
+  const labels = { "raw-ink": "RAW TERMINAL", "raw-terminal": "RAW INK" };
+  btn.addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") || "raw-ink";
+    const next = current === "raw-ink" ? "raw-terminal" : "raw-ink";
+    root.setAttribute("data-theme", next);
+    btn.textContent = labels[next];
+  });
+})();
+</script>
+
+<script type="module">
+// Tela de Produtos: catalogo global (tabela products, so leitura pra usuario comum -
+// escrita e' so do admin, ver ADMIN_EMAIL) + "adquirir" cria uma linha em
+// tipprint_systems (chave de API) ligada ao produto e a companhia escolhida.
+// Fecha o ciclo: Perfil (pessoa) -> Companhias (empresa certificada) -> Produtos
+// (o que a empresa adquire) -> chave de API pra comunicar.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://hjusqwsqykdzkftyeykd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXNxd3NxeWtkemtmdHlleWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MjY3OTksImV4cCI6MjEwMjMwMjc5OX0.5v9BqoyRowJriBbwL_TKF4jTKosQRMtGUo3HrGJ_Z3M'
+);
+
+const $ = (id) => document.getElementById(id);
+const slot = document.getElementById('accountSlot');
+const ADMIN_EMAIL = 'maiszoomimpressos@gmail.com';
+let currentUser = null;
+let myCompanies = [];
+
+function showMsg(text, kind) {
+  const el = $('produtosMsg');
+  el.textContent = text;
+  el.className = 'conta-msg ' + kind;
+}
+
+function displayName(user, profileName) {
+  if (profileName) return profileName;
+  const email = user.email || '';
+  return email.split('@')[0] || 'Conta';
+}
+
+function updateAdminBtn(user) {
+  const btn = document.getElementById('adminBtn');
+  if (btn) btn.classList.toggle('hidden', !user || user.email !== ADMIN_EMAIL);
+}
+
+const PROFILE_REQUIRED_FIELDS = [
+  'name', 'cpf', 'rg', 'birth_date', 'phone',
+  'address_street', 'address_number', 'address_neighborhood', 'address_city', 'address_zip'
+];
+function isProfileIncomplete(profile) {
+  if (!profile) return true;
+  return PROFILE_REQUIRED_FIELDS.some((field) => !profile[field]);
+}
+function updatePerfilBadge(profile) {
+  const badge = document.getElementById('perfilNavBadge');
+  if (badge) badge.classList.toggle('hidden', !isProfileIncomplete(profile));
+}
+
+function renderLoggedIn(name) {
+  slot.innerHTML =
+    '<div class="account-menu" id="accountMenu">' +
+      '<button class="btn btn-outline account-trigger" id="accountTrigger" type="button" aria-haspopup="true" aria-expanded="false">' +
+        '<span></span>' +
+        '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</button>' +
+      '<div class="account-dropdown hidden" id="accountDropdown">' +
+        '<a href="dashboard.html">Minha conta</a>' +
+        '<button type="button" id="navLogoutBtn">Sair</button>' +
+      '</div>' +
+    '</div>';
+  slot.querySelector('.account-trigger span').textContent = name;
+
+  const trigger = document.getElementById('accountTrigger');
+  const dropdown = document.getElementById('accountDropdown');
+  const close = () => { dropdown.classList.add('hidden'); trigger.setAttribute('aria-expanded', 'false'); };
+  const toggle = () => {
+    const open = dropdown.classList.toggle('hidden') === false;
+    trigger.setAttribute('aria-expanded', String(open));
+  };
+  trigger.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  document.addEventListener('click', (e) => { if (!slot.contains(e.target)) close(); });
+  document.getElementById('navLogoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = 'conta.html';
+  });
+}
+
+function companyOptionsHtml() {
+  return myCompanies.map((c) =>
+    '<option value="' + c.id + '">' + (c.trade_name || c.legal_name || 'Companhia sem nome') + '</option>'
+  ).join('');
+}
+
+async function renderCatalog() {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, description, price_label, status')
+    .eq('status', 'active')
+    .order('created_at', { ascending: true });
+  const list = $('catalogList');
+  list.innerHTML = '';
+  if (error) { showMsg('Falha ao carregar catálogo: ' + error.message, 'err'); return; }
+  $('catalogEmpty').classList.toggle('hidden', data.length > 0);
+  $('noCompanyHint').classList.toggle('hidden', myCompanies.length > 0);
+
+  data.forEach((p) => {
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML =
+      '<span class="card-tag">PRODUTO</span>' +
+      '<h3></h3><p class="p-desc"></p>' +
+      '<p class="p-price" style="margin-top:10px;font-weight:700;"></p>' +
+      '<div class="p-acquire" style="margin-top:14px;"></div>';
+    card.querySelector('h3').textContent = p.name;
+    card.querySelector('.p-desc').textContent = p.description || '';
+    card.querySelector('.p-price').textContent = p.price_label || '';
+
+    const acquireBox = card.querySelector('.p-acquire');
+    if (myCompanies.length === 0) {
+      acquireBox.innerHTML = '<a class="btn btn-outline" href="companhias.html">Cadastrar companhia</a>';
+    } else {
+      acquireBox.innerHTML =
+        (myCompanies.length > 1
+          ? '<select class="p-company-select" style="width:100%;min-height:40px;border-radius:10px;margin-bottom:8px;">' + companyOptionsHtml() + '</select>'
+          : '') +
+        '<button class="btn btn-thermal p-acquire-btn" type="button" style="width:100%;">Adquirir</button>';
+      acquireBox.querySelector('.p-acquire-btn').addEventListener('click', async (e) => {
+        const select = acquireBox.querySelector('.p-company-select');
+        const companyId = select ? select.value : myCompanies[0].id;
+        e.target.disabled = true;
+        try {
+          await acquireProduct(p, companyId);
+        } finally {
+          e.target.disabled = false;
+        }
+      });
+    }
+    list.appendChild(card);
+  });
+}
+
+async function acquireProduct(product, companyId) {
+  const raw = crypto.getRandomValues(new Uint8Array(24));
+  const api_key = 'tp_live_' + [...raw].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const { error } = await supabase.from('tipprint_systems').insert({
+    name: product.name,
+    api_key,
+    owner_id: currentUser.id,
+    company_id: companyId,
+    product_id: product.id
+  });
+  if (error) return showMsg('Falha ao adquirir: ' + error.message, 'err');
+  showMsg('Produto adquirido! Chave de API gerada abaixo, em "Meus produtos adquiridos".', 'ok');
+  renderAcquired();
+}
+
+async function renderAcquired() {
+  const { data, error } = await supabase
+    .from('tipprint_systems')
+    .select('id, name, api_key, status, created_at, companies(trade_name, legal_name)')
+    .not('product_id', 'is', null)
+    .order('created_at', { ascending: false });
+  const list = $('acquiredList');
+  list.innerHTML = '';
+  if (error) { showMsg('Falha ao carregar produtos adquiridos: ' + error.message, 'err'); return; }
+  $('acquiredEmpty').classList.toggle('hidden', data.length > 0);
+  data.forEach((sys) => {
+    const item = document.createElement('div');
+    item.className = 'sys-item';
+    item.innerHTML =
+      '<div class="sys-info"><div class="sys-name"></div><div class="sys-key"></div></div>' +
+      '<span class="sys-tag"></span>';
+    const companyLabel = sys.companies ? (sys.companies.trade_name || sys.companies.legal_name) : null;
+    item.querySelector('.sys-name').textContent = sys.name + (companyLabel ? ' — ' + companyLabel : '');
+    item.querySelector('.sys-key').textContent = sys.api_key;
+    const tag = item.querySelector('.sys-tag');
+    if (sys.status === 'active') {
+      tag.textContent = 'ATIVA — revogar';
+      tag.className = 'sys-tag revoked';
+      tag.addEventListener('click', async () => {
+        if (!confirm('Revogar a chave de "' + sys.name + '"?')) return;
+        await supabase.from('tipprint_systems')
+          .update({ status: 'revoked', revoked_at: new Date().toISOString() })
+          .eq('id', sys.id);
+        renderAcquired();
+      });
+    } else {
+      tag.textContent = 'REVOGADA';
+      tag.className = 'sys-tag';
+    }
+    list.appendChild(item);
+  });
+}
+
+async function init() {
+  const { data } = await supabase.auth.getSession();
+  const user = data.session && data.session.user;
+  if (!user) { window.location.href = 'conta.html'; return; }
+  currentUser = user;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name, cpf, rg, birth_date, phone, address_street, address_number, address_neighborhood, address_city, address_zip')
+    .eq('id', user.id)
+    .maybeSingle();
+  renderLoggedIn(displayName(user, profile && profile.name));
+  updatePerfilBadge(profile);
+  updateAdminBtn(user);
+
+  const { data: companies } = await supabase
+    .from('companies')
+    .select('id, trade_name, legal_name')
+    .order('created_at', { ascending: true });
+  myCompanies = companies || [];
+
+  await renderCatalog();
+  await renderAcquired();
+}
+
+init();
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (!session) window.location.href = 'conta.html';
+});
+</script>
+
+</body>
+</html>

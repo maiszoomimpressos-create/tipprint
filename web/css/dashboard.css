@@ -1,0 +1,68 @@
+/* TipPrint · Dashboard (painel logado)
+   Reaproveita tokens.css + landing.css (header, .btn, .wrap) - so o layout
+   de sidebar + conteudo fica aqui. */
+
+.dash-layout {
+  display: flex; align-items: flex-start; gap: 32px;
+  padding: 40px 24px 96px;
+}
+
+.dash-sidebar {
+  flex: 0 0 220px;
+  position: sticky; top: 96px;
+}
+
+.dash-nav { display: flex; flex-direction: column; gap: 4px; }
+
+.dash-nav-item {
+  display: block; font-size: 14.5px; font-weight: 600; color: inherit;
+  text-decoration: none; padding: 12px 16px;
+  border-radius: var(--tipprint-radius-md, 16px);
+  opacity: .75;
+}
+.dash-nav-item:hover { opacity: 1; background: rgba(23, 19, 16, .05); }
+[data-theme="raw-terminal"] .dash-nav-item:hover { background: rgba(220, 229, 236, .08); }
+
+.nav-badge {
+  display: inline-block; width: 7px; height: 7px; margin-left: 7px;
+  border-radius: 50%; background: var(--tipprint-brand-thermal, #E84A1B);
+  vertical-align: middle;
+}
+[data-theme="raw-terminal"] .nav-badge { background: var(--tipprint-error, #F04438); }
+.nav-badge.hidden { display: none; }
+
+.dash-nav-item.active {
+  opacity: 1; color: var(--tipprint-brand-thermal, #E84A1B);
+  background: var(--tipprint-brand-thermal-soft, #FBE9E1);
+}
+[data-theme="raw-terminal"] .dash-nav-item.active {
+  color: var(--tipprint-primary, #60A5FA);
+  background: var(--tipprint-surface-card, #161D26);
+}
+
+.dash-content { flex: 1; min-width: 0; }
+
+.dash-title { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+
+/* ---------- Formulario de perfil ---------- */
+.perfil-form { max-width: 640px; margin-top: 24px; }
+.perfil-section-title {
+  font-size: 15px; font-weight: 800; margin: 20px 0 12px;
+  opacity: .85;
+}
+.perfil-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 16px;
+}
+.perfil-grid .field { min-width: 0; }
+
+@media (max-width: 520px) {
+  .perfil-grid { grid-template-columns: 1fr; }
+  .perfil-grid .field[style] { grid-column: auto !important; }
+}
+
+@media (max-width: 720px) {
+  .dash-layout { flex-direction: column; padding-top: 24px; }
+  .dash-sidebar { position: static; width: 100%; }
+  .dash-nav { flex-direction: row; flex-wrap: wrap; }
+  .dash-nav-item { padding: 10px 14px; }
+}

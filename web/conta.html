@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="raw-ink">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minha conta · TipPrint</title>
+<meta name="description" content="Crie sua conta TipPrint e gerencie as chaves de API dos seus sistemas.">
+<link rel="icon" type="image/svg+xml" href="assets/logo-tipprint.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/conta.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="assets/logo-tipprint.svg" width="44" height="44" alt="">
+      <span class="brand-name">Tip<em>Print</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+    </nav>
+    <button class="btn btn-primary" data-theme-toggle>RAW TERMINAL</button>
+  </div>
+</header>
+
+<main class="conta-main">
+  <div class="wrap conta-wrap">
+
+    <!-- ============ LOGIN / CADASTRO ============ -->
+    <section id="authView">
+      <h1 class="conta-title" id="authTitle">Entrar</h1>
+      <p class="conta-sub" id="authSub">Acesse sua conta pra gerenciar as chaves de API dos seus sistemas.</p>
+
+      <div id="authMsg" class="conta-msg hidden"></div>
+
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" autocomplete="username" placeholder="voce@empresa.com">
+      </div>
+      <div class="field">
+        <label for="password">Senha</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+        <ul id="passwordChecklist" class="password-checklist hidden">
+          <li data-rule="len">Pelo menos 8 caracteres</li>
+          <li data-rule="upper">Uma letra maiúscula</li>
+          <li data-rule="lower">Uma letra minúscula</li>
+          <li data-rule="number">Um número</li>
+          <li data-rule="special">Um caractere especial (ex: ! @ # $ %)</li>
+        </ul>
+      </div>
+
+      <div class="conta-actions">
+        <button class="btn btn-thermal" id="authSubmit">Entrar</button>
+      </div>
+
+      <p class="conta-switch">
+        <span id="authSwitchLabel">Ainda não tem conta?</span>
+        <button id="authSwitchBtn" type="button">Criar conta</button>
+      </p>
+    </section>
+
+    <!-- ============ CONTA (LOGADO) ============ -->
+    <section id="accountView" class="hidden">
+      <h1 class="conta-title">Sua conta</h1>
+      <p class="conta-sub" id="accountEmail"></p>
+
+      <div id="accountMsg" class="conta-msg hidden"></div>
+
+      <h2 style="font-size:16px;font-weight:800;margin:24px 0 12px;">Seus sistemas (chaves de API)</h2>
+      <p class="empty-hint hidden" id="systemsEmpty">Nenhum sistema cadastrado ainda. Crie um pra usar a API do TipPrint no seu site.</p>
+      <div id="systemsList"></div>
+
+      <div class="field" style="margin-top:20px;">
+        <label for="newSystemName">Nome do novo sistema</label>
+        <input id="newSystemName" type="text" placeholder="ex: meusite.com">
+      </div>
+      <div class="conta-actions">
+        <button class="btn btn-outline" id="createSystemBtn">Criar novo sistema</button>
+        <button class="btn btn-outline" id="logoutBtn">Sair da conta</button>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const btn = document.querySelector("[data-theme-toggle]");
+  if (!btn || !root) return;
+  const labels = { "raw-ink": "RAW TERMINAL", "raw-terminal": "RAW INK" };
+  btn.addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") || "raw-ink";
+    const next = current === "raw-ink" ? "raw-terminal" : "raw-ink";
+    root.setAttribute("data-theme", next);
+    btn.textContent = labels[next];
+  });
+})();
+</script>
+
+<script type="module">
+// Pagina de conta TipPrint - cadastro/entrar + gerenciar chaves de API (tipprint_systems).
+// Fala direto com o Supabase (chave anon, segura pra expor no navegador - protegida por
+// RLS no banco, cada usuario so ve/mexe nos proprios sistemas). Mesmo banco usado pelo
+// TipPrint Desktop (ver desktop/main.js) e pelo backend/ (validacao de chave).
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://hjusqwsqykdzkftyeykd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXNxd3NxeWtkemtmdHlleWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MjY3OTksImV4cCI6MjEwMjMwMjc5OX0.5v9BqoyRowJriBbwL_TKF4jTKosQRMtGUo3HrGJ_Z3M'
+);
+
+const $ = (id) => document.getElementById(id);
+let mode = 'login';
+
+function showMsg(elId, text, kind) {
+  const el = $(elId);
+  el.textContent = text;
+  el.className = 'conta-msg ' + kind;
+}
+function hideMsg(elId) { $(elId).classList.add('hidden'); }
+
+function setMode(next) {
+  mode = next;
+  $('authTitle').textContent = mode === 'login' ? 'Entrar' : 'Criar conta';
+  $('authSubmit').textContent = mode === 'login' ? 'Entrar' : 'Criar conta';
+  $('authSwitchLabel').textContent = mode === 'login' ? 'Ainda não tem conta?' : 'Já tem conta?';
+  $('authSwitchBtn').textContent = mode === 'login' ? 'Criar conta' : 'Entrar';
+  $('passwordChecklist').classList.toggle('hidden', mode !== 'signup');
+  updatePasswordChecklist();
+  hideMsg('authMsg');
+}
+$('authSwitchBtn').addEventListener('click', () => setMode(mode === 'login' ? 'signup' : 'login'));
+
+const PASSWORD_RULES = [
+  { rule: 'len', test: (pw) => pw.length >= 8 },
+  { rule: 'upper', test: (pw) => /[A-Z]/.test(pw) },
+  { rule: 'lower', test: (pw) => /[a-z]/.test(pw) },
+  { rule: 'number', test: (pw) => /[0-9]/.test(pw) },
+  { rule: 'special', test: (pw) => /[^A-Za-z0-9]/.test(pw) }
+];
+
+function updatePasswordChecklist() {
+  const pw = $('password').value;
+  PASSWORD_RULES.forEach(({ rule, test }) => {
+    const li = $('passwordChecklist').querySelector('[data-rule="' + rule + '"]');
+    if (li) li.classList.toggle('met', test(pw));
+  });
+}
+$('password').addEventListener('input', updatePasswordChecklist);
+
+function validatePasswordStrength(pw) {
+  const failed = PASSWORD_RULES.find(({ test }) => !test(pw));
+  if (!failed) return null;
+  const labels = {
+    len: 'A senha precisa ter pelo menos 8 caracteres.',
+    upper: 'A senha precisa de pelo menos uma letra maiúscula.',
+    lower: 'A senha precisa de pelo menos uma letra minúscula.',
+    number: 'A senha precisa de pelo menos um número.',
+    special: 'A senha precisa de pelo menos um caractere especial (ex: ! @ # $ %).'
+  };
+  return labels[failed.rule];
+}
+
+$('authSubmit').addEventListener('click', async () => {
+  const email = $('email').value.trim();
+  const password = $('password').value;
+  if (!email || !password) return showMsg('authMsg', 'Preencha e-mail e senha.', 'err');
+  if (mode === 'signup') {
+    const err = validatePasswordStrength(password);
+    if (err) return showMsg('authMsg', err, 'err');
+  }
+  $('authSubmit').disabled = true;
+  try {
+    if (mode === 'signup') {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) return showMsg('authMsg', error.message, 'err');
+      if (!data.session) {
+        return showMsg('authMsg', 'Conta criada! Confirme seu e-mail (' + email + ') antes de entrar.', 'ok');
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return showMsg('authMsg', error.message, 'err');
+    }
+    await refreshView();
+  } finally {
+    $('authSubmit').disabled = false;
+  }
+});
+
+async function renderSystems() {
+  const { data, error } = await supabase
+    .from('tipprint_systems')
+    .select('id, name, api_key, status, created_at')
+    .order('created_at', { ascending: false });
+  const list = $('systemsList');
+  list.innerHTML = '';
+  if (error) { showMsg('accountMsg', 'Falha ao carregar sistemas: ' + error.message, 'err'); return; }
+  $('systemsEmpty').classList.toggle('hidden', data.length > 0);
+  data.forEach((sys) => {
+    const item = document.createElement('div');
+    item.className = 'sys-item';
+    item.innerHTML =
+      '<div class="sys-info"><div class="sys-name"></div><div class="sys-key"></div></div>' +
+      '<span class="sys-tag"></span>';
+    item.querySelector('.sys-name').textContent = sys.name;
+    item.querySelector('.sys-key').textContent = sys.api_key;
+    const tag = item.querySelector('.sys-tag');
+    if (sys.status === 'active') {
+      tag.textContent = 'ATIVA — revogar';
+      tag.className = 'sys-tag revoked';
+      tag.addEventListener('click', async () => {
+        if (!confirm('Revogar a chave de "' + sys.name + '"? O sistema que usa ela para de funcionar.')) return;
+        await supabase.from('tipprint_systems')
+          .update({ status: 'revoked', revoked_at: new Date().toISOString() })
+          .eq('id', sys.id);
+        renderSystems();
+      });
+    } else {
+      tag.textContent = 'REVOGADA';
+      tag.className = 'sys-tag';
+    }
+    list.appendChild(item);
+  });
+}
+
+$('createSystemBtn').addEventListener('click', async () => {
+  const name = $('newSystemName').value.trim();
+  if (!name) return;
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return;
+  $('createSystemBtn').disabled = true;
+  try {
+    const raw = crypto.getRandomValues(new Uint8Array(24));
+    const api_key = 'tp_live_' + [...raw].map((b) => b.toString(16).padStart(2, '0')).join('');
+    const { error } = await supabase.from('tipprint_systems')
+      .insert({ name, api_key, owner_id: userData.user.id });
+    if (error) return showMsg('accountMsg', 'Falha ao criar: ' + error.message, 'err');
+    $('newSystemName').value = '';
+    hideMsg('accountMsg');
+    renderSystems();
+  } finally {
+    $('createSystemBtn').disabled = false;
+  }
+});
+
+$('logoutBtn').addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  await refreshView();
+});
+
+async function refreshView() {
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    $('authView').classList.add('hidden');
+    $('accountView').classList.remove('hidden');
+    $('accountEmail').textContent = 'Logado como ' + data.session.user.email;
+    renderSystems();
+  } else {
+    $('accountView').classList.add('hidden');
+    $('authView').classList.remove('hidden');
+    setMode('login');
+  }
+}
+
+refreshView();
+</script>
+
+</body>
+</html>

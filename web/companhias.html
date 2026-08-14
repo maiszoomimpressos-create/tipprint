@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="raw-ink">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Companhias · TipPrint</title>
+<meta name="description" content="Identificação das empresas donas dos sistemas certificados via chave de API TipPrint.">
+<link rel="icon" type="image/svg+xml" href="assets/logo-tipprint.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/conta.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="assets/logo-tipprint.svg" width="44" height="44" alt="">
+      <span class="brand-name">Tip<em>Print</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+    </nav>
+    <div class="account-slot" id="accountSlot">
+      <a class="btn btn-outline" href="conta.html">Entrar / Criar conta</a>
+    </div>
+    <a class="btn btn-outline hidden" href="admin.html" id="adminBtn">Administrador</a>
+    <button class="btn btn-primary" data-theme-toggle>RAW TERMINAL</button>
+  </div>
+</header>
+
+<div class="dash-layout wrap">
+  <aside class="dash-sidebar">
+    <nav class="dash-nav">
+      <a class="dash-nav-item" href="dashboard.html">Dashboard</a>
+      <a class="dash-nav-item" href="perfil.html">Perfil<span class="nav-badge hidden" id="perfilNavBadge" title="Cadastro incompleto"></span></a>
+      <a class="dash-nav-item active" href="companhias.html">Companhias</a>
+      <a class="dash-nav-item" href="produtos.html">Produtos</a>
+      <a class="dash-nav-item" href="#">Configurações</a>
+    </nav>
+  </aside>
+
+  <main class="dash-content">
+    <h1 class="dash-title">Companhias</h1>
+    <p class="conta-sub" style="margin-top:6px;">Identificação das empresas donas dos sistemas que se conectam via chave de API — é a certificação por trás de cada chave (a técnica continua sendo API key + domínios liberados, configurados em Produtos).</p>
+
+    <div id="companiesMsg" class="conta-msg hidden"></div>
+
+    <p class="empty-hint hidden" id="companiesEmpty">Nenhuma companhia cadastrada ainda.</p>
+    <div id="companiesList"></div>
+
+    <h2 class="perfil-section-title" id="formTitle" style="margin-top:28px;">Nova companhia</h2>
+    <form id="companyForm" class="perfil-form">
+      <input type="hidden" id="cId">
+      <div class="perfil-grid">
+        <div class="field">
+          <label for="cLegalName">Razão social</label>
+          <input id="cLegalName" type="text" placeholder="Razão social Ltda">
+        </div>
+        <div class="field">
+          <label for="cTradeName">Nome fantasia</label>
+          <input id="cTradeName" type="text" placeholder="ex: Tipo7">
+        </div>
+        <div class="field">
+          <label for="cCnpj">CNPJ</label>
+          <input id="cCnpj" type="text" placeholder="00.000.000/0000-00">
+        </div>
+        <div class="field">
+          <label for="cContactEmail">E-mail de contato</label>
+          <input id="cContactEmail" type="email" placeholder="contato@empresa.com">
+        </div>
+        <div class="field">
+          <label for="cContactPhone">Telefone de contato</label>
+          <input id="cContactPhone" type="tel" placeholder="(00) 00000-0000">
+        </div>
+      </div>
+
+      <h2 class="perfil-section-title">Endereço da empresa</h2>
+      <div class="perfil-grid">
+        <div class="field" style="grid-column: span 2;">
+          <label for="cStreet">Rua</label>
+          <input id="cStreet" type="text" placeholder="Nome da rua">
+        </div>
+        <div class="field">
+          <label for="cNumber">Número</label>
+          <input id="cNumber" type="text" placeholder="123">
+        </div>
+        <div class="field">
+          <label for="cNeighborhood">Bairro</label>
+          <input id="cNeighborhood" type="text" placeholder="Bairro">
+        </div>
+        <div class="field">
+          <label for="cCity">Cidade</label>
+          <input id="cCity" type="text" placeholder="Cidade">
+        </div>
+        <div class="field">
+          <label for="cZip">CEP</label>
+          <input id="cZip" type="text" placeholder="00000-000">
+        </div>
+      </div>
+
+      <p class="field-hint" id="responsibleHint"></p>
+
+      <div class="conta-actions" style="margin-top:8px; display:flex; gap:10px;">
+        <button class="btn btn-thermal" id="companySaveBtn" type="submit">Salvar companhia</button>
+        <button class="btn btn-outline hidden" id="companyCancelBtn" type="button">Cancelar edição</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const btn = document.querySelector("[data-theme-toggle]");
+  if (!btn || !root) return;
+  const labels = { "raw-ink": "RAW TERMINAL", "raw-terminal": "RAW INK" };
+  btn.addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") || "raw-ink";
+    const next = current === "raw-ink" ? "raw-terminal" : "raw-ink";
+    root.setAttribute("data-theme", next);
+    btn.textContent = labels[next];
+  });
+})();
+</script>
+
+<script type="module">
+// Tela de Companhias: identificacao/certificacao das empresas donas de sistema
+// (ex: Tipo7) - CNPJ/razao social fazem pra empresa o que CPF/RG fazem pra pessoa
+// em Perfil. A parte tecnica (chave de API + dominios liberados) continua em
+// tipprint_systems (tela Produtos), agora ligada por company_id.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://hjusqwsqykdzkftyeykd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXNxd3NxeWtkemtmdHlleWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MjY3OTksImV4cCI6MjEwMjMwMjc5OX0.5v9BqoyRowJriBbwL_TKF4jTKosQRMtGUo3HrGJ_Z3M'
+);
+
+const $ = (id) => document.getElementById(id);
+const slot = document.getElementById('accountSlot');
+const ADMIN_EMAIL = 'maiszoomimpressos@gmail.com';
+let currentUser = null;
+
+function showMsg(text, kind) {
+  const el = $('companiesMsg');
+  el.textContent = text;
+  el.className = 'conta-msg ' + kind;
+}
+
+function displayName(user, profileName) {
+  if (profileName) return profileName;
+  const email = user.email || '';
+  return email.split('@')[0] || 'Conta';
+}
+
+function updateAdminBtn(user) {
+  const btn = document.getElementById('adminBtn');
+  if (btn) btn.classList.toggle('hidden', !user || user.email !== ADMIN_EMAIL);
+}
+
+function renderLoggedIn(name) {
+  slot.innerHTML =
+    '<div class="account-menu" id="accountMenu">' +
+      '<button class="btn btn-outline account-trigger" id="accountTrigger" type="button" aria-haspopup="true" aria-expanded="false">' +
+        '<span></span>' +
+        '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</button>' +
+      '<div class="account-dropdown hidden" id="accountDropdown">' +
+        '<a href="dashboard.html">Minha conta</a>' +
+        '<button type="button" id="navLogoutBtn">Sair</button>' +
+      '</div>' +
+    '</div>';
+  slot.querySelector('.account-trigger span').textContent = name;
+
+  const trigger = document.getElementById('accountTrigger');
+  const dropdown = document.getElementById('accountDropdown');
+  const close = () => { dropdown.classList.add('hidden'); trigger.setAttribute('aria-expanded', 'false'); };
+  const toggle = () => {
+    const open = dropdown.classList.toggle('hidden') === false;
+    trigger.setAttribute('aria-expanded', String(open));
+  };
+  trigger.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  document.addEventListener('click', (e) => { if (!slot.contains(e.target)) close(); });
+  document.getElementById('navLogoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = 'conta.html';
+  });
+}
+
+const PROFILE_REQUIRED_FIELDS = [
+  'name', 'cpf', 'rg', 'birth_date', 'phone',
+  'address_street', 'address_number', 'address_neighborhood', 'address_city', 'address_zip'
+];
+function isProfileIncomplete(profile) {
+  if (!profile) return true;
+  return PROFILE_REQUIRED_FIELDS.some((field) => !profile[field]);
+}
+function updatePerfilBadge(profile) {
+  const badge = document.getElementById('perfilNavBadge');
+  if (badge) badge.classList.toggle('hidden', !isProfileIncomplete(profile));
+}
+
+function resetForm() {
+  $('companyForm').reset();
+  $('cId').value = '';
+  $('formTitle').textContent = 'Nova companhia';
+  $('companySaveBtn').textContent = 'Salvar companhia';
+  $('companyCancelBtn').classList.add('hidden');
+}
+
+function fillForm(c) {
+  $('cId').value = c.id;
+  $('cLegalName').value = c.legal_name || '';
+  $('cTradeName').value = c.trade_name || '';
+  $('cCnpj').value = c.cnpj || '';
+  $('cContactEmail').value = c.contact_email || '';
+  $('cContactPhone').value = c.contact_phone || '';
+  $('cStreet').value = c.address_street || '';
+  $('cNumber').value = c.address_number || '';
+  $('cNeighborhood').value = c.address_neighborhood || '';
+  $('cCity').value = c.address_city || '';
+  $('cZip').value = c.address_zip || '';
+  $('formTitle').textContent = 'Editando: ' + (c.trade_name || c.legal_name || 'companhia');
+  $('companySaveBtn').textContent = 'Salvar alterações';
+  $('companyCancelBtn').classList.remove('hidden');
+  window.scrollTo({ top: document.getElementById('companyForm').offsetTop - 20, behavior: 'smooth' });
+}
+
+async function renderCompanies() {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id, legal_name, trade_name, cnpj, contact_email, status, created_at')
+    .order('created_at', { ascending: false });
+  const list = $('companiesList');
+  list.innerHTML = '';
+  if (error) { showMsg('Falha ao carregar companhias: ' + error.message, 'err'); return; }
+  $('companiesEmpty').classList.toggle('hidden', data.length > 0);
+  data.forEach((c) => {
+    const item = document.createElement('div');
+    item.className = 'sys-item';
+    item.innerHTML =
+      '<div class="sys-info"><div class="sys-name"></div><div class="sys-key"></div></div>' +
+      '<span class="sys-tag" style="cursor:pointer;">EDITAR</span>';
+    item.querySelector('.sys-name').textContent = c.trade_name || c.legal_name || '(sem nome)';
+    item.querySelector('.sys-key').textContent = [c.cnpj, c.contact_email].filter(Boolean).join(' · ') || 'sem CNPJ/contato cadastrado';
+    item.querySelector('.sys-tag').addEventListener('click', () => fillForm(c));
+    list.appendChild(item);
+  });
+}
+
+$('companyCancelBtn').addEventListener('click', resetForm);
+
+$('companyForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('companySaveBtn').disabled = true;
+  try {
+    const payload = {
+      legal_name: $('cLegalName').value.trim(),
+      trade_name: $('cTradeName').value.trim(),
+      cnpj: $('cCnpj').value.trim(),
+      contact_email: $('cContactEmail').value.trim(),
+      contact_phone: $('cContactPhone').value.trim(),
+      address_street: $('cStreet').value.trim(),
+      address_number: $('cNumber').value.trim(),
+      address_neighborhood: $('cNeighborhood').value.trim(),
+      address_city: $('cCity').value.trim(),
+      address_zip: $('cZip').value.trim()
+    };
+    const id = $('cId').value;
+    let error;
+    if (id) {
+      ({ error } = await supabase.from('companies').update(payload).eq('id', id));
+    } else {
+      ({ error } = await supabase.from('companies').insert({
+        ...payload,
+        owner_id: currentUser.id,
+        responsible_profile_id: currentUser.id
+      }));
+    }
+    if (error) return showMsg('Falha ao salvar: ' + error.message, 'err');
+    showMsg('Companhia salva com sucesso.', 'ok');
+    resetForm();
+    renderCompanies();
+  } finally {
+    $('companySaveBtn').disabled = false;
+  }
+});
+
+async function init() {
+  const { data } = await supabase.auth.getSession();
+  const user = data.session && data.session.user;
+  if (!user) { window.location.href = 'conta.html'; return; }
+  currentUser = user;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name, cpf, rg, birth_date, phone, address_street, address_number, address_neighborhood, address_city, address_zip')
+    .eq('id', user.id)
+    .maybeSingle();
+  renderLoggedIn(displayName(user, profile && profile.name));
+  updatePerfilBadge(profile);
+  updateAdminBtn(user);
+  $('responsibleHint').textContent = 'Responsável legal: ' + displayName(user, profile && profile.name) + ' (dados em Perfil).';
+  renderCompanies();
+}
+
+init();
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (!session) window.location.href = 'conta.html';
+});
+</script>
+
+</body>
+</html>

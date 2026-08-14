@@ -4,6 +4,8 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+.hidden { display: none !important; }
+
 :root {
   color-scheme: light;
 }
@@ -60,6 +62,37 @@ em { font-style: normal; color: var(--tipprint-brand-thermal, #E84A1B); }
 .btn-outline:hover { background: rgba(23, 19, 16, .05); }
 [data-theme="raw-terminal"] .btn-outline:hover { background: rgba(220, 229, 236, .08); }
 
+/* ---------- Menu de conta (logado) ---------- */
+.account-slot { position: relative; }
+.account-trigger { gap: 8px; }
+.account-trigger span { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-trigger svg { flex-shrink: 0; transition: transform var(--tipprint-motion-fast, 150ms) ease; }
+.account-trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
+.account-menu { position: relative; }
+.account-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 20;
+  min-width: 180px; display: flex; flex-direction: column; gap: 2px;
+  background: var(--tipprint-brand-paper, #F7F5F0);
+  border: 1px dashed var(--tipprint-brand-ink, #171310);
+  border-radius: var(--tipprint-radius-md, 16px);
+  padding: 8px; box-shadow: 0 8px 24px rgba(23, 19, 16, .12);
+}
+[data-theme="raw-terminal"] .account-dropdown {
+  background: var(--tipprint-surface-card, #161D26);
+  border-color: var(--tipprint-outline, #2A3644);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+}
+.account-dropdown.hidden { display: none; }
+.account-dropdown a, .account-dropdown button {
+  display: block; width: 100%; text-align: left;
+  font-family: inherit; font-size: 14px; font-weight: 500; color: inherit;
+  background: transparent; border: none; text-decoration: none; cursor: pointer;
+  padding: 10px 12px; border-radius: var(--tipprint-radius-sm, 10px);
+}
+.account-dropdown a:hover, .account-dropdown button:hover { background: rgba(23, 19, 16, .06); }
+[data-theme="raw-terminal"] .account-dropdown a:hover,
+[data-theme="raw-terminal"] .account-dropdown button:hover { background: rgba(220, 229, 236, .08); }
+
 /* ---------- Hero ---------- */
 .hero { padding: 88px 0 96px; }
 .ticket {
@@ -101,6 +134,16 @@ em { font-style: normal; color: var(--tipprint-brand-thermal, #E84A1B); }
 .card h3 { font-size: 19px; font-weight: 800; margin-bottom: 10px; }
 .card p { font-size: 14.5px; opacity: .85; }
 
+.plat {
+  background: var(--tipprint-brand-paper-alt, #EFEBE2);
+  border-radius: var(--tipprint-radius-lg, 20px);
+  padding: 28px;
+  box-shadow: 0 1px 2px rgba(23, 19, 16, .05);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+[data-theme="raw-terminal"] .plat { background: var(--tipprint-surface-card, #161D26); }
 .plat-badge {
   font-family: var(--tipprint-font-mono, monospace); font-size: 10px; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase;
@@ -109,6 +152,7 @@ em { font-style: normal; color: var(--tipprint-brand-thermal, #E84A1B); }
 }
 [data-theme="raw-terminal"] .plat-badge { color: var(--tipprint-success, #2FB96C); }
 .plat h3 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.plat p { font-size: 14.5px; opacity: .85; flex-grow: 1; }
 .btn-download { margin-top: 16px; }
 
 /* ---------- Passos ---------- */

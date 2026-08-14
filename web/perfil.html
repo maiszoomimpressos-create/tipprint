@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="raw-ink">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perfil · TipPrint</title>
+<meta name="description" content="Dados de cadastro da conta TipPrint.">
+<link rel="icon" type="image/svg+xml" href="assets/logo-tipprint.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/conta.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="assets/logo-tipprint.svg" width="44" height="44" alt="">
+      <span class="brand-name">Tip<em>Print</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+    </nav>
+    <div class="account-slot" id="accountSlot">
+      <a class="btn btn-outline" href="conta.html">Entrar / Criar conta</a>
+    </div>
+    <a class="btn btn-outline hidden" href="admin.html" id="adminBtn">Administrador</a>
+    <button class="btn btn-primary" data-theme-toggle>RAW TERMINAL</button>
+  </div>
+</header>
+
+<div class="dash-layout wrap">
+  <aside class="dash-sidebar">
+    <nav class="dash-nav">
+      <a class="dash-nav-item" href="dashboard.html">Dashboard</a>
+      <a class="dash-nav-item active" href="perfil.html">Perfil<span class="nav-badge hidden" id="perfilNavBadge" title="Cadastro incompleto"></span></a>
+      <a class="dash-nav-item" href="companhias.html">Companhias</a>
+      <a class="dash-nav-item" href="produtos.html">Produtos</a>
+      <a class="dash-nav-item" href="#">Configurações</a>
+    </nav>
+  </aside>
+
+  <main class="dash-content">
+    <h1 class="dash-title">Perfil</h1>
+    <p class="conta-sub" style="margin-top:6px;">Dados de cadastro da sua conta.</p>
+
+    <div id="perfilIncompleteBanner" class="conta-msg err hidden">Cadastro incompleto — preencha todos os campos abaixo.</div>
+    <div id="perfilMsg" class="conta-msg hidden"></div>
+
+    <form id="perfilForm" class="perfil-form">
+      <div class="field">
+        <label for="pEmail">E-mail</label>
+        <input id="pEmail" type="email" disabled>
+      </div>
+      <div class="field">
+        <label for="pName">Nome completo</label>
+        <input id="pName" type="text" placeholder="Seu nome completo">
+      </div>
+
+      <div class="perfil-grid">
+        <div class="field">
+          <label for="pCpf">CPF</label>
+          <input id="pCpf" type="text" placeholder="000.000.000-00">
+        </div>
+        <div class="field">
+          <label for="pRg">RG</label>
+          <input id="pRg" type="text" placeholder="00.000.000-0">
+        </div>
+        <div class="field">
+          <label for="pBirth">Data de nascimento</label>
+          <input id="pBirth" type="date">
+        </div>
+        <div class="field">
+          <label for="pPhone">Telefone</label>
+          <input id="pPhone" type="tel" placeholder="(00) 00000-0000">
+        </div>
+      </div>
+
+      <h2 class="perfil-section-title">Endereço</h2>
+      <div class="perfil-grid">
+        <div class="field" style="grid-column: span 2;">
+          <label for="pStreet">Rua</label>
+          <input id="pStreet" type="text" placeholder="Nome da rua">
+        </div>
+        <div class="field">
+          <label for="pNumber">Número</label>
+          <input id="pNumber" type="text" placeholder="123">
+        </div>
+        <div class="field">
+          <label for="pNeighborhood">Bairro</label>
+          <input id="pNeighborhood" type="text" placeholder="Bairro">
+        </div>
+        <div class="field">
+          <label for="pCity">Cidade</label>
+          <input id="pCity" type="text" placeholder="Cidade">
+        </div>
+        <div class="field">
+          <label for="pZip">CEP</label>
+          <input id="pZip" type="text" placeholder="00000-000">
+        </div>
+      </div>
+
+      <div class="conta-actions" style="margin-top:8px;">
+        <button class="btn btn-thermal" id="perfilSaveBtn" type="submit">Salvar alterações</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const btn = document.querySelector("[data-theme-toggle]");
+  if (!btn || !root) return;
+  const labels = { "raw-ink": "RAW TERMINAL", "raw-terminal": "RAW INK" };
+  btn.addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") || "raw-ink";
+    const next = current === "raw-ink" ? "raw-terminal" : "raw-ink";
+    root.setAttribute("data-theme", next);
+    btn.textContent = labels[next];
+  });
+})();
+</script>
+
+<script type="module">
+// Tela de Perfil: exige sessao Supabase, carrega e salva os dados de cadastro
+// (tabela profiles - mesmo banco usado em conta.html, index.html e dashboard.html).
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://hjusqwsqykdzkftyeykd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXNxd3NxeWtkemtmdHlleWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MjY3OTksImV4cCI6MjEwMjMwMjc5OX0.5v9BqoyRowJriBbwL_TKF4jTKosQRMtGUo3HrGJ_Z3M'
+);
+
+const $ = (id) => document.getElementById(id);
+const slot = document.getElementById('accountSlot');
+const ADMIN_EMAIL = 'maiszoomimpressos@gmail.com';
+
+function showMsg(text, kind) {
+  const el = $('perfilMsg');
+  el.textContent = text;
+  el.className = 'conta-msg ' + kind;
+}
+
+function displayName(user, profileName) {
+  if (profileName) return profileName;
+  const email = user.email || '';
+  return email.split('@')[0] || 'Conta';
+}
+
+function updateAdminBtn(user) {
+  const btn = document.getElementById('adminBtn');
+  if (btn) btn.classList.toggle('hidden', !user || user.email !== ADMIN_EMAIL);
+}
+
+function renderLoggedIn(name) {
+  slot.innerHTML =
+    '<div class="account-menu" id="accountMenu">' +
+      '<button class="btn btn-outline account-trigger" id="accountTrigger" type="button" aria-haspopup="true" aria-expanded="false">' +
+        '<span></span>' +
+        '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</button>' +
+      '<div class="account-dropdown hidden" id="accountDropdown">' +
+        '<a href="dashboard.html">Minha conta</a>' +
+        '<button type="button" id="navLogoutBtn">Sair</button>' +
+      '</div>' +
+    '</div>';
+  slot.querySelector('.account-trigger span').textContent = name;
+
+  const trigger = document.getElementById('accountTrigger');
+  const dropdown = document.getElementById('accountDropdown');
+  const close = () => { dropdown.classList.add('hidden'); trigger.setAttribute('aria-expanded', 'false'); };
+  const toggle = () => {
+    const open = dropdown.classList.toggle('hidden') === false;
+    trigger.setAttribute('aria-expanded', String(open));
+  };
+  trigger.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  document.addEventListener('click', (e) => { if (!slot.contains(e.target)) close(); });
+  document.getElementById('navLogoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = 'conta.html';
+  });
+}
+
+let currentUser = null;
+
+async function loadProfile() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('name, email, cpf, rg, birth_date, address_street, address_number, address_neighborhood, address_city, address_zip, phone')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+  if (error) { showMsg('Falha ao carregar perfil: ' + error.message, 'err'); return; }
+  const p = data || {};
+  $('pEmail').value = p.email || currentUser.email || '';
+  $('pName').value = p.name || '';
+  $('pCpf').value = p.cpf || '';
+  $('pRg').value = p.rg || '';
+  $('pBirth').value = p.birth_date || '';
+  $('pPhone').value = p.phone || '';
+  $('pStreet').value = p.address_street || '';
+  $('pNumber').value = p.address_number || '';
+  $('pNeighborhood').value = p.address_neighborhood || '';
+  $('pCity').value = p.address_city || '';
+  $('pZip').value = p.address_zip || '';
+  updatePerfilBadge();
+}
+
+const PROFILE_REQUIRED_FIELDS = [
+  'pName', 'pCpf', 'pRg', 'pBirth', 'pPhone',
+  'pStreet', 'pNumber', 'pNeighborhood', 'pCity', 'pZip'
+];
+function isProfileIncomplete() {
+  return PROFILE_REQUIRED_FIELDS.some((id) => !$(id).value.trim());
+}
+function updatePerfilBadge() {
+  const incomplete = isProfileIncomplete();
+  const badge = document.getElementById('perfilNavBadge');
+  if (badge) badge.classList.toggle('hidden', !incomplete);
+  $('perfilIncompleteBanner').classList.toggle('hidden', !incomplete);
+}
+
+$('perfilForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('perfilSaveBtn').disabled = true;
+  try {
+    const { error } = await supabase.from('profiles').update({
+      name: $('pName').value.trim(),
+      cpf: $('pCpf').value.trim(),
+      rg: $('pRg').value.trim(),
+      birth_date: $('pBirth').value || null,
+      phone: $('pPhone').value.trim(),
+      address_street: $('pStreet').value.trim(),
+      address_number: $('pNumber').value.trim(),
+      address_neighborhood: $('pNeighborhood').value.trim(),
+      address_city: $('pCity').value.trim(),
+      address_zip: $('pZip').value.trim()
+    }).eq('id', currentUser.id);
+    if (error) return showMsg('Falha ao salvar: ' + error.message, 'err');
+    showMsg('Perfil salvo com sucesso.', 'ok');
+    renderLoggedIn(displayName(currentUser, $('pName').value.trim()));
+    updatePerfilBadge();
+  } finally {
+    $('perfilSaveBtn').disabled = false;
+  }
+});
+
+async function init() {
+  const { data } = await supabase.auth.getSession();
+  const user = data.session && data.session.user;
+  if (!user) { window.location.href = 'conta.html'; return; }
+  currentUser = user;
+  const { data: profile } = await supabase.from('profiles').select('name').eq('id', user.id).maybeSingle();
+  renderLoggedIn(displayName(user, profile && profile.name));
+  updateAdminBtn(user);
+  await loadProfile();
+}
+
+init();
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (!session) window.location.href = 'conta.html';
+});
+</script>
+
+</body>
+</html>

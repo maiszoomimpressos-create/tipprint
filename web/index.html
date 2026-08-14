@@ -18,13 +18,17 @@
   <div class="wrap nav">
     <a class="brand" href="#top">
       <img src="assets/logo-tipprint.svg" width="44" height="44" alt="">
-      <span class="brand-name">RAW<em>BTS</em></span>
+      <span class="brand-name">Tip<em>Print</em></span>
     </a>
     <nav class="nav-links">
       <a href="#product">Produto</a>
       <a href="#platforms">Plataformas</a>
       <a href="#how">Como funciona</a>
     </nav>
+    <div class="account-slot" id="accountSlot">
+      <a class="btn btn-outline" href="conta.html">Entrar / Criar conta</a>
+    </div>
+    <a class="btn btn-outline hidden" href="admin.html" id="adminBtn">Administrador</a>
     <button class="btn btn-primary" data-theme-toggle>RAW TERMINAL</button>
   </div>
 </header>
@@ -113,7 +117,7 @@
 <footer class="site-footer">
   <div class="wrap foot">
     <div>
-      <span class="brand-name">RAW<em>BTS</em></span>
+      <span class="brand-name">Tip<em>Print</em></span>
       <p class="foot-tagline">Conecte · Controle · Imprima.</p>
     </div>
     <p class="foot-meta">Design system compartilhado · tokens únicos para Android, Windows, iOS e Web</p>
@@ -134,6 +138,82 @@
     btn.textContent = labels[next];
   });
 })();
+</script>
+
+<script type="module">
+// Se tiver sessao Supabase ativa, troca o botao "Entrar / Criar conta" pelo
+// nome do usuario com menu suspenso (Minha conta / Sair). Mesmo banco usado
+// em conta.html e no TipPrint Desktop.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://hjusqwsqykdzkftyeykd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXNxd3NxeWtkemtmdHlleWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MjY3OTksImV4cCI6MjEwMjMwMjc5OX0.5v9BqoyRowJriBbwL_TKF4jTKosQRMtGUo3HrGJ_Z3M'
+);
+
+const slot = document.getElementById('accountSlot');
+const ADMIN_EMAIL = 'maiszoomimpressos@gmail.com';
+
+function displayName(user, profileName) {
+  if (profileName) return profileName;
+  const email = user.email || '';
+  return email.split('@')[0] || 'Conta';
+}
+
+function updateAdminBtn(user) {
+  const btn = document.getElementById('adminBtn');
+  if (btn) btn.classList.toggle('hidden', !user || user.email !== ADMIN_EMAIL);
+}
+
+function renderLoggedOut() {
+  slot.innerHTML = '<a class="btn btn-outline" href="conta.html">Entrar / Criar conta</a>';
+  updateAdminBtn(null);
+}
+
+function renderLoggedIn(name) {
+  slot.innerHTML =
+    '<div class="account-menu" id="accountMenu">' +
+      '<button class="btn btn-outline account-trigger" id="accountTrigger" type="button" aria-haspopup="true" aria-expanded="false">' +
+        '<span></span>' +
+        '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</button>' +
+      '<div class="account-dropdown hidden" id="accountDropdown">' +
+        '<a href="dashboard.html">Minha conta</a>' +
+        '<button type="button" id="navLogoutBtn">Sair</button>' +
+      '</div>' +
+    '</div>';
+  slot.querySelector('.account-trigger span').textContent = name;
+
+  const trigger = document.getElementById('accountTrigger');
+  const dropdown = document.getElementById('accountDropdown');
+  const close = () => { dropdown.classList.add('hidden'); trigger.setAttribute('aria-expanded', 'false'); };
+  const toggle = () => {
+    const open = dropdown.classList.toggle('hidden') === false;
+    trigger.setAttribute('aria-expanded', String(open));
+  };
+  trigger.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  document.addEventListener('click', (e) => { if (!slot.contains(e.target)) close(); });
+  document.getElementById('navLogoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    renderLoggedOut();
+  });
+}
+
+async function refreshAccountSlot() {
+  const { data } = await supabase.auth.getSession();
+  const user = data.session && data.session.user;
+  if (!user) { renderLoggedOut(); return; }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name')
+    .eq('id', user.id)
+    .maybeSingle();
+  renderLoggedIn(displayName(user, profile && profile.name));
+  updateAdminBtn(user);
+}
+
+refreshAccountSlot();
+supabase.auth.onAuthStateChange(() => refreshAccountSlot());
 </script>
 </body>
 </html>

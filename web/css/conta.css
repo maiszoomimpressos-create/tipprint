@@ -1,0 +1,84 @@
+/* TipPrint · Pagina de conta (cadastro/entrar + gerenciar chaves de API)
+   Reaproveita tokens.css + landing.css (header, .btn, .card, .wrap) - so o que
+   e' especifico de formulario/lista fica aqui. */
+
+.hidden { display: none !important; }
+
+.conta-main { padding: 56px 0 96px; }
+
+.conta-wrap { max-width: 480px; margin: 0 auto; }
+
+.conta-title { font-size: 28px; font-weight: 800; margin-bottom: 8px; text-wrap: balance; }
+.conta-sub { opacity: .75; font-size: 14.5px; margin-bottom: 28px; }
+
+.field { margin-bottom: 14px; }
+.field label {
+  display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em;
+  margin-bottom: 6px; opacity: .8;
+}
+.field input {
+  width: 100%; font-family: inherit; font-size: 15px;
+  min-height: var(--tipprint-control-min-height, 48px);
+  padding: 0 14px; border-radius: var(--tipprint-radius-md, 16px);
+  border: 1px solid var(--tipprint-outline, #E5E9F0);
+  background: var(--tipprint-surface-card, #fff); color: inherit;
+}
+[data-theme="raw-terminal"] .field input {
+  background: var(--tipprint-surface, #11161D); border-color: var(--tipprint-outline, #2A3644);
+}
+.field input:focus { outline: none; border-color: var(--tipprint-brand-thermal, #E84A1B); }
+.field-hint { font-size: 12px; opacity: .65; margin-top: 6px; line-height: 1.5; }
+
+/* Checklist de senha - marca ao vivo o que ja foi preenchido, enquanto a pessoa digita */
+.password-checklist { list-style: none; margin: 6px 0 4px; display: grid; gap: 4px; }
+.password-checklist li {
+  font-family: var(--tipprint-font-mono, monospace); font-size: 12px; opacity: .6;
+  padding-left: 20px; position: relative;
+}
+.password-checklist li::before {
+  content: '○'; position: absolute; left: 0; opacity: .6;
+}
+.password-checklist li.met { opacity: 1; color: var(--tipprint-success, #16A34A); }
+.password-checklist li.met::before { content: '●'; opacity: 1; }
+
+.conta-msg {
+  border-radius: var(--tipprint-radius-md, 16px); padding: 12px 14px; margin-bottom: 16px;
+  font-size: 13.5px; line-height: 1.5;
+}
+.conta-msg.err { background: var(--tipprint-brand-thermal-soft, #FBE9E1); color: var(--tipprint-brand-thermal, #E84A1B); }
+[data-theme="raw-terminal"] .conta-msg.err { background: var(--tipprint-error-soft, #3A1513); color: var(--tipprint-error, #F04438); }
+.conta-msg.ok { background: var(--tipprint-success-soft, #EAF6EE); color: var(--tipprint-success, #16A34A); }
+[data-theme="raw-terminal"] .conta-msg.ok { background: var(--tipprint-success-soft, #123523); color: var(--tipprint-success, #2FB96C); }
+
+.conta-actions { display: grid; gap: 10px; margin-top: 4px; }
+.conta-actions .btn { width: 100%; }
+
+.conta-switch { text-align: center; margin-top: 18px; font-size: 13.5px; }
+.conta-switch button {
+  background: none; border: none; color: var(--tipprint-brand-thermal, #E84A1B);
+  font-weight: 700; cursor: pointer; font-size: 13.5px; font-family: inherit;
+}
+[data-theme="raw-terminal"] .conta-switch button { color: var(--tipprint-primary, #60A5FA); }
+
+/* ---------- Lista de sistemas (chaves de API) ---------- */
+.sys-item {
+  display: flex; align-items: center; gap: 12px;
+  border-radius: var(--tipprint-radius-md, 16px); padding: 14px 16px; margin-bottom: 10px;
+  background: var(--tipprint-brand-paper-alt, #EFEBE2);
+}
+[data-theme="raw-terminal"] .sys-item { background: var(--tipprint-surface-card, #161D26); }
+.sys-item .sys-info { min-width: 0; flex: 1; }
+.sys-item .sys-name { font-weight: 700; font-size: 14.5px; }
+.sys-item .sys-key {
+  font-family: var(--tipprint-font-mono, monospace); font-size: 12px; opacity: .75;
+  word-break: break-all; margin-top: 4px;
+}
+.sys-item .sys-tag {
+  flex-shrink: 0; font-family: var(--tipprint-font-mono, monospace); font-size: 10px;
+  font-weight: 700; letter-spacing: .08em; border-radius: 6px; padding: 4px 8px;
+  border: 1px solid currentColor;
+}
+.sys-item .sys-tag.active { color: var(--tipprint-success, #16A34A); }
+.sys-item .sys-tag.revoked { color: var(--tipprint-brand-thermal, #E84A1B); cursor: pointer; }
+
+.empty-hint { opacity: .6; font-size: 13.5px; margin-bottom: 18px; }

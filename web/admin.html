@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="raw-ink">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administrador · TipPrint</title>
+<meta name="description" content="Painel administrativo TipPrint.">
+<link rel="icon" type="image/svg+xml" href="assets/logo-tipprint.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="assets/logo-tipprint.svg" width="44" height="44" alt="">
+      <span class="brand-name">Tip<em>Print</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="dashboard.html">Minha conta</a>
+    </nav>
+    <div class="account-slot" id="accountSlot">
+      <a class="btn btn-outline" href="conta.html">Entrar / Criar conta</a>
+    </div>
+    <a class="btn btn-outline" href="admin.html" id="adminBtn">Administrador</a>
+    <button class="btn btn-primary" data-theme-toggle>RAW TERMINAL</button>
+  </div>
+</header>
+
+<div class="dash-layout wrap">
+  <aside class="dash-sidebar">
+    <nav class="dash-nav">
+      <a class="dash-nav-item active" href="admin.html">Dashboard</a>
+    </nav>
+  </aside>
+
+  <main class="dash-content">
+    <h1 class="dash-title">Painel do administrador</h1>
+    <p class="conta-sub" style="margin-top:6px;">Em construção — validação e edição do catálogo de produtos chega aqui.</p>
+  </main>
+</div>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const btn = document.querySelector("[data-theme-toggle]");
+  if (!btn || !root) return;
+  const labels = { "raw-ink": "RAW TERMINAL", "raw-terminal": "RAW INK" };
+  btn.addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") || "raw-ink";
+    const next = current === "raw-ink" ? "raw-terminal" : "raw-ink";
+    root.setAttribute("data-theme", next);
+    btn.textContent = labels[next];
+  });
+})();
+</script>
+
+<script type="module">
+// Painel do admin: so o e-mail ADMIN_EMAIL entra (checado no client contra a
+// sessao Supabase). Sem sessao ou com outro e-mail -> manda pra fora. Isso e'
+// so a UI - o dado sensivel de verdade (tabela products) ja e' protegido por
+// RLS no banco (auth.jwt() ->> 'email' = ADMIN_EMAIL), entao mesmo se alguem
+// forjar essa tela, o Supabase recusa escrita/leitura de rascunho pra quem
+// nao for o admin de verdade.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://hjusqwsqykdzkftyeykd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXNxd3NxeWtkemtmdHlleWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MjY3OTksImV4cCI6MjEwMjMwMjc5OX0.5v9BqoyRowJriBbwL_TKF4jTKosQRMtGUo3HrGJ_Z3M'
+);
+
+const slot = document.getElementById('accountSlot');
+const ADMIN_EMAIL = 'maiszoomimpressos@gmail.com';
+
+function displayName(user, profileName) {
+  if (profileName) return profileName;
+  const email = user.email || '';
+  return email.split('@')[0] || 'Conta';
+}
+
+function renderLoggedIn(name) {
+  slot.innerHTML =
+    '<div class="account-menu" id="accountMenu">' +
+      '<button class="btn btn-outline account-trigger" id="accountTrigger" type="button" aria-haspopup="true" aria-expanded="false">' +
+        '<span></span>' +
+        '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</button>' +
+      '<div class="account-dropdown hidden" id="accountDropdown">' +
+        '<a href="dashboard.html">Minha conta</a>' +
+        '<button type="button" id="navLogoutBtn">Sair</button>' +
+      '</div>' +
+    '</div>';
+  slot.querySelector('.account-trigger span').textContent = name;
+
+  const trigger = document.getElementById('accountTrigger');
+  const dropdown = document.getElementById('accountDropdown');
+  const close = () => { dropdown.classList.add('hidden'); trigger.setAttribute('aria-expanded', 'false'); };
+  const toggle = () => {
+    const open = dropdown.classList.toggle('hidden') === false;
+    trigger.setAttribute('aria-expanded', String(open));
+  };
+  trigger.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  document.addEventListener('click', (e) => { if (!slot.contains(e.target)) close(); });
+  document.getElementById('navLogoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = 'conta.html';
+  });
+}
+
+async function init() {
+  const { data } = await supabase.auth.getSession();
+  const user = data.session && data.session.user;
+  if (!user) { window.location.href = 'conta.html'; return; }
+  if (user.email !== ADMIN_EMAIL) { window.location.href = 'dashboard.html'; return; }
+  const { data: profile } = await supabase.from('profiles').select('name').eq('id', user.id).maybeSingle();
+  renderLoggedIn(displayName(user, profile && profile.name));
+}
+
+init();
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (!session) { window.location.href = 'conta.html'; return; }
+  if (session.user.email !== ADMIN_EMAIL) window.location.href = 'dashboard.html';
+});
+</script>
+
+</body>
+</html>
