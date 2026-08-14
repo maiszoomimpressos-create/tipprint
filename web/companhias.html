@@ -271,19 +271,22 @@ $('companyForm').addEventListener('submit', async (e) => {
       address_zip: $('cZip').value.trim()
     };
     const id = $('cId').value;
-    let error;
+    let error, saved;
     if (id) {
-      ({ error } = await supabase.from('companies').update(payload).eq('id', id));
+      ({ data: saved, error } = await supabase.from('companies').update(payload).eq('id', id).select().single());
     } else {
-      ({ error } = await supabase.from('companies').insert({
+      ({ data: saved, error } = await supabase.from('companies').insert({
         ...payload,
         owner_id: currentUser.id,
         responsible_profile_id: currentUser.id
-      }));
+      }).select().single());
     }
     if (error) return showMsg('Falha ao salvar: ' + error.message, 'err');
     showMsg('Companhia salva com sucesso.', 'ok');
-    resetForm();
+    // Mantem os dados na tela (em modo edicao) em vez de limpar o formulario - antes o
+    // resetForm() aqui dava a impressao de que os dados tinham sumido, mesmo salvos de
+    // verdade (apareciam so' no card da lista, fora da vista imediata do usuario).
+    if (saved) fillForm(saved); else resetForm();
     renderCompanies();
   } finally {
     $('companySaveBtn').disabled = false;
