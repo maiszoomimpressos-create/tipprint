@@ -10,11 +10,16 @@ using System.Text;
 using System.Threading;
 using System.Web.Script.Serialization;
 
+// Este processo E' o TipPrint Desktop Agent: o unico dono do acesso fisico a impressora
+// (COM/USB/BT/driver do Windows) nesta maquina. O app Electron (pasta desktop/) nao abre
+// mais porta serial direto - ele fala com este processo via HTTP (/connect, /print) pra
+// nao disputar a porta COM com ele. Nome do arquivo/porta/API mantidos como estao
+// (PrintServer.exe, :8080) por compatibilidade com o tipo7.com e o auto-update ja em producao.
 class PrintServer
 {
     // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
     // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
-    public const string AppVersion = "1.0.5.2.0.1";
+    public const string AppVersion = "1.0.5.2.0.2";
     static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
 
     static int HttpPort = 8080;
@@ -36,6 +41,17 @@ class PrintServer
     static string LastError = null;
     static DateTime? LastErrorAt = null;
     static DateTime? LastSuccessAt = null;
+
+    // Chave de sistema (TipPrint Backend) - autorizacao por PRODUTO (ex: Tipo7), separada da
+    // licenca por origem acima. So' entra em acao se o config.txt tiver uma chave configurada
+    // (linha 4) - instalacoes existentes sem isso continuam em modo livre, sem chamar nada.
+    // Falha de rede ao validar NUNCA bloqueia impressao (mantem o ultimo estado conhecido) -
+    // so bloqueia quando o backend confirma de verdade que a chave e invalida/revogada.
+    const string DefaultBackendUrl = "http://localhost:8090"; // usado so' se apiKey configurada sem backendUrl - ambiente de teste local
+    static bool? SystemKeyValid = null;
+    static string SystemName = null;
+    static string SystemLastError = null;
+    static DateTime? SystemLastCheck = null;
 
     // Deduplicacao de pedidos (evita imprimir o mesmo ingresso 2x em caso de retry de rede)
     static readonly object DedupLock = new object();
@@ -99,6 +115,10 @@ class PrintServer
         var updater = new Thread(UpdateCheckLoop);
         updater.IsBackground = true;
         updater.Start();
+
+        var systemCheck = new Thread(SystemCheckLoop);
+        systemCheck.IsBackground = true;
+        systemCheck.Start();
 
         string saved = LoadConfig();
         if (!string.IsNullOrEmpty(saved))
@@ -249,6 +269,76 @@ class PrintServer
         Environment.Exit(0);
     }
 
+    // A cada N minutos, se houver uma chave de sistema configurada, confirma com o TipPrint
+    // Backend se ela ainda e' valida. Roda em paralelo ao servidor, nunca bloqueia o startup.
+    static void SystemCheckLoop()
+    {
+        Thread.Sleep(4000);
+        while (true)
+        {
+            try
+            {
+                string key = LoadApiKey();
+                if (!string.IsNullOrEmpty(key)) ValidateSystemKey(key);
+            }
+            catch (Exception ex)
+            {
+                Log("Erro ao validar chave de sistema (ignorado, tenta de novo mais tarde): " + ex.Message);
+            }
+            Thread.Sleep(5 * 60 * 1000); // a cada 5 min
+        }
+    }
+
+    static void ValidateSystemKey(string key)
+    {
+        string url = LoadBackendUrl().TrimEnd('/') + "/validate";
+        try
+        {
+            var req = (HttpWebRequest)WebRequest.Create(url);
+            req.Method = "POST";
+            req.ContentType = "application/json";
+            req.Timeout = 8000;
+            byte[] bytes = Encoding.UTF8.GetBytes(new JavaScriptSerializer().Serialize(new { key = key }));
+            req.ContentLength = bytes.Length;
+            using (var s = req.GetRequestStream()) s.Write(bytes, 0, bytes.Length);
+            using (var resp = (HttpWebResponse)req.GetResponse())
+            using (var reader = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+            {
+                string json = reader.ReadToEnd();
+                var info = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
+                bool valid = info != null && info.ContainsKey("valid") && Convert.ToBoolean(info["valid"]);
+                string name = info != null && info.ContainsKey("system") ? Convert.ToString(info["system"]) : null;
+                lock (Lock)
+                {
+                    SystemKeyValid = valid;
+                    SystemName = name;
+                    SystemLastError = null;
+                    SystemLastCheck = DateTime.Now;
+                }
+                Log(valid ? ("Chave de sistema valida (" + name + ").") : "Chave de sistema INVALIDA ou revogada - impressao sera bloqueada ate corrigir.");
+            }
+        }
+        catch (Exception ex)
+        {
+            lock (Lock)
+            {
+                SystemLastError = ex.Message;
+                SystemLastCheck = DateTime.Now;
+                // nao mexe em SystemKeyValid aqui de proposito: falha de rede/backend fora do ar
+                // mantem o ultimo estado conhecido, nao pode derrubar impressao em producao.
+            }
+            Log("Nao foi possivel validar a chave de sistema agora (mantendo ultimo estado conhecido): " + ex.Message);
+        }
+    }
+
+    // So' bloqueia quando o backend JA CONFIRMOU que a chave e' invalida/revogada. Sem chave
+    // configurada (instalacoes de hoje) ou ainda sem checagem concluida = modo livre, como sempre foi.
+    static bool SistemaAutorizado()
+    {
+        if (string.IsNullOrEmpty(LoadApiKey())) return true;
+        lock (Lock) { return SystemKeyValid != false; }
+    }
+
     static DateTime? ReadLastUpdateMarker(string path)
     {
         try
@@ -351,8 +441,33 @@ class PrintServer
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
-            File.WriteAllText(ConfigPath, id + Environment.NewLine + charset);
+            // Preserva origens/chave de sistema/backendUrl (linhas 3-5) que ja estivessem
+            // salvas - sobrescrever tudo aqui apagaria a licenca configurada a cada reconexao.
+            string[] existing = File.Exists(ConfigPath) ? File.ReadAllLines(ConfigPath) : new string[0];
+            string origins = existing.Length > 2 ? existing[2] : "";
+            string apiKey = existing.Length > 3 ? existing[3] : "";
+            string backendUrl = existing.Length > 4 ? existing[4] : "";
+            File.WriteAllText(ConfigPath, id + Environment.NewLine + charset + Environment.NewLine
+                + origins + Environment.NewLine + apiKey + Environment.NewLine + backendUrl);
             Log(string.Format("Configuracao salva: impressora={0}, charset={1}", id, charset));
+        }
+        catch { }
+    }
+
+    // Grava a chave de sistema (TipPrint Backend) e a URL do backend, preservando impressora/
+    // charset/origens ja configurados.
+    static void SaveSystemConfig(string apiKey, string backendUrl)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
+            string[] existing = File.Exists(ConfigPath) ? File.ReadAllLines(ConfigPath) : new string[0];
+            string id = existing.Length > 0 ? existing[0] : "";
+            string charset = existing.Length > 1 ? existing[1] : "ascii";
+            string origins = existing.Length > 2 ? existing[2] : "";
+            File.WriteAllText(ConfigPath, id + Environment.NewLine + charset + Environment.NewLine
+                + origins + Environment.NewLine + (apiKey ?? "") + Environment.NewLine + (backendUrl ?? ""));
+            Log("Chave de sistema/backend atualizada.");
         }
         catch { }
     }
@@ -407,6 +522,33 @@ class PrintServer
     static string ModoLicenca()
     {
         return LoadOrigins() == null ? "livre" : "restrita";
+    }
+
+    static string LoadApiKey()
+    {
+        try
+        {
+            if (!File.Exists(ConfigPath)) return null;
+            string[] lines = File.ReadAllLines(ConfigPath);
+            if (lines.Length < 4) return null;
+            string k = (lines[3] ?? "").Trim();
+            return k.Length > 0 ? k : null;
+        }
+        catch { return null; }
+    }
+
+    static string LoadBackendUrl()
+    {
+        try
+        {
+            if (File.Exists(ConfigPath))
+            {
+                string[] lines = File.ReadAllLines(ConfigPath);
+                if (lines.Length >= 5 && !string.IsNullOrEmpty((lines[4] ?? "").Trim())) return lines[4].Trim();
+            }
+        }
+        catch { }
+        return DefaultBackendUrl;
     }
 
     static bool OriginAutorizada(HttpListenerContext ctx)
@@ -570,7 +712,11 @@ class PrintServer
         return false;
     }
 
-    static void ConnectPrinter(PrinterInfo pi)
+    // Retorna se a impressora ficou REALMENTE conectada agora (nao so "selecionada pra
+    // tentar"). Antes o retorno de TryOpen() era descartado aqui - o /connect respondia
+    // ok:true mesmo quando a porta falhava na hora, e o app (Electron/Android) mostrava
+    // "conectado" sem ser verdade (caso real 2026-08-14: KP-1025 com Bluetooth instavel).
+    static bool ConnectPrinter(PrinterInfo pi)
     {
         lock (Lock)
         {
@@ -582,10 +728,10 @@ class PrintServer
         if (pi.Type == "windows")
         {
             Log(string.Format("Impressora do Windows selecionada: {0}.", pi.Name));
-            return;
+            return true;
         }
         Log(string.Format("Conectando a {0} ({1})...", pi.Name, pi.Id));
-        TryOpen();
+        return TryOpen();
     }
 
     static void CloseActiveLocked()
@@ -901,7 +1047,14 @@ class PrintServer
                     printedFail = PrintedFail,
                     lastError = LastError,
                     lastErrorAt = LastErrorAt.HasValue ? LastErrorAt.Value.ToString("HH:mm:ss") : null,
-                    lastSuccessAt = LastSuccessAt.HasValue ? LastSuccessAt.Value.ToString("HH:mm:ss") : null
+                    lastSuccessAt = LastSuccessAt.HasValue ? LastSuccessAt.Value.ToString("HH:mm:ss") : null,
+                    sistema = LoadApiKey() == null ? null : new
+                    {
+                        nome = SystemName,
+                        valida = SystemKeyValid,
+                        checadoEm = SystemLastCheck.HasValue ? SystemLastCheck.Value.ToString("HH:mm:ss") : null,
+                        erro = SystemLastError
+                    }
                 });
                 return;
             }
@@ -914,7 +1067,14 @@ class PrintServer
                     ok = true,
                     modo = ModoLicenca(),
                     licenca = allowed == null ? "gratis" : "licenciada",
-                    origens = allowed ?? new string[0]
+                    origens = allowed ?? new string[0],
+                    sistema = LoadApiKey() == null ? null : new
+                    {
+                        nome = SystemName,
+                        valida = SystemKeyValid,
+                        checadoEm = SystemLastCheck.HasValue ? SystemLastCheck.Value.ToString("HH:mm:ss") : null,
+                        erro = SystemLastError
+                    }
                 });
                 return;
             }
@@ -952,8 +1112,13 @@ class PrintServer
                     if (string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase)) target = p;
                 }
                 if (target == null) { Json(ctx, new { ok = false, error = "Impressora nao encontrada" }); return; }
-                ConnectPrinter(target);
+                bool connected = ConnectPrinter(target);
                 SaveConfig(target.Id, LoadCharset());
+                if (!connected)
+                {
+                    Json(ctx, new { ok = false, error = "Impressora selecionada, mas nao respondeu ao conectar agora. Confira se esta ligada e por perto." });
+                    return;
+                }
                 Json(ctx, new { ok = true });
                 return;
             }
@@ -965,6 +1130,18 @@ class PrintServer
                 string charset = Convert.ToString(doc["charset"]);
                 if (charset != "ascii" && charset != "cp850") { Json(ctx, new { ok = false, error = "charset deve ser ascii ou cp850" }); return; }
                 SaveConfig(Active != null ? Active.Id : (LoadConfig() ?? ""), charset);
+                if (doc.ContainsKey("apiKey"))
+                {
+                    string newKey = Convert.ToString(doc["apiKey"]);
+                    string newBackend = doc.ContainsKey("backendUrl") ? Convert.ToString(doc["backendUrl"]) : LoadBackendUrl();
+                    SaveSystemConfig(newKey, newBackend);
+                    lock (Lock) { SystemKeyValid = null; SystemName = null; SystemLastError = null; SystemLastCheck = null; }
+                    ThreadPool.QueueUserWorkItem(delegate
+                    {
+                        try { if (!string.IsNullOrEmpty(newKey)) ValidateSystemKey(newKey); }
+                        catch (Exception ex) { Log("Erro ao validar chave de sistema recem-configurada: " + ex.Message); }
+                    });
+                }
                 Json(ctx, new { ok = true, charset = charset });
                 return;
             }
@@ -972,6 +1149,7 @@ class PrintServer
             if (path == "/ticket" && ctx.Request.HttpMethod == "POST")
             {
                 if (!OriginAutorizada(ctx)) { Json(ctx, new { ok = false, licenca = "bloqueada", error = "Uso nao autorizado: este servidor atende apenas origens licenciadas." }, 403); return; }
+                if (!SistemaAutorizado()) { Json(ctx, new { ok = false, licenca = "bloqueada", error = "Chave de sistema invalida ou revogada." }, 403); return; }
                 var body = ReadBody(ctx.Request);
                 var doc = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(body);
 
@@ -1017,6 +1195,7 @@ class PrintServer
             if (path == "/print" && ctx.Request.HttpMethod == "POST")
             {
                 if (!OriginAutorizada(ctx)) { Json(ctx, new { ok = false, licenca = "bloqueada", error = "Uso nao autorizado: este servidor atende apenas origens licenciadas." }, 403); return; }
+                if (!SistemaAutorizado()) { Json(ctx, new { ok = false, licenca = "bloqueada", error = "Chave de sistema invalida ou revogada." }, 403); return; }
                 var body = ReadBody(ctx.Request);
                 var doc = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(body);
 
