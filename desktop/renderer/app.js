@@ -17,6 +17,29 @@ function setControls(enabled) {
   });
 }
 
+function setBusy(id, busy) {
+  const el = $(id);
+  if (el) el.classList.toggle('busy', busy);
+}
+
+function renderConnBanner() {
+  const el = $('connBanner');
+  if (!el) return;
+  el.classList.remove('ok', 'err');
+  if (activePort) {
+    el.textContent = 'Impressora conectada — ' + activePort;
+    el.classList.add('ok');
+  } else {
+    el.textContent = 'Nenhuma impressora conectada';
+    el.classList.add('err');
+  }
+  ['portsList', 'portsListUsb'].forEach((listId) => {
+    $(listId).querySelectorAll('.port-item').forEach((item) => {
+      item.classList.toggle('active', item.dataset.path === activePort);
+    });
+  });
+}
+
 function openWork(type) {
   currentType = type;
   $('chooser').classList.add('hidden');
@@ -24,6 +47,8 @@ function openWork(type) {
   $('btSection').classList.toggle('hidden', type !== 'bt');
   $('usbSection').classList.toggle('hidden', type !== 'usb');
   $('netSection').classList.toggle('hidden', type !== 'net');
+  activePort = null;
+  renderConnBanner();
   if (type === 'bt') {
     discoverDevices();
     refreshPorts('bt');
@@ -33,6 +58,7 @@ function openWork(type) {
 
 function openChooser() {
   currentType = null;
+  activePort = null;
   window.tipprint.disconnect().catch(() => {});
   $('work').classList.add('hidden');
   $('chooser').classList.remove('hidden');
@@ -134,6 +160,8 @@ function renderPorts(listId, ports) {
   ports.forEach((port) => {
     const item = document.createElement('div');
     item.className = 'port-item';
+    item.dataset.path = port.path;
+    if (port.path === activePort) item.classList.add('active');
     const tag = document.createElement('span');
     tag.className = 'port-tag';
     tag.textContent = tagFor(port);
@@ -168,7 +196,9 @@ function macDisplay(mac) {
 let cachedPorts = [];
 
 async function refreshPorts(kind) {
+  const btnId = kind === 'bt' ? 'refreshPorts' : 'refreshPortsUsb';
   setControls(false);
+  setBusy(btnId, true);
   showStatus('Buscando portas...');
   await new Promise((r) => setTimeout(r, 800));
   try {
@@ -182,6 +212,7 @@ async function refreshPorts(kind) {
     showStatus('Falha ao listar portas: ' + e.message);
   } finally {
     setControls(true);
+    setBusy(btnId, false);
   }
 }
 
@@ -224,6 +255,7 @@ function renderBtDevices(devices) {
 
 async function discoverDevices() {
   setControls(false);
+  setBusy('discoverDevices', true);
   showStatus('Pesquisando dispositivos Bluetooth por perto (~10s)...');
   try {
     const devices = await window.tipprint.btDevices();
@@ -238,6 +270,7 @@ async function discoverDevices() {
       : 'Nenhum dispositivo encontrado por perto.');
   } finally {
     setControls(true);
+    setBusy('discoverDevices', false);
   }
 }
 
@@ -343,6 +376,7 @@ async function repairBtClicked() {
     setControls(true);
     return;
   }
+  setBusy('repairBtBtn', true);
   showStatus('Reparando pareamento da impressora (' + mac + '): desparear, reparar e recriar a porta COM...');
   try {
     const r = await window.tipprint.btRepair(mac);
@@ -365,6 +399,7 @@ async function repairBtClicked() {
     showStatus('Falha no reparo: ' + e.message);
   } finally {
     setControls(true);
+    setBusy('repairBtBtn', false);
   }
 }
 
@@ -393,6 +428,7 @@ async function connectPort(portPath) {
       $('btConnectedLabel').textContent = '● ' + portPath;
       $('btConnectedLabel').classList.remove('hidden');
     }
+    renderConnBanner();
   } catch (e) {
     const msg = String(e.message || '');
     if (/access denied/i.test(msg)) {
@@ -417,6 +453,7 @@ async function connectNetClicked() {
     await window.tipprint.connectNet(host, port);
     activePort = host + ':' + port;
     showStatus('Rede conectada: ' + activePort);
+    renderConnBanner();
   } catch (e) {
     showStatus('Falha ao conectar: ' + e.message);
   } finally {

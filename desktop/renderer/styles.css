@@ -68,6 +68,16 @@ body {
 .bt-status.err::before { background: #E84A1B; }
 .bt-status .bt-name { color: var(--muted); font-weight: 400; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
 
+/* ---------- Faixa fixa: impressora conectada ou não ---------- */
+.conn-banner {
+  font-size: 14px; padding: 14px 16px; white-space: normal;
+}
+.conn-banner::before { width: 12px; height: 12px; }
+.conn-banner.ok { border-color: var(--success); }
+.conn-banner.ok::before { background: var(--success); box-shadow: 0 0 8px var(--success); }
+.conn-banner.err { border-color: var(--outline); }
+.conn-banner.err::before { background: var(--muted); }
+
 /* ---------- Buttons ---------- */
 .btn {
   display: block; width: 100%; border: 1px solid var(--outline);
@@ -75,10 +85,31 @@ body {
   font-family: var(--font); font-size: 15px; font-weight: 700;
   padding: 14px 18px; cursor: pointer; text-align: center;
   transition: filter .15s, transform .05s;
+  position: relative;
 }
 .btn:hover { filter: brightness(1.12); }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* sinal de "buscando" nos botões (Buscar dispositivos, Atualizar portas, Reparar pareamento...) */
+.btn.busy {
+  color: transparent !important;
+  pointer-events: none;
+  opacity: 1;
+}
+.btn.busy::after {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  width: 18px; height: 18px; margin: -10px 0 0 -10px;
+  border: 2px solid rgba(255,255,255,.25);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: tp-spin .7s linear infinite;
+}
+.btn-primary.busy::after { border-top-color: var(--primary); }
+.btn-thermal.busy::after { border-top-color: #fff; }
+
+@keyframes tp-spin { to { transform: rotate(360deg); } }
 
 .chooser-btns { display: grid; gap: 12px; margin-top: 10px; }
 
@@ -125,6 +156,8 @@ body {
   background: var(--surface); padding: 12px 14px; cursor: pointer;
 }
 .port-item:hover { filter: brightness(1.12); }
+.port-item.active { border-color: var(--success); background: rgba(47,185,108,.1); }
+.port-item.active .port-path::after { content: ' — conectada'; color: var(--success); font-weight: 400; }
 
 .port-item .port-path { font-family: var(--mono); font-weight: 700; font-size: 14px; }
 
