@@ -2,7 +2,7 @@
   "name": "tipprint-desktop",
   "productName": "TipPrint",
   "version": "1.0.5",
-  "displayVersion": "1.0.5.0.1.5",
+  "displayVersion": "1.0.5.0.1.6",
   "description": "TipPrint Windows - impressao termica via Bluetooth, USB e rede",
   "main": "main.js",
   "author": "RAW BTS",
@@ -28,6 +28,9 @@
       "preload.js",
       "lib/**",
       "renderer/**"
+    ],
+    "asarUnpack": [
+      "lib/scripts/**"
     ],
     "win": {
       "target": [

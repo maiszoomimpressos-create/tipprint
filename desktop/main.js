@@ -14,6 +14,16 @@ const { createClient } = require('@supabase/supabase-js');
 // dar erro no createClient.
 global.WebSocket = require('ws');
 
+// Scripts .ps1/.exe em lib/scripts sao rodados como processo EXTERNO (powershell.exe -File,
+// ou o proprio .exe) - powershell.exe/CreateProcess nao entendem caminho dentro de app.asar
+// (so' o require() do Node e' asar-aware). electron-builder.asarUnpack tira esses arquivos
+// do asar e poe em app.asar.unpacked/... de verdade no disco - por isso o caminho precisa
+// apontar pra la' quando empacotado (bug real, achado em producao em 2026-08-14: "Reparar
+// pareamento" e outros botoes de Bluetooth falhavam com "arquivo nao existe" no app instalado).
+const SCRIPTS_DIR = app.isPackaged
+  ? path.join(process.resourcesPath, 'app.asar.unpacked', 'lib', 'scripts')
+  : path.join(__dirname, 'lib', 'scripts');
+
 // Login do TipPrint Desktop: e' do CLIENTE que contrata a API do TipPrint pra usar no
 // site/produto dele (ex: dono do Tipo7), nao do atendente do caixa. Usa Supabase Auth
 // (mesmo banco do backend/, ver backend/server.js e a tabela tipprint_systems).
@@ -269,7 +279,7 @@ function runBtRepair(mac) {
     execFile(
       'powershell.exe',
       ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
-        path.join(__dirname, 'lib', 'scripts', 'bt-repair.ps1'), '-mac', String(mac)],
+        path.join(SCRIPTS_DIR, 'bt-repair.ps1'), '-mac', String(mac)],
       { timeout: 120000, windowsHide: true },
       (err, stdout) => {
         if (err) return resolve({ ok: false, error: String(err.message || err), raw: String(stdout) });
@@ -325,7 +335,7 @@ function runBtScanFile() {
     execFile(
       'powershell.exe',
       ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
-        path.join(__dirname, 'lib', 'scripts', 'bt-scan.ps1')],
+        path.join(SCRIPTS_DIR, 'bt-scan.ps1')],
       { timeout: 30000, windowsHide: true },
       (err, stdout) => {
         if (err) return resolve([]);
@@ -343,7 +353,7 @@ function runBtScanFile() {
 function runBtWatcher(seconds) {
   return new Promise((resolve) => {
     execFile(
-      path.join(__dirname, 'lib', 'scripts', 'bt-watcher.exe'),
+      path.join(SCRIPTS_DIR, 'bt-watcher.exe'),
       [String(seconds)],
       { timeout: 40000, windowsHide: true },
       (err, stdout) => {
@@ -369,7 +379,7 @@ function runBtAdapterCheck() {
     execFile(
       'powershell.exe',
       ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
-        path.join(__dirname, 'lib', 'scripts', 'bt-adapter-check.ps1')],
+        path.join(SCRIPTS_DIR, 'bt-adapter-check.ps1')],
       { timeout: 15000, windowsHide: true },
       (err, stdout) => {
         if (err) return resolve({ Problems: [], AdapterCount: 0, Adapters: [] });

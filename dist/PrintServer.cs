@@ -19,7 +19,7 @@ class PrintServer
 {
     // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
     // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
-    public const string AppVersion = "1.0.5.2.0.2";
+    public const string AppVersion = "1.0.5.2.0.3";
     static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
 
     static int HttpPort = 8080;
@@ -139,7 +139,13 @@ class PrintServer
         }
 
         Log(string.Format("Pronto. Painel: http://localhost:{0}  |  Impressao por rede TCP:{1}", HttpPort, TcpPort));
-        Console.ReadLine();
+        // Console.ReadLine() ficava aqui antes pra manter o processo vivo - so' funciona com
+        // console interativo de verdade. Quando o Desktop app sobe este .exe sozinho (sem
+        // console, ex: fallback "Agent nao respondeu"), ReadLine() recebe EOF na hora e o
+        // processo morria logo depois de logar "Pronto" (bug real, achado em producao em
+        // 2026-08-14 - o Agent nunca chegava a responder ao Desktop). Loop sem depender de
+        // stdin mantem o processo de pe em qualquer forma de inicializacao.
+        while (true) Thread.Sleep(60000);
     }
 
     // Garante que so exista uma copia do PrintServer rodando por sessao do Windows.
@@ -490,7 +496,11 @@ class PrintServer
     static void Log(string msg)
     {
         string line = string.Format("[{0}] {1}", DateTime.Now.ToString("HH:mm:ss"), msg);
-        Console.WriteLine(line);
+        // Console.WriteLine pode lancar quando o processo nao tem console de verdade (ex:
+        // stdio redirecionado pra NUL, caso do spawn 'ignore' do Electron) - sem o try/catch
+        // aqui, isso derrubava o Log() inteiro ANTES de gravar no arquivo, entao nem o log
+        // em disco sobrevivia pra explicar o problema.
+        try { Console.WriteLine(line); } catch { }
         try
         {
             if (LogFile != null) File.AppendAllText(LogFile, line + Environment.NewLine);

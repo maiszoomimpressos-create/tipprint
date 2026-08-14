@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.desktop",
-  "versionName": "1.0.5.0.1.5",
+  "versionName": "1.0.5.0.1.6",
   "downloadPath": "/downloads/app-windows.exe",
-  "notes": "Login do cliente (conta TipPrint) e gestao das chaves de API dos seus sistemas direto no app. O app fala com o TipPrint Desktop Agent (PrintServer) via localhost:8080 pra conectar/imprimir, em vez de abrir a porta COM direto."
+  "notes": "Corrige 'Reparar pareamento' e outros botoes de Bluetooth, que falhavam com 'arquivo nao existe' no app instalado (script rodava de dentro do pacote .asar, agora vai pra fora dele de verdade). Depende do PrintServer 1.0.5.2.0.3 pra funcionar direito quando o Agent precisa subir sozinho."
 }

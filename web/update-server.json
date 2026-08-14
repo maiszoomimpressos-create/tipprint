@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.printserver",
-  "versionName": "1.0.5.2.0.1",
+  "versionName": "1.0.5.2.0.3",
   "downloadPath": "/downloads/PrintServer.exe",
-  "notes": "Numero da versao agora aparece no painel local (localhost:8080), para conferir visualmente que atualizou."
+  "notes": "Corrige bug critico: o Agent morria na hora quando iniciado sem console (ex: pelo Desktop app sozinho, quando o Agent nao estava rodando) - agora fica de pe em qualquer forma de inicializacao. Tambem valida a chave de sistema do TipPrint Backend (Tipo7) quando configurada."
 }
