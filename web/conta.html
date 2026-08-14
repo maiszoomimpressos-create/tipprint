@@ -180,9 +180,13 @@ $('authSubmit').addEventListener('click', async () => {
     if (mode === 'signup') {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) return showMsg('authMsg', error.message, 'err');
+      // Cadastro feito - manda pra home (index.html) em vez de ficar aqui. Se ainda precisar
+      // confirmar o e-mail (sessao nula), avisa antes de sair da tela.
       if (!data.session) {
-        return showMsg('authMsg', 'Conta criada! Confirme seu e-mail (' + email + ') antes de entrar.', 'ok');
+        alert('Conta criada! Confirme seu e-mail (' + email + ') antes de entrar.');
       }
+      window.location.href = 'index.html';
+      return;
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return showMsg('authMsg', error.message, 'err');
