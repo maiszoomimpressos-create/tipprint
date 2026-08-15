@@ -13,16 +13,8 @@
 
 import 'dotenv/config';
 import express from 'express';
-import { ZipArchive } from 'archiver';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import JSZip from 'jszip';
 import { createClient } from '@supabase/supabase-js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// Onde estao PrintServer.exe/Instalar.bat/Desinstalar.bat ja compilados/prontos - o
-// /provision monta o ZIP a partir deles, nao reinventa nada.
-const DIST_DIR = path.join(__dirname, '..', 'dist');
 
 const PORT = process.env.PORT || 8090;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
@@ -31,6 +23,11 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 // sentido pra testar no mesmo PC (localhost) - ver docs/PROVISIONAMENTO-AUTOMATICO-TIPO7.md,
 // isso so' vale pra maquina remota de verdade depois que este backend for publicado.
 const PUBLIC_BACKEND_URL = process.env.PUBLIC_BACKEND_URL || `http://localhost:${PORT}`;
+// ZIP base ja publicado (PrintServer.exe + Instalar.bat + Desinstalar.bat) - o /download
+// busca esse arquivo e so' troca o config.txt de dentro, em vez de guardar copia propria
+// dos binarios. Fica sempre sincronizado com o que ja esta publicado pro site, e funciona
+// mesmo se este backend for implantado isolado (sem acesso a pasta dist/ do repo).
+const BASE_ZIP_URL = process.env.BASE_ZIP_URL || 'https://tipprint.vercel.app/downloads/TipPrintPrintServer.zip';
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Faltando SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY no .env - encerrando.');
@@ -209,11 +206,14 @@ app.get('/download/:token', async (req, res) => {
     return res.status(410).json({ ok: false, error: 'Link expirado. Peca um novo /provision.' });
   }
 
-  const exePath = path.join(DIST_DIR, 'PrintServer.exe');
-  const installPath = path.join(DIST_DIR, 'Instalar.bat');
-  const uninstallPath = path.join(DIST_DIR, 'Desinstalar.bat');
-  if (!fs.existsSync(exePath) || !fs.existsSync(installPath)) {
-    return res.status(500).json({ ok: false, error: 'Pacote base (dist/) nao encontrado no servidor.' });
+  let baseZipResp;
+  try {
+    baseZipResp = await fetch(BASE_ZIP_URL);
+  } catch (e) {
+    return res.status(502).json({ ok: false, error: 'Falha ao buscar o pacote base: ' + e.message });
+  }
+  if (!baseZipResp.ok) {
+    return res.status(502).json({ ok: false, error: 'Pacote base indisponivel (HTTP ' + baseZipResp.status + ').' });
   }
 
   // Marca como usado ANTES de comecar a transmitir - se o download cair no meio, o cliente
@@ -223,19 +223,22 @@ app.get('/download/:token', async (req, res) => {
 
   const configTxt = ['', 'ascii', '', data.token, PUBLIC_BACKEND_URL, ''].join('\r\n');
 
+  const zip = await JSZip.loadAsync(await baseZipResp.arrayBuffer());
+  zip.file('config.txt', configTxt);
+  const out = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+
   res.setHeader('Content-Type', 'application/zip');
   res.setHeader('Content-Disposition', 'attachment; filename="TipPrintPrintServer.zip"');
-
-  const archive = new ZipArchive({ zlib: { level: 9 } });
-  archive.on('error', (err) => { console.error('Erro montando ZIP:', err.message); res.destroy(); });
-  archive.pipe(res);
-  archive.file(exePath, { name: 'PrintServer.exe' });
-  archive.file(installPath, { name: 'Instalar.bat' });
-  if (fs.existsSync(uninstallPath)) archive.file(uninstallPath, { name: 'Desinstalar.bat' });
-  archive.append(configTxt, { name: 'config.txt' });
-  await archive.finalize();
+  res.send(out);
 });
 
-app.listen(PORT, () => {
-  console.log(`TipPrint Backend no ar em http://localhost:${PORT}`);
-});
+// process.env.VERCEL so' existe rodando como Vercel Function - la' quem sobe o servidor
+// HTTP e' a plataforma, nao este processo (senao da' porta ja em uso / nunca fica pronto).
+// Local (npm start) continua igual, sobe na porta normal.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`TipPrint Backend no ar em http://localhost:${PORT}`);
+  });
+}
+
+export default app;

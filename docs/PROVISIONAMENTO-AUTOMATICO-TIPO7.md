@@ -1,10 +1,10 @@
 # TipPrint — Provisionamento automático do PC (Bluetooth) para o tipo7.com
 
-> ⚠️ **Implementado e testado localmente (2026-08-14), mas o backend ainda só roda
-> `localhost` neste PC — não publicado num endereço da internet ainda.** O contrato
-> abaixo já é real (testei o fluxo completo: `/provision` → baixar o ZIP → o
-> `PrintServer.exe` extraído validou a chave sozinho). Não dá pra chamar de fora deste
-> PC até o backend ser publicado. Avisar quando isso mudar.
+> ✅ **No ar em produção desde 2026-08-14.** Backend publicado em
+> **`https://tipprint-backend.vercel.app`**. Testado ponta a ponta contra o endereço
+> público de verdade: `/provision` → `/download` → ZIP → `PrintServer.exe` validou a
+> chave contra o backend público, sem nada local envolvido. Pode chamar de qualquer
+> lugar agora.
 
 ---
 
@@ -60,7 +60,7 @@ Body (opcional):
 ```json
 {
   "ok": true,
-  "downloadUrl": "https://<tipprint-backend>/download/dl_8f2a1c9e...",
+  "downloadUrl": "https://tipprint-backend.vercel.app/download/dl_8f2a1c9e...",
   "expiresAt": "2026-08-15T00:20:00Z"
 }
 ```
@@ -107,8 +107,8 @@ Body (opcional):
 - [x] Implementar `GET /download/:token` (serve o ZIP, uso único/expira em 30min)
 - [x] Fluxo testado de ponta a ponta localmente (provision → download → ZIP →
       `PrintServer.exe` extraído validou sozinho como "tipo7")
-- [ ] Publicar o TipPrint Backend num endereço público (hoje só roda local) — **bloqueia
-      uso real pelo tipo7.com**
+- [x] Publicar o TipPrint Backend num endereço público —
+      **`https://tipprint-backend.vercel.app`**, testado de verdade contra produção
 - [ ] Endpoint de admin pra listar/revogar instalações por sistema (hoje só dá pra
       revogar via SQL direto)
 
