@@ -212,8 +212,13 @@ async function renderCatalog() {
 async function acquireProduct(product, companyId) {
   const raw = crypto.getRandomValues(new Uint8Array(24));
   const api_key = 'tp_live_' + [...raw].map((b) => b.toString(16).padStart(2, '0')).join('');
+  // O titulo da chave e' o nome do site/empresa dona dela (nao o nome do produto, que e'
+  // sempre o mesmo pra todo mundo e nao ajuda a distinguir uma chave da outra quando tem
+  // varias companhias). Pedido do usuario.
+  const company = myCompanies.find((c) => c.id === companyId);
+  const siteName = (company && (company.trade_name || company.legal_name)) || product.name;
   const { error } = await supabase.from('tipprint_systems').insert({
-    name: product.name,
+    name: siteName,
     api_key,
     owner_id: currentUser.id,
     company_id: companyId,
@@ -227,7 +232,7 @@ async function acquireProduct(product, companyId) {
 async function renderAcquired() {
   const { data, error } = await supabase
     .from('tipprint_systems')
-    .select('id, name, api_key, status, created_at, companies(trade_name, legal_name)')
+    .select('id, name, api_key, status, created_at, products(name)')
     .not('product_id', 'is', null)
     .order('created_at', { ascending: false });
   const list = $('acquiredList');
@@ -241,8 +246,10 @@ async function renderAcquired() {
       '<div class="sys-info"><div class="sys-name"></div><div class="sys-key"></div></div>' +
       '<button type="button" class="sys-copy">Copiar</button>' +
       '<span class="sys-tag"></span>';
-    const companyLabel = sys.companies ? (sys.companies.trade_name || sys.companies.legal_name) : null;
-    item.querySelector('.sys-name').textContent = sys.name + (companyLabel ? ' — ' + companyLabel : '');
+    // sys.name e' o titulo (nome do site/empresa dona da chave); o produto vira
+    // informacao secundaria, ja que o titulo principal agora identifica o site.
+    const productLabel = sys.products ? sys.products.name : null;
+    item.querySelector('.sys-name').textContent = sys.name + (productLabel ? ' — ' + productLabel : '');
     item.querySelector('.sys-key').textContent = sys.api_key;
     const copyBtn = item.querySelector('.sys-copy');
     copyBtn.addEventListener('click', async () => {
