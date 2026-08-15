@@ -15,6 +15,10 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+rem Pacotes provisionados (baixados via tipo7.com) vem com um config.txt proprio, ja
+rem com a chave de instalacao - copia se existir. Pacotes genericos (sem essa chave)
+rem nao tem esse arquivo, entao esta linha nao faz nada neles.
+if exist "%~dp0config.txt" copy /Y "%~dp0config.txt" "%DEST%\config.txt" >nul
 
 echo [2/4] Ativando inicio com o Windows...
 powershell -NoProfile -Command "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\TipPrint PrintServer.lnk');$s.TargetPath='powershell.exe';$s.Arguments='-NoProfile -WindowStyle Hidden -Command \"& ''%DEST%\PrintServer.exe'' 8080 9100 ''%DEST%\printserver.log''\"';$s.WorkingDirectory='%DEST%';$s.Save()"

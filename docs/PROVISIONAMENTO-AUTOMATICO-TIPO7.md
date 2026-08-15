@@ -1,9 +1,10 @@
 # TipPrint — Provisionamento automático do PC (Bluetooth) para o tipo7.com
 
-> ⚠️ **Ainda NÃO implementado.** Este documento é o contrato combinado pra o tipo7.com
-> já deixar o lado dele pronto, enquanto o TipPrint Backend implementa o endpoint
-> `POST /provision` descrito aqui. Não chamar essa URL ainda — ela não existe no ar.
-> Quando o TipPrint publicar, este aviso é removido.
+> ⚠️ **Implementado e testado localmente (2026-08-14), mas o backend ainda só roda
+> `localhost` neste PC — não publicado num endereço da internet ainda.** O contrato
+> abaixo já é real (testei o fluxo completo: `/provision` → baixar o ZIP → o
+> `PrintServer.exe` extraído validou a chave sozinho). Não dá pra chamar de fora deste
+> PC até o backend ser publicado. Avisar quando isso mudar.
 
 ---
 
@@ -101,11 +102,15 @@ Body (opcional):
 
 ## 4. Pendências do lado do TipPrint (não é responsabilidade do Tipo7)
 
-- [ ] Implementar `POST /provision` no TipPrint Backend (gera token por instalação +
+- [x] Implementar `POST /provision` no TipPrint Backend (gera token por instalação +
       monta o ZIP com `config.txt` pré-preenchido)
-- [ ] Implementar `GET /download/:token` (serve o ZIP, uso único/expira)
-- [ ] Publicar o TipPrint Backend num endereço público (hoje só roda local)
-- [ ] Fluxo do PC testado de ponta a ponta antes de replicar pro Android
+- [x] Implementar `GET /download/:token` (serve o ZIP, uso único/expira em 30min)
+- [x] Fluxo testado de ponta a ponta localmente (provision → download → ZIP →
+      `PrintServer.exe` extraído validou sozinho como "tipo7")
+- [ ] Publicar o TipPrint Backend num endereço público (hoje só roda local) — **bloqueia
+      uso real pelo tipo7.com**
+- [ ] Endpoint de admin pra listar/revogar instalações por sistema (hoje só dá pra
+      revogar via SQL direto)
 
 ## 5. Android — ainda não incluído nesse desenho
 
