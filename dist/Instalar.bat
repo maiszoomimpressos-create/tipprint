@@ -70,18 +70,37 @@ rem Windows ligar.
 powershell -NoProfile -ExecutionPolicy Bypass -File "%TEMP%\tipprint-launch.ps1" >nul 2>&1
 del "%TEMP%\tipprint-launch.ps1" >nul 2>&1
 
-echo [6/6] Instalando o TipPrint Desktop (app de configuracao)...
+set DESKTOP_FOUND=0
+if not exist "%~dp0app-windows.exe" goto no_desktop
 rem So' existe nos pacotes provisionados pelo tipo7.com (baixados via /provision) - o
 rem pacote generico (dist/TipPrintPrintServer.zip, download direto do site) so' tem o
 rem PrintServer. "if exist" faz esse mesmo Instalar.bat servir os dois casos sem
 rem duplicar script. /S = instalacao silenciosa do instalador NSIS (electron-builder).
-if exist "%~dp0app-windows.exe" (
-    "%~dp0app-windows.exe" /S
-    ping -n 6 127.0.0.1 >nul
-    start "" "%ProgramFiles%\TipPrint\TipPrint.exe"
-) else (
-    echo    - Pacote sem o Desktop app ^(so' o Agent^) - nada a fazer aqui.
-)
+rem Sem "perMachine" no instalador, ele cai no local PADRAO por usuario
+rem (%LOCALAPPDATA%\Programs\TipPrint) quando roda sem admin - que e' o caso normal
+rem (usuario comum baixando e instalando). So' vai pra Program Files se rodar elevado.
+rem Evitar bloco if/else com comandos complexos aninhados (achado real: "nao foi
+rem esperado neste momento" - cmd.exe e' fragil com isso) - GOTO em vez disso.
+echo [6/6] Instalando o TipPrint Desktop (app de configuracao)...
+"%~dp0app-windows.exe" /S
+set WAITED=0
+:wait_desktop_loop
+if exist "%LOCALAPPDATA%\Programs\TipPrint\TipPrint.exe" goto desktop_ready
+if exist "%ProgramFiles%\TipPrint\TipPrint.exe" goto desktop_ready
+ping -n 2 127.0.0.1 >nul
+set /a WAITED+=1
+if %WAITED% LSS 20 goto wait_desktop_loop
+echo    - AVISO: instalacao do Desktop demorou mais que o esperado - confira manualmente.
+goto after_desktop
+:desktop_ready
+set DESKTOP_EXE=%LOCALAPPDATA%\Programs\TipPrint\TipPrint.exe
+if not exist "%DESKTOP_EXE%" set DESKTOP_EXE=%ProgramFiles%\TipPrint\TipPrint.exe
+start "" "%DESKTOP_EXE%"
+set DESKTOP_FOUND=1
+goto after_desktop
+:no_desktop
+echo    - Pacote sem o Desktop app (so' o Agent) - nada a fazer aqui.
+:after_desktop
 
 echo.
 echo ============================================================
@@ -94,10 +113,10 @@ echo      Ligue a impressora e pareie. (PIN padrao: 0000)
 echo.
 start ms-settings:bluetooth
 ping -n 3 127.0.0.1 >nul
-if exist "%~dp0app-windows.exe" (
-    echo   2) O TipPrint Desktop ja abriu sozinho - escolha sua impressora nele.
+if "%DESKTOP_FOUND%"=="1" (
+    echo   2^) O TipPrint Desktop ja abriu sozinho - escolha sua impressora nele.
 ) else (
-    echo   2) O painel abre sozinho no navegador - clique na sua impressora na lista.
+    echo   2^) O painel abre sozinho no navegador - clique na sua impressora na lista.
     start http://localhost:8080
 )
 echo   3) Pronto! O sistema ja vai conseguir imprimir nela.
