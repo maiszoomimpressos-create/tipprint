@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.printserver",
-  "versionName": "1.0.5.2.0.4",
+  "versionName": "1.0.5.2.0.5",
   "downloadPath": "/downloads/PrintServer.exe",
-  "notes": "Reconecta sozinho quando o numero da porta COM da impressora Bluetooth muda (comum apos reconectar/reiniciar) - antes exigia reconfigurar na mao, agora acha a mesma impressora pelo MAC salvo em qualquer porta nova."
+  "notes": "Corrige o painel local (localhost:8080, usado quando so o PrintServer e instalado, sem o Desktop app): nomes das impressoras apareciam \"undefined\" e clicar pra conectar nao funcionava (mandava um id vazio pro servidor)."
 }

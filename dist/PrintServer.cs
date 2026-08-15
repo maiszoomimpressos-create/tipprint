@@ -19,7 +19,7 @@ class PrintServer
 {
     // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
     // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
-    public const string AppVersion = "1.0.5.2.0.4";
+    public const string AppVersion = "1.0.5.2.0.5";
     static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
 
     static int HttpPort = 8080;
@@ -1855,11 +1855,11 @@ class Properties
             "b.textContent='Nenhuma impressora Bluetooth pareada encontrada. Siga o passo 1 e 2 acima.';d.appendChild(b);}" +
             "p.printers.forEach(function(x){" +
             "var b=document.createElement('button');b.className='sel';" +
-            "b.classList.toggle('conectada',x.status=='conectado');" +
+            "b.classList.toggle('conectada',x.Status=='conectado');" +
             "var tipo={bluetooth:'Bt',usb:'USB',windows:'Windows'}[x.Type]||x.Type;" +
-            "b.textContent=(x.status=='conectado'?'CONECTADA - ':'')+x.name+' ['+tipo+' · '+x.Width+'mm]';" +
+            "b.textContent=(x.Status=='conectado'?'CONECTADA - ':'')+x.Name+' ['+tipo+' · '+x.Width+'mm]';" +
             "b.title='Modelo/Tipo: '+x.Name+' ('+x.Type+') - largura estimada '+x.Width+'mm';" +
-            "b.onclick=function(){fetch('/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({printer:x.id})}).then(function(){setTimeout(refresh,800);});};" +
+            "b.onclick=function(){fetch('/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({printer:x.Id})}).then(function(){setTimeout(refresh,800);});};" +
             "d.appendChild(b);});" +
             "}" +
             "async function testPrint(){var r=await(await fetch('/print',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).json();alert(r.ok?'Impressao enviada!':'Erro: '+r.error);}" +
