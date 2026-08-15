@@ -28,6 +28,11 @@ const PUBLIC_BACKEND_URL = process.env.PUBLIC_BACKEND_URL || `http://localhost:$
 // dos binarios. Fica sempre sincronizado com o que ja esta publicado pro site, e funciona
 // mesmo se este backend for implantado isolado (sem acesso a pasta dist/ do repo).
 const BASE_ZIP_URL = process.env.BASE_ZIP_URL || 'https://tipprint.vercel.app/downloads/TipPrintPrintServer.zip';
+// Instalador do TipPrint Desktop (Electron) - incluido no pacote provisionado (so' esse,
+// nao no ZIP estatico generico) pra o cliente final ja receber os dois juntos, ja
+// funcionando, sem precisar baixar/instalar o Desktop separado. Pedido do usuario
+// (2026-08-14): "o usuario baixa, nos devemos entregar rodando e funcionando".
+const DESKTOP_EXE_URL = process.env.DESKTOP_EXE_URL || 'https://tipprint.vercel.app/downloads/app-windows.exe';
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Faltando SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY no .env - encerrando.');
@@ -206,14 +211,17 @@ app.get('/download/:token', async (req, res) => {
     return res.status(410).json({ ok: false, error: 'Link expirado. Peca um novo /provision.' });
   }
 
-  let baseZipResp;
+  let baseZipResp, desktopExeResp;
   try {
-    baseZipResp = await fetch(BASE_ZIP_URL);
+    [baseZipResp, desktopExeResp] = await Promise.all([fetch(BASE_ZIP_URL), fetch(DESKTOP_EXE_URL)]);
   } catch (e) {
     return res.status(502).json({ ok: false, error: 'Falha ao buscar o pacote base: ' + e.message });
   }
   if (!baseZipResp.ok) {
     return res.status(502).json({ ok: false, error: 'Pacote base indisponivel (HTTP ' + baseZipResp.status + ').' });
+  }
+  if (!desktopExeResp.ok) {
+    return res.status(502).json({ ok: false, error: 'Instalador do Desktop indisponivel (HTTP ' + desktopExeResp.status + ').' });
   }
 
   // Marca como usado ANTES de comecar a transmitir - se o download cair no meio, o cliente
@@ -225,6 +233,9 @@ app.get('/download/:token', async (req, res) => {
 
   const zip = await JSZip.loadAsync(await baseZipResp.arrayBuffer());
   zip.file('config.txt', configTxt);
+  // Instalar.bat detecta esse arquivo pelo nome ("if exist app-windows.exe") e instala o
+  // Desktop silencioso + abre sozinho, junto com o Agent - ver dist/Instalar.bat.
+  zip.file('app-windows.exe', await desktopExeResp.arrayBuffer());
   const out = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 
   res.setHeader('Content-Type', 'application/zip');
