@@ -19,7 +19,7 @@ class PrintServer
 {
     // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
     // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
-    public const string AppVersion = "1.0.5.2.0.5";
+    public const string AppVersion = "1.0.5.2.0.6";
     static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
 
     static int HttpPort = 8080;
@@ -911,11 +911,18 @@ class PrintServer
 
     static void EnqueueJob(PrinterInfo pi, byte[] data, string label)
     {
+        EnqueueJob(pi, data, label, -1, 0);
+    }
+
+    // atomicStart/atomicLen marcam um trecho (ex: o comando ESC/POS do QR Code) que NUNCA
+    // pode ser cortado no meio entre dois pedacos do chunking - ver SendAndChunk.
+    static void EnqueueJob(PrinterInfo pi, byte[] data, string label, int atomicStart, int atomicLen)
+    {
         if (data == null || data.Length == 0) throw new Exception("Dados vazios.");
         if (pi == null) throw new Exception("Nenhuma impressora conectada. Use /connect primeiro.");
         lock (QueueLock)
         {
-            JobQueue.Enqueue(new PrintJob { Printer = pi, Data = data, Label = label });
+            JobQueue.Enqueue(new PrintJob { Printer = pi, Data = data, Label = label, AtomicStart = atomicStart, AtomicLen = atomicLen });
             Monitor.PulseAll(QueueLock);
         }
         Log(string.Format("Job \"{0}\" enfileirado ({1} bytes). Fila: {2}", label, data.Length, QueuedCount()));
@@ -1003,6 +1010,26 @@ class PrintServer
                 continue;
             }
             int len = Math.Min(prof.ChunkBytes, data.Length - offset);
+            // Nunca corta o trecho protegido (ex: comando ESC/POS do QR Code) no meio entre
+            // dois pedacos - impressoras baratas perdem a sincronia do comando se ele chegar
+            // partido em duas escritas com pausa no meio, e imprimem os bytes do comando como
+            // texto puro em vez de executar (achado real em producao, 2026-08-14: linha
+            // "P0<hash>" aparecendo crua no cupom, antes do QR). Se o corte cairia dentro do
+            // trecho protegido, encurta ESTE pedaco pra terminar exatamente antes dele (o
+            // proximo pedaco entao comeca exatamente no inicio do trecho protegido, com o
+            // trecho inteiro cabendo - ele e' bem menor que ChunkBytes).
+            if (job.AtomicStart >= 0)
+            {
+                int atomicEnd = job.AtomicStart + job.AtomicLen;
+                if (offset < job.AtomicStart && offset + len > job.AtomicStart)
+                {
+                    len = job.AtomicStart - offset;
+                }
+                else if (offset >= job.AtomicStart && offset < atomicEnd)
+                {
+                    len = Math.Max(len, atomicEnd - offset);
+                }
+            }
             try
             {
                 sp.Write(data, offset, len);
@@ -1283,10 +1310,11 @@ class PrintServer
                 }
                 string charset = doc.ContainsKey("charset") ? Convert.ToString(doc["charset"]) : LoadCharset();
                 if (charset != "cp850") charset = "ascii";
-                byte[] data = BuildTicket(doc, charset);
+                int qrStart, qrLen;
+                byte[] data = BuildTicket(doc, charset, out qrStart, out qrLen);
                 PrinterInfo pi;
                 lock (Lock) pi = Active;
-                EnqueueJob(pi, data, "ticket");
+                EnqueueJob(pi, data, "ticket", qrStart, qrLen);
                 if (dedupKey != null) MarkRequestHandled(dedupKey);
                 Json(ctx, new { ok = true, bytes = data.Length, queue = QueuedCount() });
                 return;
@@ -1412,6 +1440,12 @@ class PrintServer
 
     static byte[] BuildTicket(Dictionary<string, object> doc, string charset)
     {
+        int qrStart, qrLen;
+        return BuildTicket(doc, charset, out qrStart, out qrLen);
+    }
+
+    static byte[] BuildTicket(Dictionary<string, object> doc, string charset, out int qrCommandStart, out int qrCommandLen)
+    {
         string title = Get(doc, "title", "INGRESSO");
         string eventName = Get(doc, "event", null);
         string date = Get(doc, "date", null);
@@ -1456,22 +1490,28 @@ class PrintServer
         if (!string.IsNullOrEmpty(eventName))
         {
             ms.Write(boldOn, 0, boldOn.Length);
-            WriteLine(ms, enc, eventName);
+            WriteWrapped(ms, enc, eventName);
             ms.Write(boldOff, 0, boldOff.Length);
         }
-        if (!string.IsNullOrEmpty(date)) WriteLine(ms, enc, "Data: " + date);
-        if (!string.IsNullOrEmpty(local)) WriteLine(ms, enc, "Local: " + local);
-        if (!string.IsNullOrEmpty(sector)) WriteLine(ms, enc, "Setor: " + sector);
+        if (!string.IsNullOrEmpty(date)) WriteWrapped(ms, enc, "Data: " + date);
+        if (!string.IsNullOrEmpty(local)) WriteWrapped(ms, enc, "Local: " + local);
+        if (!string.IsNullOrEmpty(sector)) WriteWrapped(ms, enc, "Setor: " + sector);
         WriteLine(ms, enc, "");
         ms.Write(left, 0, left.Length);
         WriteLine(ms, enc, "--------------------------------");
-        if (!string.IsNullOrEmpty(buyer)) WriteLine(ms, enc, "Nome: " + buyer);
+        if (!string.IsNullOrEmpty(buyer)) WriteWrapped(ms, enc, "Nome: " + buyer);
         if (!string.IsNullOrEmpty(code)) WriteLine(ms, enc, "Codigo: " + code);
         if (!string.IsNullOrEmpty(price)) WriteLine(ms, enc, "Valor: " + price);
         WriteLine(ms, enc, "--------------------------------");
         ms.Write(center, 0, center.Length);
         WriteLine(ms, enc, "");
+        // O comando ESC/POS do QR Code (guarda os dados + manda imprimir) nao pode ser
+        // cortado no meio pelo chunking (SendAndChunk) - impressoras baratas perdem a
+        // sincronia e imprimem os bytes do comando como texto cru em vez de executar
+        // (achado real em producao, 2026-08-14). Guarda o intervalo exato pra proteger.
+        qrCommandStart = (int)ms.Position;
         WriteQr(ms, NormalizeText(qr), 8);
+        qrCommandLen = (int)ms.Position - qrCommandStart;
         WriteLine(ms, enc, "");
         WriteLine(ms, enc, "Aponte a camera para validar");
         WriteLine(ms, enc, "na portaria.");
@@ -1558,9 +1598,35 @@ class PrintServer
         ms.WriteByte(0x0A);
     }
 
+    // Quebra a linha por ESPACO antes de mandar pra impressora, em vez de deixar o
+    // hardware dela quebrar sozinho no meio de uma palavra/valor por contagem de
+    // caractere - achado real em producao (2026-08-14): "As 21:00" virava "As 21" numa
+    // linha e ":00" sozinho na proxima, feio e confuso. 32 colunas = largura padrao 58mm
+    // (a maioria das impressoras portateis baratas, incluindo a KP-1025 ja testada).
+    static void WriteWrapped(MemoryStream ms, Encoding enc, string line, int width = 32)
+    {
+        if (string.IsNullOrEmpty(line)) { WriteLine(ms, enc, line); return; }
+        while (line.Length > width)
+        {
+            int cut = line.LastIndexOf(' ', Math.Min(width, line.Length - 1));
+            if (cut <= 0) cut = width; // palavra unica maior que a largura - corta mesmo
+            WriteLine(ms, enc, line.Substring(0, cut));
+            line = line.Substring(cut).TrimStart(' ');
+        }
+        WriteLine(ms, enc, line);
+    }
+
     static string ReadBody(HttpListenerRequest req)
     {
-        using (var r = new StreamReader(req.InputStream, req.ContentEncoding ?? Encoding.UTF8))
+        // Sempre UTF-8, nunca req.ContentEncoding: quando o cliente (Tipo7 etc) manda
+        // "Content-Type: application/json" sem "; charset=utf-8" explicito (o normal - a
+        // maioria dos fetch() nao especifica, e JSON e' UTF-8 por padrao no RFC 8259),
+        // req.ContentEncoding do HttpListener NAO cai pra UTF-8 sozinho - ele usa o
+        // codepage ANSI do Windows. Bug real, achado em producao 2026-08-14: acentos
+        // vinham corrompidos no cupom impresso ("nao" virava "nAfO", "espaco" virava
+        // "espaAo") porque os bytes UTF-8 de cada acento eram lidos um a um como se fossem
+        // caracteres ANSI separados.
+        using (var r = new StreamReader(req.InputStream, Encoding.UTF8))
         {
             return r.ReadToEnd();
         }
@@ -1717,6 +1783,10 @@ class PrintJob
     public PrinterInfo Printer;
     public byte[] Data;
     public string Label;
+    // Trecho que o chunking nao pode cortar no meio (ex: comando ESC/POS do QR Code) -
+    // -1 = sem trecho protegido. Ver SendAndChunk.
+    public int AtomicStart = -1;
+    public int AtomicLen = 0;
 }
 
 class PrintProfile

@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.printserver",
-  "versionName": "1.0.5.2.0.5",
+  "versionName": "1.0.5.2.0.6",
   "downloadPath": "/downloads/PrintServer.exe",
-  "notes": "Corrige o painel local (localhost:8080, usado quando so o PrintServer e instalado, sem o Desktop app): nomes das impressoras apareciam \"undefined\" e clicar pra conectar nao funcionava (mandava um id vazio pro servidor)."
+  "notes": "Corrige acentos corrompidos no cupom (nao virava nAfO), uma linha de codigo cru aparecendo antes do QR Code, e a data/hora quebrando no meio do valor (ex: 21:00 virando duas linhas)."
 }
