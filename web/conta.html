@@ -211,9 +211,22 @@ async function renderSystems() {
     item.className = 'sys-item';
     item.innerHTML =
       '<div class="sys-info"><div class="sys-name"></div><div class="sys-key"></div></div>' +
+      '<button type="button" class="sys-copy">Copiar</button>' +
       '<span class="sys-tag"></span>';
     item.querySelector('.sys-name').textContent = sys.name;
     item.querySelector('.sys-key').textContent = sys.api_key;
+    const copyBtn = item.querySelector('.sys-copy');
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(sys.api_key);
+        const original = copyBtn.textContent;
+        copyBtn.textContent = 'Copiado ✓';
+        copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = original; copyBtn.classList.remove('copied'); }, 1600);
+      } catch {
+        showMsg('accountMsg', 'Não consegui copiar automaticamente — selecione a chave e copie manualmente.', 'err');
+      }
+    });
     const tag = item.querySelector('.sys-tag');
     if (sys.status === 'active') {
       tag.textContent = 'ATIVA — revogar';

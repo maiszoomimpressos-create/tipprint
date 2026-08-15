@@ -81,4 +81,12 @@
 .sys-item .sys-tag.active { color: var(--tipprint-success, #16A34A); }
 .sys-item .sys-tag.revoked { color: var(--tipprint-brand-thermal, #E84A1B); cursor: pointer; }
 
+.sys-item .sys-copy {
+  flex-shrink: 0; font-family: inherit; font-size: 11.5px; font-weight: 700;
+  border-radius: 6px; padding: 5px 10px; border: 1px solid currentColor;
+  opacity: .75; background: none; cursor: pointer; color: inherit;
+}
+.sys-item .sys-copy:hover { opacity: 1; }
+.sys-item .sys-copy.copied { color: var(--tipprint-success, #16A34A); opacity: 1; }
+
 .empty-hint { opacity: .6; font-size: 13.5px; margin-bottom: 18px; }
