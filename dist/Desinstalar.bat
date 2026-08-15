@@ -11,6 +11,10 @@ if exist "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\TipPrint Print
     del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\TipPrint PrintServer.lnk" >nul 2>&1
 )
 
+if exist "%USERPROFILE%\Desktop\TipPrint.url" (
+    del "%USERPROFILE%\Desktop\TipPrint.url" >nul 2>&1
+)
+
 if exist "%DEST%" rmdir /s /q "%DEST%"
 
 echo.
