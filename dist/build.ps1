@@ -56,7 +56,7 @@ if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Force -Path $OutDi
 & $csc /nologo /target:exe /platform:anycpu /out:"$OutDir\PrintServer.exe" `
     /reference:System.Management.dll /reference:System.Web.Extensions.dll `
     /reference:System.Runtime.WindowsRuntime.dll /reference:"$netRuntime" /reference:"$unionWinmd" `
-    "$src\PrintServer.cs" "$src\PrintTransport.cs" "$src\ConnectionManager.cs" "$src\AdapterMonitor.cs"
+    "$src\PrintServer.cs" "$src\PrintTransport.cs" "$src\ConnectionManager.cs" "$src\AdapterMonitor.cs" "$src\QrEncoder.cs"
 
 $code = $LASTEXITCODE
 if ($code -eq 0) {

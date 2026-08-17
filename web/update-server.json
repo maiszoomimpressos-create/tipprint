@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.printserver",
-  "versionName": "1.0.5.2.0.9",
+  "versionName": "1.0.5.2.0.10",
   "downloadPath": "/downloads/PrintServer.exe",
-  "notes": "Conexao Bluetooth passa a usar RFCOMM direto (sem depender de porta COM), com deteccao automatica de queda e reconexao sozinha, sem precisar tentar imprimir pra perceber que a impressora caiu."
+  "notes": "Corrige o QR Code do ingresso vazando como texto cru no cupom (ex: 'P0<hash>' antes do QR) em impressoras Bluetooth que perdem byte no meio da transmissao. O QR agora e' gerado e impresso como imagem, sem depender do comando nativo da impressora."
 }

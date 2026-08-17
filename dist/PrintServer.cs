@@ -19,7 +19,7 @@ class PrintServer
 {
     // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
     // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
-    public const string AppVersion = "1.0.5.2.0.9";
+    public const string AppVersion = "1.0.5.2.0.10";
     static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
 
     static int HttpPort = 8080;
@@ -1647,43 +1647,93 @@ class PrintServer
         return def;
     }
 
+    // Antes isso mandava o comando nativo ESC/POS de QR Code (GS ( k: grava dados + manda
+    // imprimir), que depende do firmware da impressora interpretar certo uma sequencia de
+    // bytes com o payload embutido. Achado real em producao (cupons de teste, 2026-08-17):
+    // em impressora Bluetooth barata, um ou poucos bytes se perdem no link de radio e a
+    // impressora cai fora do "modo comando" bem no meio - como o comando de gravar dados
+    // comeca com os bytes ASCII 'P' '0' antes do payload, o que vaza no cupom e' literalmente
+    // "P0<hash-do-ingresso>" legivel. Isso e' perda de bytes no proprio radio, nao um bug de
+    // timing do nosso software (ja estava com toda a protecao de chunking/pausa aplicada e
+    // vazou do mesmo jeito) - pausa/chunk nao resolve.
+    //
+    // Agora a gente MESMO gera a matriz do QR Code (QrEncoder.cs) e manda como IMAGEM RASTER
+    // (GS v 0, o mesmo comando usado pra logos/bitmaps): a impressora so' carimba pontos
+    // pretos/brancos, sem interpretar nenhum comando de dados variavel no meio do caminho. Se
+    // algum byte se perder agora, o pior caso vira uma falha visual (um pedaco do QR borrado)
+    // em vez do hash inteiro vazando como texto legivel no cupom do cliente.
     static void WriteQr(MemoryStream ms, string content, int size)
     {
         byte[] data = Encoding.GetEncoding("ISO-8859-1").GetBytes(content);
+        int moduleCount;
+        bool[,] modules;
+        try
+        {
+            modules = QrEncoder.Encode(data, out moduleCount);
+        }
+        catch (Exception ex)
+        {
+            // Nunca deixa a impressao inteira falhar por causa do QR - loga e pula (o cliente
+            // ainda recebe o resto do cupom, com a linha "Codigo:" pra validacao manual).
+            Log("Falha ao gerar QR Code (pulado, resto do cupom segue normal): " + ex.Message);
+            return;
+        }
+
+        const int quietZone = 4; // margem branca minima exigida pela spec (ISO/IEC 18004)
+        const int printerWidthDots = 384; // 58mm - mesmo padrao ja usado no app Android (printImageSize)
+
+        int desiredScale = size > 0 ? size : 6;
+        int maxScaleForWidth = Math.Max(1, printerWidthDots / (moduleCount + quietZone * 2));
+        int scale = Math.Min(desiredScale, maxScaleForWidth);
+        if (scale < 2) scale = 2;
+
+        int qrPixels = (moduleCount + quietZone * 2) * scale;
+        int canvasWidth = qrPixels <= printerWidthDots ? printerWidthDots : qrPixels;
+        if (qrPixels > printerWidthDots)
+            Log(string.Format("QR Code maior que a largura da impressora ({0} > {1} pontos) - imprimindo mesmo assim, mas pode nao caber no papel.", qrPixels, printerWidthDots));
+        int leftPad = (canvasWidth - qrPixels) / 2;
+
+        bool[,] canvas = new bool[qrPixels, canvasWidth];
+        for (int mr = 0; mr < moduleCount; mr++)
+        {
+            for (int mc = 0; mc < moduleCount; mc++)
+            {
+                if (!modules[mr, mc]) continue;
+                int py0 = (mr + quietZone) * scale;
+                int px0 = leftPad + (mc + quietZone) * scale;
+                for (int dy = 0; dy < scale; dy++)
+                    for (int dx = 0; dx < scale; dx++)
+                        canvas[py0 + dy, px0 + dx] = true;
+            }
+        }
+
+        WriteRasterImage(ms, canvas, canvasWidth, qrPixels);
+    }
+
+    // Comando ESC/POS de imagem raster (GS v 0) - o mesmo usado pra logos/bitmaps. m=0 (modo
+    // normal), largura em bytes (8 pontos por byte, MSB primeiro), altura em pontos.
+    static void WriteRasterImage(MemoryStream ms, bool[,] darkPixels, int widthDots, int heightDots)
+    {
+        int xBytes = (widthDots + 7) / 8;
         ms.WriteByte(0x1D);
-        ms.WriteByte(0x28);
-        ms.WriteByte(0x6B);
-        ms.WriteByte(0x03);
-        ms.WriteByte(0x00);
-        ms.WriteByte(0x31);
-        ms.WriteByte(0x43);
-        ms.WriteByte((byte)size);
-        ms.WriteByte(0x1D);
-        ms.WriteByte(0x28);
-        ms.WriteByte(0x6B);
-        ms.WriteByte(0x03);
-        ms.WriteByte(0x00);
-        ms.WriteByte(0x31);
-        ms.WriteByte(0x45);
-        ms.WriteByte(0x32);
-        ms.WriteByte(0x1D);
-        ms.WriteByte(0x28);
-        ms.WriteByte(0x6B);
-        ms.WriteByte((byte)((data.Length + 3) & 0xFF));
-        ms.WriteByte((byte)(((data.Length + 3) >> 8) & 0xFF));
-        ms.WriteByte(0x00);
-        ms.WriteByte(0x31);
-        ms.WriteByte(0x50);
+        ms.WriteByte(0x76);
         ms.WriteByte(0x30);
-        ms.Write(data, 0, data.Length);
-        ms.WriteByte(0x1D);
-        ms.WriteByte(0x28);
-        ms.WriteByte(0x6B);
-        ms.WriteByte(0x03);
         ms.WriteByte(0x00);
-        ms.WriteByte(0x31);
-        ms.WriteByte(0x51);
-        ms.WriteByte(0x30);
+        ms.WriteByte((byte)(xBytes & 0xFF));
+        ms.WriteByte((byte)((xBytes >> 8) & 0xFF));
+        ms.WriteByte((byte)(heightDots & 0xFF));
+        ms.WriteByte((byte)((heightDots >> 8) & 0xFF));
+
+        byte[] row = new byte[xBytes];
+        for (int y = 0; y < heightDots; y++)
+        {
+            Array.Clear(row, 0, xBytes);
+            for (int x = 0; x < widthDots; x++)
+            {
+                if (darkPixels[y, x]) row[x / 8] |= (byte)(0x80 >> (x % 8));
+            }
+            ms.Write(row, 0, xBytes);
+        }
     }
 
     static byte[] BuildSample(string title)
