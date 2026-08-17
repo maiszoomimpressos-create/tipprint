@@ -1,6 +1,6 @@
 {
   "appId": "br.com.tipprint.printserver",
-  "versionName": "1.0.5.2.0.6",
+  "versionName": "1.0.5.2.0.9",
   "downloadPath": "/downloads/PrintServer.exe",
-  "notes": "Corrige acentos corrompidos no cupom (nao virava nAfO), uma linha de codigo cru aparecendo antes do QR Code, e a data/hora quebrando no meio do valor (ex: 21:00 virando duas linhas)."
+  "notes": "Conexao Bluetooth passa a usar RFCOMM direto (sem depender de porta COM), com deteccao automatica de queda e reconexao sozinha, sem precisar tentar imprimir pra perceber que a impressora caiu."
 }

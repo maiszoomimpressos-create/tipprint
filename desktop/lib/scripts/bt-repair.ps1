@@ -5,13 +5,14 @@ param($mac)
 # (a API nova WinRT/DeviceWatcher so retorna resultado pra apps com identidade de pacote UWP/MSIX) --
 # e depois pareia pela API moderna (WinRT), sem precisar abrir Configuracoes do Windows manualmente.
 $mac = (($mac -replace '[^0-9A-Fa-f]', '') -replace ':', '').ToUpper()
-$result = [ordered]@{ ok = $false; unpaired = $false; paired = $false; status = 'notfound'; port = ''; ports = @(); discovery = '' }
+$result = [ordered]@{ ok = $false; unpaired = $false; paired = $false; status = 'notfound'; port = ''; ports = @(); discovery = ''; radioReset = $false }
 
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
 [void][Windows.Devices.Enumeration.DeviceInformation, Windows.Devices.Enumeration, ContentType=WindowsRuntime]
 [void][Windows.Devices.Bluetooth.BluetoothDevice, Windows.Devices.Bluetooth, ContentType=WindowsRuntime]
 [void][Windows.Devices.Enumeration.DeviceInformationCustomPairing, Windows.Devices.Enumeration, ContentType=WindowsRuntime]
 try { [void][Windows.Devices.Enumeration.DevicePairingRequestedEventArgs, Windows.Devices.Enumeration, ContentType=WindowsRuntime] } catch { }
+try { [void][Windows.Devices.Radios.Radio, Windows.Devices.Radios, ContentType=WindowsRuntime] } catch { }
 
 $btNativeSrc = @"
 using System;
@@ -139,15 +140,13 @@ function Wait-PortState($mac, $wantPresent, $seconds) {
   return ''
 }
 
-$di = Find-Printer
-if ($di) {
+# Tenta parear (pareamento custom, com fallback pro pareamento simples) e devolve
+# {paired, status} -- extraido do corpo principal pra poder chamar de novo depois
+# de um reset de radio, sem duplicar a logica.
+function Invoke-PairAttempt($diForPairing) {
+  $out = [ordered]@{ paired = $false; status = '' }
   try {
-    $r = Await ($di.Pairing.UnpairAsync()) ([Windows.Devices.Enumeration.DeviceUnpairingResult])
-    $result.unpaired = ($r.Status.ToString() -in @('Unpaired', 'AlreadyUnpaired'))
-  } catch { $result.status = 'unpair-error: ' + $_.Exception.Message }
-  Wait-PortState $mac $false 15 | Out-Null
-  try {
-    $custom = $di.Pairing.Custom
+    $custom = $diForPairing.Pairing.Custom
     [void]$custom.add_PairingRequested([Windows.Foundation.TypedEventHandler[Windows.Devices.Enumeration.DeviceInformationCustomPairing, Windows.Devices.Enumeration.DevicePairingRequestedEventArgs]]{
       param($sender, $args)
       switch ($args.PairingKind.ToString()) {
@@ -157,16 +156,74 @@ if ($di) {
     })
     $kinds = [Windows.Devices.Enumeration.DevicePairingKinds]'ConfirmOnly, DisplayPin, ProvidePin, ConfirmPinMatch'
     $r2 = Await ($custom.PairAsync($kinds, [Windows.Devices.Enumeration.DevicePairingProtectionLevel]::Default)) ([Windows.Devices.Enumeration.DevicePairingResult])
-    $result.paired = ($r2.Status.ToString() -in @('Paired', 'AlreadyPaired'))
-    $result.status = $r2.Status.ToString()
+    $out.paired = ($r2.Status.ToString() -in @('Paired', 'AlreadyPaired'))
+    $out.status = $r2.Status.ToString()
   } catch {
-    $result.status = 'pair-error: ' + $_.Exception.Message
+    $out.status = 'pair-error: ' + $_.Exception.Message
     try {
-      $r2 = Await ($di.Pairing.PairAsync()) ([Windows.Devices.Enumeration.DevicePairingResult])
-      $result.paired = ($r2.Status.ToString() -in @('Paired', 'AlreadyPaired'))
-      $result.status = $r2.Status.ToString()
-    } catch { $result.status = 'pair-error2: ' + $_.Exception.Message }
+      $r2 = Await ($diForPairing.Pairing.PairAsync()) ([Windows.Devices.Enumeration.DevicePairingResult])
+      $out.paired = ($r2.Status.ToString() -in @('Paired', 'AlreadyPaired'))
+      $out.status = $r2.Status.ToString()
+    } catch { $out.status = 'pair-error2: ' + $_.Exception.Message }
   }
+  return $out
+}
+
+# Desliga e religa so o radio Bluetooth (equivalente a apertar o botao de aviao
+# so pro BT nas Configuracoes) -- nao exige admin/UAC, ao contrario de
+# Disable-PnpDevice. Usado como escalada quando o re-pareamento falha mesmo
+# depois de redescobrir o dispositivo: o sintoma real visto em producao
+# (15/08/2026) era o radio USB Bluetooth sumindo/reaparecendo sozinho (pnpId
+# pai mudando entre tentativas), nao so a sessao de pareamento — religar o
+# radio forca o Windows a reconstruir a pilha BT inteira, inclusive a porta
+# COM, sem precisar trocar a porta USB fisica na mao.
+# Extraido pra bt-radio-reset.ps1 (script standalone) em 15/08/2026 pra tambem
+# ser reaproveitado pelo AdapterMonitor do PrintServer.cs, sem duplicar a logica.
+function Reset-BluetoothRadio {
+  try {
+    $out = & (Join-Path $PSScriptRoot 'bt-radio-reset.ps1')
+    return ($out -join '') -match '^OK$'
+  } catch { return $false }
+}
+
+$di = Find-Printer
+if ($di) {
+  try {
+    $r = Await ($di.Pairing.UnpairAsync()) ([Windows.Devices.Enumeration.DeviceUnpairingResult])
+    $result.unpaired = ($r.Status.ToString() -in @('Unpaired', 'AlreadyUnpaired'))
+  } catch { $result.status = 'unpair-error: ' + $_.Exception.Message }
+  Wait-PortState $mac $false 15 | Out-Null
+
+  # Redescobre o dispositivo depois do Unpair -- o $di antigo pode carregar
+  # estado de pareamento obsoleto pro WinRT (a sessao de pairing anterior),
+  # fazendo o PairAsync() de baixo retornar "Failed" mesmo com o unpair tendo
+  # funcionado. Achado real (15/08/2026): bt-repair falhando repetidamente em
+  # producao com "unpaired": true mas "status": "Failed" no re-pareamento,
+  # deixando a impressora sem porta COM e o Windows ainda mostrando "Paired"
+  # (estado ambiguo, pior que antes de rodar o reparo). So troca $di se achou
+  # de novo -- se nao achou (ainda nao reapareceu no discovery), segue com o
+  # $di antigo em vez de falhar cedo.
+  $diFresh = Find-Printer
+  if ($diFresh) { $di = $diFresh }
+
+  $attempt = Invoke-PairAttempt $di
+  $result.paired = $attempt.paired
+  $result.status = $attempt.status
+
+  # Escalada: se nem redescobrindo o dispositivo o pareamento colou, tenta
+  # religar o radio Bluetooth e repetir o ciclo (descoberta + pareamento) mais
+  # uma vez antes de desistir. Ver comentario da Reset-BluetoothRadio acima.
+  if (-not $result.paired) {
+    $result.radioReset = Reset-BluetoothRadio
+    if ($result.radioReset) {
+      $diAfterReset = Find-Printer
+      if ($diAfterReset) { $di = $diAfterReset }
+      $attempt2 = Invoke-PairAttempt $di
+      $result.paired = $attempt2.paired
+      $result.status = if ($attempt2.paired) { $attempt2.status + ' (apos reset do radio)' } else { $result.status + ' | apos reset do radio: ' + $attempt2.status }
+    }
+  }
+
   if ($result.paired) {
     $result.port = Wait-PortState $mac $true 25
     $result.ok = [bool]$result.port

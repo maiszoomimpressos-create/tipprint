@@ -19,7 +19,7 @@ class PrintServer
 {
     // Sobe a cada publicacao (padrao do TipPrint: X.X.X.<app>.X.X - 2 = PrintServer/PC).
     // Mude aqui e publique web/update-server.json com o mesmo numero para o auto-update disparar.
-    public const string AppVersion = "1.0.5.2.0.6";
+    public const string AppVersion = "1.0.5.2.0.9";
     static string UpdateCheckUrl = "https://tipprint.vercel.app/update-server.json";
 
     static int HttpPort = 8080;
@@ -30,10 +30,12 @@ class PrintServer
         "TipPrint", "config.txt");
 
     static readonly object Lock = new object();
-    static PrinterInfo Active = null;
-    static SerialPort ActivePort = null;
-    static bool WantConnect = false;
-    static int ReconnectTries = 0;
+    // Active/ActivePort/WantConnect/ReconnectTries viviam aqui como campos soltos antes desta
+    // mudanca (2026-08-15, camada universal de monitoramento/reconexao). Agora moram dentro
+    // de PrinterManager.Current (ConnectionManager.cs), que tambem sabe diferenciar causa de
+    // falha (impressora desligada / porta sumiu / adaptador com erro / Windows precisa
+    // reiniciar) em vez de so' "conectado sim/nao". Ver PrintTransport.cs/ConnectionManager.cs/
+    // AdapterMonitor.cs.
 
     // Saude/observabilidade da impressao (exposto em /status)
     static int PrintedOk = 0;
@@ -428,7 +430,7 @@ class PrintServer
         return null;
     }
 
-    static string LoadCharset()
+    internal static string LoadCharset()
     {
         try
         {
@@ -442,7 +444,7 @@ class PrintServer
         return "ascii";
     }
 
-    static void SaveConfig(string id, string charset)
+    internal static void SaveConfig(string id, string charset)
     {
         try
         {
@@ -484,7 +486,7 @@ class PrintServer
     // MAC da impressora Bluetooth ativa - salvo pra sobreviver a troca de numero de porta
     // COM (o Windows recria a porta com outro numero depois de reconectar/reiniciar, mas o
     // MAC do dispositivo continua o mesmo - achado em producao em 2026-08-14).
-    static void SaveBtMac(string mac)
+    internal static void SaveBtMac(string mac)
     {
         if (string.IsNullOrEmpty(mac)) return;
         try
@@ -503,7 +505,7 @@ class PrintServer
         catch { }
     }
 
-    static string LoadBtMac()
+    internal static string LoadBtMac()
     {
         try
         {
@@ -519,7 +521,7 @@ class PrintServer
 
     // Procura a MESMA impressora fisica (mesmo MAC) em qualquer porta COM que ela esteja
     // agora, mesmo que o numero mudou desde a ultima vez. Retorna null se nao achar.
-    static PrinterInfo FindByMac(string mac, List<PrinterInfo> found)
+    internal static PrinterInfo FindByMac(string mac, List<PrinterInfo> found)
     {
         if (string.IsNullOrEmpty(mac)) return null;
         foreach (var p in found)
@@ -552,10 +554,10 @@ class PrintServer
             Log("Impressora salva nao encontrada agora (" + id + "). Pareie-a e conecte pelo painel.");
             return;
         }
-        ConnectPrinter(target);
+        PrinterManager.Current.Connect(target);
     }
 
-    static void Log(string msg)
+    internal static void Log(string msg)
     {
         string line = string.Format("[{0}] {1}", DateTime.Now.ToString("HH:mm:ss"), msg);
         // Console.WriteLine pode lancar quando o processo nao tem console de verdade (ex:
@@ -568,6 +570,19 @@ class PrintServer
             if (LogFile != null) File.AppendAllText(LogFile, line + Environment.NewLine);
         }
         catch { }
+    }
+
+    // Log estruturado (pedido do usuario, item 14): um cabecalho "impressora - EVENTO"
+    // seguido de linhas de detalhe indentadas, todos passando pelo mesmo Log() de sempre
+    // (mesmo sink: console + arquivo) - nao cria um sistema de log paralelo, so' um
+    // formatador em cima do que ja existia. Linhas nulas/vazias sao ignoradas (permite
+    // chamar com detalhes condicionais sem montar array na mao).
+    internal static void LogEvent(string printerLabel, string kind, params string[] details)
+    {
+        Log(string.Format("{0} - {1}", string.IsNullOrEmpty(printerLabel) ? "?" : printerLabel, kind));
+        if (details == null) return;
+        foreach (string d in details)
+            if (!string.IsNullOrEmpty(d)) Log("    " + d);
     }
 
     static string[] LoadOrigins()
@@ -640,7 +655,7 @@ class PrintServer
         return false;
     }
 
-    static List<PrinterInfo> FindPrinters()
+    internal static List<PrinterInfo> FindPrinters()
     {
         var list = new List<PrinterInfo>();
         try
@@ -784,90 +799,16 @@ class PrintServer
         return false;
     }
 
-    // Retorna se a impressora ficou REALMENTE conectada agora (nao so "selecionada pra
-    // tentar"). Antes o retorno de TryOpen() era descartado aqui - o /connect respondia
-    // ok:true mesmo quando a porta falhava na hora, e o app (Electron/Android) mostrava
-    // "conectado" sem ser verdade (caso real 2026-08-14: KP-1025 com Bluetooth instavel).
-    static bool ConnectPrinter(PrinterInfo pi)
-    {
-        lock (Lock)
-        {
-            CloseActiveLocked();
-            Active = pi;
-            WantConnect = true;
-            ReconnectTries = 0;
-        }
-        if (pi.Type == "windows")
-        {
-            Log(string.Format("Impressora do Windows selecionada: {0}.", pi.Name));
-            return true;
-        }
-        Log(string.Format("Conectando a {0} ({1})...", pi.Name, pi.Id));
-        bool ok = TryOpen();
-        if (ok && pi.Type == "bluetooth" && !string.IsNullOrEmpty(pi.Detail)) SaveBtMac(pi.Detail);
-        return ok;
-    }
+    // ConnectPrinter/CloseActiveLocked/TryOpen/TryReacquireByMac viviam aqui como metodos
+    // soltos antes desta mudanca. Agora moram em ConnectionManager (ConnectionManager.cs) -
+    // mesma logica (conecta, fecha, reabre, redescobre por MAC), so' atras da maquina de
+    // estados/interface de transporte. Chamadas: PrinterManager.Current.Connect/TryOpen/
+    // Disconnect/TryReacquireByIdentity.
 
-    static void CloseActiveLocked()
-    {
-        WantConnect = false;
-        if (ActivePort != null)
-        {
-            try { ActivePort.Close(); } catch { }
-            ActivePort = null;
-        }
-    }
-
-    static bool TryOpen()
-    {
-        PrinterInfo pi;
-        lock (Lock)
-        {
-            if (!WantConnect || Active == null) return false;
-            pi = Active;
-        }
-        try
-        {
-            var sp = new SerialPort(pi.Id, 115200, Parity.None, 8, StopBits.One)
-            {
-                WriteTimeout = 3000,
-                ReadTimeout = 300
-            };
-            sp.Open();
-            lock (Lock) ActivePort = sp;
-            ReconnectTries = 0;
-            Log(string.Format("Conectado: {0} na {1}.", pi.Name, pi.Id));
-            return true;
-        }
-        catch (Exception ex)
-        {
-            ReconnectTries++;
-            Log(string.Format("Falha ao conectar ({0}x): {1}", ReconnectTries, ex.Message));
-            return false;
-        }
-    }
-
-    // Chamado pelo watchdog quando a porta salva ja falhou algumas vezes seguidas. Troca
-    // Active.Id pra qualquer porta nova onde a mesma impressora (mesmo MAC) apareca agora -
-    // a proxima tentativa do watchdog usa essa porta nova automaticamente.
-    static void TryReacquireByMac()
-    {
-        string mac;
-        string currentId;
-        lock (Lock)
-        {
-            if (Active == null || Active.Type != "bluetooth") return;
-            mac = !string.IsNullOrEmpty(Active.Detail) ? Active.Detail : LoadBtMac();
-            currentId = Active.Id;
-        }
-        if (string.IsNullOrEmpty(mac)) return;
-        var target = FindByMac(mac, FindPrinters());
-        if (target == null || string.Equals(target.Id, currentId, StringComparison.OrdinalIgnoreCase)) return;
-        Log("Porta da impressora mudou (" + currentId + " -> " + target.Id + ", mesmo MAC " + mac + ") - tentando reconectar na porta nova.");
-        lock (Lock) { Active = target; ReconnectTries = 0; }
-        SaveConfig(target.Id, LoadCharset());
-    }
-
+    // Laco fino: toda a decisao de "precisa reabrir? qual backoff? redescobre por
+    // identidade? consulta o adaptador Bluetooth?" mora em ConnectionManager.Tick() agora -
+    // o watchdog so' chama isso a cada 4s, preservando o comportamento de antes (mesmo
+    // intervalo de checagem).
     static void WatchdogLoop()
     {
         while (true)
@@ -875,32 +816,7 @@ class PrintServer
             try
             {
                 Thread.Sleep(4000);
-                bool needReopen = false;
-                lock (Lock)
-                {
-                    if (WantConnect && ActivePort != null)
-                    {
-                        if (!ActivePort.IsOpen) needReopen = true;
-                    }
-                    else if (WantConnect && ActivePort == null)
-                    {
-                        needReopen = true;
-                    }
-                    if (Active != null && Active.Type == "windows") needReopen = false;
-                }
-                if (needReopen)
-                {
-                    if (!TryOpen())
-                    {
-                        // Depois de algumas falhas seguidas na MESMA porta, suspeita que o
-                        // numero da porta COM mudou (Windows reatribuiu depois de reconectar o
-                        // Bluetooth) e tenta achar a impressora de novo pelo MAC, em vez de
-                        // insistir pra sempre numa porta que pode nem existir mais.
-                        if (ReconnectTries > 0 && ReconnectTries % 3 == 0) TryReacquireByMac();
-                        int delay = Math.Min(30, 2 * ReconnectTries);
-                        Thread.Sleep(delay * 1000);
-                    }
-                }
+                PrinterManager.Current.Tick();
             }
             catch (Exception ex)
             {
@@ -990,6 +906,8 @@ class PrintServer
         if (pi.Type == "windows")
         {
             WinPrinter.RawPrint(pi.Id, job.Data);
+            job.State = JobState.Completed;
+            PrinterManager.Current.NotifyPrintSuccess();
             Log(string.Format("Impressao \"{0}\" enviada ({1} bytes) para \"{2}\".", job.Label, job.Data.Length, pi.Name));
             return;
         }
@@ -997,16 +915,29 @@ class PrintServer
         byte[] data = job.Data;
         int offset = 0;
         int totalAttempts = 0;
+        job.State = JobState.Sending;
 
         while (offset < data.Length)
         {
-            SerialPort sp;
-            lock (Lock) sp = ActivePort;
-            if (sp == null || !sp.IsOpen)
+            IPrinterTransport transport = PrinterManager.Current.Transport;
+            if (transport == null || !PrinterManager.Current.IsReady)
             {
-                if (totalAttempts++ >= 12) throw new Exception("Impressora sem conexao apos 12 tentativas (job abortado).");
+                if (totalAttempts++ >= 12)
+                {
+                    // Estado INDETERMINADO (pedido explicito do usuario): se ja saiu byte
+                    // pra fora deste processo (offset > 0), NAO sabemos se a impressora
+                    // recebeu tudo - nunca reenviamos esse job sozinhos, so' registramos e
+                    // deixamos claro no log/estado. So' e' "seguro reenviar" (Failed) quando
+                    // nada saiu daqui ainda.
+                    job.State = offset > 0 ? JobState.SentIndeterminate : JobState.Failed;
+                    if (job.State == JobState.SentIndeterminate)
+                        Log(string.Format("Job \"{0}\" em estado INDETERMINADO: {1}/{2} bytes ja tinham sido entregues ao sistema quando a conexao caiu de vez - resultado fisico desconhecido, NAO sera reenviado automaticamente.", job.Label, offset, data.Length));
+                    throw new Exception(job.State == JobState.SentIndeterminate
+                        ? string.Format("Impressora sem conexao apos 12 tentativas - job INDETERMINADO ({0}/{1} bytes enviados).", offset, data.Length)
+                        : "Impressora sem conexao apos 12 tentativas (job abortado, nada foi enviado).");
+                }
                 Log(string.Format("Job \"{0}\" aguardando reconexao da impressora...", job.Label));
-                if (!TryOpen()) Thread.Sleep(2000);
+                if (!PrinterManager.Current.TryOpen()) Thread.Sleep(2000);
                 continue;
             }
             int len = Math.Min(prof.ChunkBytes, data.Length - offset);
@@ -1028,39 +959,123 @@ class PrintServer
                 else if (offset >= job.AtomicStart && offset < atomicEnd)
                 {
                     len = Math.Max(len, atomicEnd - offset);
+                    // Respiro extra antes do comando do QR: a pausa normal entre chunks
+                    // (prof.PauseMs, abaixo) existe pra nao estourar o buffer de recepcao da
+                    // impressora, nao pra esperar o cabecote terminar de imprimir fisicamente
+                    // as linhas de texto anteriores. Em impressora fraca isso pode ainda estar
+                    // rolando quando o comando do QR chega, mesmo ele saindo inteiro num unico
+                    // Write() sem ser cortado - ela perde a sincronia e imprime um pedaco do
+                    // comando como texto cru antes de retomar e renderizar o QR (achado real,
+                    // 15/08/2026: linha "P0<hash>" aparecendo antes do QR mesmo com a protecao
+                    // de nao cortar o comando). Dobra a pausa so nesse ponto de transicao.
+                    if (prof.PauseMs > 0) Thread.Sleep(prof.PauseMs);
                 }
             }
             try
             {
-                sp.Write(data, offset, len);
+                transport.Write(data, offset, len);
             }
             catch (Exception ex)
             {
                 totalAttempts++;
-                if (totalAttempts >= 12) throw new Exception("Falha persistente ao gravar: " + ex.Message);
-                bool busy = ex.Message != null && (ex.Message.ToLower().Contains("tempo") ||
-                                                   ex.Message.ToLower().Contains("timeout") ||
-                                                   ex.Message.ToLower().Contains("exced") ||
-                                                   ex.Message.ToLower().Contains("timed"));
-                if (busy)
+                FailureReason reason = transport.Classify(ex);
+                if (totalAttempts >= 12)
+                {
+                    job.State = offset > 0 ? JobState.SentIndeterminate : JobState.Failed;
+                    if (job.State == JobState.SentIndeterminate)
+                        Log(string.Format("Job \"{0}\" em estado INDETERMINADO: {1}/{2} bytes ja tinham sido entregues ao sistema quando as tentativas de escrita esgotaram - resultado fisico desconhecido, NAO sera reenviado automaticamente.", job.Label, offset, data.Length));
+                    throw new Exception("Falha persistente ao gravar: " + ex.Message);
+                }
+                if (reason == FailureReason.Busy)
                 {
                     Log(string.Format("Impressora ocupada no job \"{0}\" ({1} bytes pendentes): aguardando drenar o buffer...", job.Label, data.Length - offset));
                     Thread.Sleep(2000);
                     continue;
                 }
-                Log(string.Format("Erro ao gravar \"{0}\": {1} - reconectando ({2}/12)...", job.Label, ex.Message, totalAttempts));
-                lock (Lock)
-                {
-                    if (ActivePort != null) { try { ActivePort.Close(); } catch { } ActivePort = null; }
-                }
+                Log(string.Format("Erro ao gravar \"{0}\": {1} (causa: {2}) - reconectando ({3}/12)...", job.Label, ex.Message, reason, totalAttempts));
+                PrinterManager.Current.ForceCloseTransport();
                 Thread.Sleep(1500);
                 continue;
             }
             offset += len;
+            PrinterManager.Current.NotifyCommunication();
             if (offset < data.Length && prof.PauseMs > 0) Thread.Sleep(prof.PauseMs);
         }
+        job.State = JobState.Completed;
+        PrinterManager.Current.NotifyPrintSuccess();
         Log(string.Format("Impressao \"{0}\" concluida ({1} bytes, chunks de {2} B) em {3} ({4}) - perfil {5}.",
             job.Label, data.Length, prof.ChunkBytes, pi.Name, pi.Id, prof.Name));
+    }
+
+    // Teste de estresse controlado (pedido do usuario, item 17): conectar -> imprimir teste
+    // -> desconectar NOSSO PROPRIO transporte (nunca a impressora fisica - isso exigiria
+    // autorizacao/acao do operador) -> reconectar -> repetir. Mede a confiabilidade REAL do
+    // ciclo de reconexao em condicoes controladas, sem risco pro hardware.
+    static object RunStressTest(int cycles)
+    {
+        PrinterInfo target = PrinterManager.Current.Target;
+        IPrinterTransport transport = PrinterManager.Current.Transport;
+        if (target == null || transport == null)
+            throw new Exception("Nenhuma impressora conectada. Conecte uma impressora antes de rodar o teste de estresse.");
+        if (!transport.Capabilities.CanReconnect)
+            throw new Exception("Este transporte (" + transport.Kind + ") nao suporta ciclos de reconexao controlada - o teste de estresse se aplica a Bluetooth/USB.");
+        // Nao roda por cima de impressao real em andamento - evita duas escritas
+        // concorrentes no mesmo transporte (o job de teste NAO passa pela fila normal,
+        // pra medir o ciclo conectar/desconectar sem depender do SenderLoop).
+        if (QueuedCount() > 0 || ActiveJobs > 0)
+            throw new Exception("Ha impressoes reais em andamento/na fila agora - espere esvaziar antes de rodar o teste de estresse.");
+
+        int successfulReconnects = 0;
+        int failedReconnects = 0;
+        int printFailures = 0;
+
+        Log(string.Format("Printer Stress Test iniciado: {0} ciclos em {1} ({2}).", cycles, target.Name, target.Id));
+
+        for (int i = 1; i <= cycles; i++)
+        {
+            if (!PrinterManager.Current.IsReady)
+            {
+                if (!PrinterManager.Current.TryOpen()) { failedReconnects++; continue; }
+            }
+            try
+            {
+                var testJob = new PrintJob { Printer = target, Data = BuildSample("TESTE DE ESTRESSE " + i + "/" + cycles), Label = "stress-test-" + i };
+                SendAndChunk(testJob);
+            }
+            catch (Exception ex)
+            {
+                printFailures++;
+                Log(string.Format("Stress test ciclo {0}: falha ao imprimir - {1}", i, ex.Message));
+            }
+
+            // Desconecta SO' o nosso lado (fecha o handle da porta) - a impressora fisica
+            // nunca e' desligada sozinha (pedido explicito do usuario). Isso e' o suficiente
+            // pra forcar o Windows a tratar a proxima abertura como uma reconexao de verdade.
+            PrinterManager.Current.ForceCloseTransport();
+            Thread.Sleep(300);
+
+            bool reconnected = false;
+            for (int attempt = 0; attempt < 5 && !reconnected; attempt++)
+            {
+                if (attempt > 0) Thread.Sleep(1000);
+                reconnected = PrinterManager.Current.TryOpen();
+            }
+            if (reconnected) successfulReconnects++; else failedReconnects++;
+        }
+
+        double successRate = cycles > 0 ? Math.Round((double)successfulReconnects / cycles * 100.0, 1) : 0;
+        Log(string.Format("Printer Stress Test concluido: {0}/{1} reconexoes OK ({2}%), {3} falhas de impressao.",
+            successfulReconnects, cycles, successRate, printFailures));
+
+        return new
+        {
+            ok = true,
+            cycles = cycles,
+            successfulReconnects = successfulReconnects,
+            failedReconnects = failedReconnects,
+            successRate = successRate,
+            printFailures = printFailures
+        };
     }
 
     static readonly string[] STRONG_MARKS = { "bematech", "elgin", "daruma", "epson", "tm-", "tm t", "mp-4200", "mp-20", "mp20", "mpp-20", "kmex", "sweda", "vkp", "nkp", "80mm", "80 mm", "gr80", "hs-380", "gprinter", "3x3", "italtec", "c3tech" };
@@ -1139,13 +1154,12 @@ class PrintServer
             if (path == "/printers")
             {
                 var printers = FindPrinters();
-                lock (Lock)
+                PrinterInfo activeTarget = PrinterManager.Current.Target;
+                bool activeReady = PrinterManager.Current.IsReady;
+                foreach (var p in printers)
                 {
-                    foreach (var p in printers)
-                    {
-                        p.Status = (Active != null && string.Equals(Active.Id, p.Id, StringComparison.OrdinalIgnoreCase) && (Active.Type == "windows" || (ActivePort != null && ActivePort.IsOpen)))
-                            ? "conectado" : "disponivel";
-                    }
+                    p.Status = (activeTarget != null && string.Equals(activeTarget.Id, p.Id, StringComparison.OrdinalIgnoreCase) && activeReady)
+                        ? "conectado" : "disponivel";
                 }
                 Json(ctx, new { ok = true, printers = printers });
                 return;
@@ -1153,18 +1167,20 @@ class PrintServer
 
             if (path == "/status")
             {
-                string activeId = Active != null ? Active.Id : (LoadConfig() ?? "");
-                string profile = Active != null ? ProfileFor(Active).Name : null;
+                PrinterInfo active = PrinterManager.Current.Target;
+                string profile = active != null ? ProfileFor(active).Name : null;
+                HealthSnapshot health = PrinterManager.Current.Snapshot(QueuedCount());
+                ReliabilityStats stats = PrinterManager.Current.Stats;
                 Json(ctx, new
                 {
                     ok = true,
                     version = AppVersion,
-                    connected = (ActivePort != null && ActivePort.IsOpen) || (Active != null && Active.Type == "windows"),
-                    printer = Active != null ? Active.Name : null,
-                    port = Active != null ? Active.Id : null,
-                    type = Active != null ? Active.Type : null,
-                    width = Active != null ? Active.Width : "58",
-                    tries = ReconnectTries,
+                    connected = PrinterManager.Current.IsReady,
+                    printer = active != null ? active.Name : null,
+                    port = active != null ? active.Id : null,
+                    type = active != null ? active.Type : null,
+                    width = active != null ? active.Width : "58",
+                    tries = PrinterManager.Current.ReconnectAttempts,
                     charset = LoadCharset(),
                     profile = profile,
                     queue = QueuedCount(),
@@ -1175,6 +1191,29 @@ class PrintServer
                     lastError = LastError,
                     lastErrorAt = LastErrorAt.HasValue ? LastErrorAt.Value.ToString("HH:mm:ss") : null,
                     lastSuccessAt = LastSuccessAt.HasValue ? LastSuccessAt.Value.ToString("HH:mm:ss") : null,
+                    // Bloco novo (camada universal de monitoramento, 2026-08-15) - so' ADITIVO,
+                    // nenhum campo acima mudou de nome/tipo/semantica pra nao quebrar quem ja
+                    // consome esta rota (Tipo7, Desktop, Android).
+                    state = health.State.ToString(),
+                    lastFailureReason = health.LastFailureReason.ToString(),
+                    health = new
+                    {
+                        percent = health.HealthPercent,
+                        lastCommunication = health.LastSuccessfulCommunication.HasValue ? health.LastSuccessfulCommunication.Value.ToString("HH:mm:ss") : null,
+                        lastPrint = health.LastSuccessfulPrint.HasValue ? health.LastSuccessfulPrint.Value.ToString("HH:mm:ss") : null,
+                        reconnectAttempts = health.ReconnectAttempts,
+                        failedAttempts = health.FailedAttempts,
+                        pendingJobs = health.PendingJobs
+                    },
+                    reliability = new
+                    {
+                        connectionAttempts = stats.ConnectionAttempts,
+                        connectionsSuccessful = stats.ConnectionsSuccessful,
+                        connectionsFailed = stats.ConnectionsFailed,
+                        autoRecoveries = stats.AutoRecoveries,
+                        unrecoverableFailures = stats.UnrecoverableFailures,
+                        reconnectSuccessRate = stats.ReconnectSuccessRate
+                    },
                     sistema = LoadApiKey() == null ? null : new
                     {
                         nome = SystemName,
@@ -1206,10 +1245,99 @@ class PrintServer
                 return;
             }
 
+            // Visao completa de diagnostico (pedido do usuario, item 15): impressora +
+            // adaptador Bluetooth (quando aplicavel) + confiabilidade. Formato pra um painel,
+            // nao pro fluxo de impressao normal - so' faz a consulta WMI detalhada do
+            // adaptador aqui, nunca no caminho quente de impressao.
+            if (path == "/diagnostics")
+            {
+                PrinterInfo target = PrinterManager.Current.Target;
+                IPrinterTransport transport = PrinterManager.Current.Transport;
+                HealthSnapshot health = PrinterManager.Current.Snapshot(QueuedCount());
+                ReliabilityStats stats = PrinterManager.Current.Stats;
+
+                object adapterInfo = null;
+                if (transport != null && transport.Kind == TransportKind.Bluetooth)
+                {
+                    var a = PrinterManager.Current.Adapter.Check(true);
+                    adapterInfo = new
+                    {
+                        name = a.AdapterName,
+                        instanceId = a.InstanceId,
+                        status = a.Status,
+                        enabled = a.Enabled,
+                        problemCode = a.ProblemCode,
+                        problemDescription = a.Detail,
+                        driverVersion = a.DriverVersion,
+                        driverProvider = a.DriverProvider,
+                        adapterCount = a.AdapterCount,
+                        needsReboot = a.NeedsReboot
+                    };
+                }
+
+                Json(ctx, new
+                {
+                    ok = true,
+                    printer = target == null ? null : new
+                    {
+                        name = target.Name,
+                        connection = target.Type,
+                        transport = transport != null ? transport.Kind.ToString() : null,
+                        status = health.State.ToString(),
+                        healthPercent = health.HealthPercent,
+                        mac = target.Type == "bluetooth" ? target.Detail : null,
+                        endpoint = target.Id,
+                        lastCommunication = health.LastSuccessfulCommunication.HasValue ? health.LastSuccessfulCommunication.Value.ToString("HH:mm:ss") : null,
+                        lastPrint = health.LastSuccessfulPrint.HasValue ? health.LastSuccessfulPrint.Value.ToString("HH:mm:ss") : null,
+                        reconnects = health.ReconnectAttempts,
+                        errors = health.FailedAttempts,
+                        lastError = health.LastFailureDetail,
+                        lastFailureReason = health.LastFailureReason.ToString(),
+                        queue = health.PendingJobs
+                    },
+                    adapter = adapterInfo,
+                    reliability = new
+                    {
+                        connectionAttempts = stats.ConnectionAttempts,
+                        connectionsSuccessful = stats.ConnectionsSuccessful,
+                        connectionsFailed = stats.ConnectionsFailed,
+                        autoRecoveries = stats.AutoRecoveries,
+                        unrecoverableFailures = stats.UnrecoverableFailures,
+                        reconnectSuccessRate = stats.ReconnectSuccessRate,
+                        printJobsTotal = PrintedOk + PrintedFail,
+                        printJobsSuccessful = PrintedOk,
+                        printJobsFailed = PrintedFail
+                    }
+                });
+                return;
+            }
+
+            if (path == "/diagnostics/stress-test" && ctx.Request.HttpMethod == "POST")
+            {
+                var body = ReadBody(ctx.Request);
+                var doc = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(body);
+                int cycles = 5;
+                try { if (doc != null && doc.ContainsKey("cycles")) cycles = Convert.ToInt32(doc["cycles"]); } catch { }
+                if (cycles < 1) cycles = 1;
+                if (cycles > 50) cycles = 50; // limite de seguranca (pedido do usuario: teste controlado, nao um stress infinito)
+
+                object result;
+                try
+                {
+                    result = RunStressTest(cycles);
+                }
+                catch (Exception ex)
+                {
+                    Json(ctx, new { ok = false, error = ex.Message });
+                    return;
+                }
+                Json(ctx, result);
+                return;
+            }
+
             if (path == "/capabilities")
             {
-                PrinterInfo pi;
-                lock (Lock) pi = Active;
+                PrinterInfo pi = PrinterManager.Current.Target;
                 if (pi == null) { Json(ctx, new { ok = false, error = "Nenhuma impressora conectada" }); return; }
                 PrintProfile prof = ProfileFor(pi);
                 Json(ctx, new
@@ -1239,7 +1367,7 @@ class PrintServer
                     if (string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase)) target = p;
                 }
                 if (target == null) { Json(ctx, new { ok = false, error = "Impressora nao encontrada" }); return; }
-                bool connected = ConnectPrinter(target);
+                bool connected = PrinterManager.Current.Connect(target);
                 SaveConfig(target.Id, LoadCharset());
                 if (!connected)
                 {
@@ -1256,7 +1384,7 @@ class PrintServer
                 var doc = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(body);
                 string charset = Convert.ToString(doc["charset"]);
                 if (charset != "ascii" && charset != "cp850") { Json(ctx, new { ok = false, error = "charset deve ser ascii ou cp850" }); return; }
-                SaveConfig(Active != null ? Active.Id : (LoadConfig() ?? ""), charset);
+                SaveConfig(PrinterManager.Current.Target != null ? PrinterManager.Current.Target.Id : (LoadConfig() ?? ""), charset);
                 if (doc.ContainsKey("apiKey"))
                 {
                     string newKey = Convert.ToString(doc["apiKey"]);
@@ -1292,11 +1420,8 @@ class PrintServer
                 if (doc.ContainsKey("printer"))
                 {
                     string wanted = Convert.ToString(doc["printer"]);
-                    bool already = false;
-                    lock (Lock)
-                    {
-                        if (Active != null && string.Equals(Active.Id, wanted, StringComparison.OrdinalIgnoreCase)) already = true;
-                    }
+                    PrinterInfo currentTarget = PrinterManager.Current.Target;
+                    bool already = currentTarget != null && string.Equals(currentTarget.Id, wanted, StringComparison.OrdinalIgnoreCase);
                     if (!already)
                     {
                         PrinterInfo target = null;
@@ -1305,15 +1430,14 @@ class PrintServer
                             if (string.Equals(p.Id, wanted, StringComparison.OrdinalIgnoreCase)) target = p;
                         }
                         if (target == null) { Json(ctx, new { ok = false, error = "Impressora nao encontrada: " + wanted }); return; }
-                        ConnectPrinter(target);
+                        PrinterManager.Current.Connect(target);
                     }
                 }
                 string charset = doc.ContainsKey("charset") ? Convert.ToString(doc["charset"]) : LoadCharset();
                 if (charset != "cp850") charset = "ascii";
                 int qrStart, qrLen;
                 byte[] data = BuildTicket(doc, charset, out qrStart, out qrLen);
-                PrinterInfo pi;
-                lock (Lock) pi = Active;
+                PrinterInfo pi = PrinterManager.Current.Target;
                 EnqueueJob(pi, data, "ticket", qrStart, qrLen);
                 if (dedupKey != null) MarkRequestHandled(dedupKey);
                 Json(ctx, new { ok = true, bytes = data.Length, queue = QueuedCount() });
@@ -1338,11 +1462,8 @@ class PrintServer
                 if (doc.ContainsKey("printer"))
                 {
                     string wanted = Convert.ToString(doc["printer"]);
-                    bool already = false;
-                    lock (Lock)
-                    {
-                        if (Active != null && string.Equals(Active.Id, wanted, StringComparison.OrdinalIgnoreCase)) already = true;
-                    }
+                    PrinterInfo currentTarget = PrinterManager.Current.Target;
+                    bool already = currentTarget != null && string.Equals(currentTarget.Id, wanted, StringComparison.OrdinalIgnoreCase);
                     if (!already)
                     {
                         PrinterInfo target = null;
@@ -1351,7 +1472,7 @@ class PrintServer
                             if (string.Equals(p.Id, wanted, StringComparison.OrdinalIgnoreCase)) target = p;
                         }
                         if (target == null) { Json(ctx, new { ok = false, error = "Impressora nao encontrada: " + wanted }); return; }
-                        ConnectPrinter(target);
+                        PrinterManager.Current.Connect(target);
                     }
                 }
                 string mode = Convert.ToString(doc.ContainsKey("mode") ? doc["mode"] : "escpos");
@@ -1392,8 +1513,7 @@ class PrintServer
                     data = BuildSample(doc.ContainsKey("data") ? Convert.ToString(doc["data"]) : null);
                 }
                 if (data == null || data.Length == 0) { Json(ctx, new { ok = false, error = "Dados vazios" }); return; }
-                PrinterInfo pi;
-                lock (Lock) pi = Active;
+                PrinterInfo pi = PrinterManager.Current.Target;
                 EnqueueJob(pi, data, "print");
                 if (printDedupKey != null) MarkRequestHandled(printDedupKey);
                 Json(ctx, new { ok = true, bytes = data.Length, queue = QueuedCount() });
@@ -1675,8 +1795,7 @@ class PrintServer
                         }
                         if (ms.Length > 0)
                         {
-                            PrinterInfo pi;
-                            lock (Lock) pi = Active;
+                            PrinterInfo pi = PrinterManager.Current.Target;
                             if (pi != null) EnqueueJob(pi, ms.ToArray(), "tcp");
                             else Log("TCP: dados chegando sem impressora conectada - ignorado.");
                         }
@@ -1690,7 +1809,7 @@ class PrintServer
     }
 }
 
-class PrinterInfo
+public class PrinterInfo
 {
     public string Type { get; set; }
     public string Name { get; set; }
@@ -1700,82 +1819,23 @@ class PrinterInfo
     public string Width { get; set; }
 }
 
-class WinPrinter
+// WinPrinter mudou pra PrintTransport.cs em 2026-08-15 (junto com o BluetoothRfcommTransport)
+// - a camada de transporte compila numa DLL separada agora (TipPrint.Transport.dll, ver
+// dist/build.ps1), e WindowsPrinterTransport precisa dele. Ver PrintTransport.cs.
+
+// Estado de entrega de um job - "Sending" cobre desde o primeiro byte escrito.
+// "SentIndeterminate" e' o caso critico (pedido explicito do usuario, item 6): a conexao
+// morreu depois de PARTE dos bytes ja terem sido entregues ao SO, entao nao sabemos se a
+// impressora recebeu tudo, so' parte, ou nada - por isso nunca reenviamos esse job sozinhos.
+// "Failed" so' acontece quando NADA saiu daqui ainda (offset==0), esse sim seria seguro pro
+// chamador reenviar se quiser.
+public enum JobState
 {
-    [System.Runtime.InteropServices.DllImport("winspool.drv", SetLastError = true)]
-    static extern bool OpenPrinter(string pPrinterName, out IntPtr phPrinter, IntPtr pDefault);
-
-    [System.Runtime.InteropServices.DllImport("winspool.drv", SetLastError = true)]
-    static extern bool ClosePrinter(IntPtr hPrinter);
-
-    [System.Runtime.InteropServices.DllImport("winspool.drv", SetLastError = true)]
-    static extern bool StartDocPrinter(IntPtr hPrinter, int level, [System.Runtime.InteropServices.In] DOC_INFO_1 di);
-
-    [System.Runtime.InteropServices.DllImport("winspool.drv", SetLastError = true)]
-    static extern bool EndDocPrinter(IntPtr hPrinter);
-
-    [System.Runtime.InteropServices.DllImport("winspool.drv", SetLastError = true)]
-    static extern bool StartPagePrinter(IntPtr hPrinter);
-
-    [System.Runtime.InteropServices.DllImport("winspool.drv", SetLastError = true)]
-    static extern bool EndPagePrinter(IntPtr hPrinter);
-
-    [System.Runtime.InteropServices.DllImport("winspool.drv", SetLastError = true)]
-    static extern bool WritePrinter(IntPtr hPrinter, byte[] pBytes, int dwCount, out int dwWritten);
-
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-    struct DOC_INFO_1
-    {
-        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]
-        public string pDocName;
-        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]
-        public string pOutputFile;
-        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]
-        public string pDatatype;
-    }
-
-    public static void RawPrint(string printerName, byte[] data)
-    {
-        IntPtr hprinter;
-        if (!OpenPrinter(printerName, out hprinter, IntPtr.Zero))
-            throw new Exception(string.Format("Nao foi possivel abrir a impressora \"{0}\".", printerName));
-        try
-        {
-            DOC_INFO_1 di = new DOC_INFO_1
-            {
-                pDocName = "TipPrint",
-                pOutputFile = null,
-                pDatatype = "RAW"
-            };
-            if (!StartDocPrinter(hprinter, 1, di))
-                throw new Exception(string.Format("Nao foi possivel iniciar o documento na impressora \"{0}\".", printerName));
-            try
-            {
-                StartPagePrinter(hprinter);
-                int written;
-                int offset = 0;
-                int page = 8192;
-                while (offset < data.Length)
-                {
-                    int len = Math.Min(page, data.Length - offset);
-                    byte[] chunk = new byte[len];
-                    Array.Copy(data, offset, chunk, 0, len);
-                    if (!WritePrinter(hprinter, chunk, len, out written))
-                        throw new Exception("Falha ao gravar dados na impressora.");
-                    offset += written;
-                }
-                EndPagePrinter(hprinter);
-            }
-            finally
-            {
-                EndDocPrinter(hprinter);
-            }
-        }
-        finally
-        {
-            ClosePrinter(hprinter);
-        }
-    }
+    Queued,
+    Sending,
+    SentIndeterminate,
+    Failed,
+    Completed
 }
 
 class PrintJob
@@ -1787,6 +1847,8 @@ class PrintJob
     // -1 = sem trecho protegido. Ver SendAndChunk.
     public int AtomicStart = -1;
     public int AtomicLen = 0;
+    public JobState State = JobState.Queued;
+    public DateTime EnqueuedAt = DateTime.Now;
 }
 
 class PrintProfile
